@@ -1,0 +1,11 @@
+# fichiers intermédiaires latex
+*.aux
+*.log
+*.out
+*.pdf
+*.toc
+
+# bytecode python
+*.pyc
+__pycache__
+
