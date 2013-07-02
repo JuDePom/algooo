@@ -1,5 +1,8 @@
-import pbuf as parser_buffer
+import sys
+import parser
 
 if __name__ == '__main__':
-	parser_buffer.load_file('rapport/snippets/salut.lda')
+	p = parser.Parser(sys.argv[1])
+	p.analyze_algorithm()
+	
 
