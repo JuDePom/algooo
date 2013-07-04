@@ -30,6 +30,7 @@ class Parser:
 		with open(path, 'r') as input_file:
 			self.buf = input_file.read()
 
+	@property
 	def cc(self):
 		'''
 		Return the current character in the buffer.
@@ -41,7 +42,7 @@ class Parser:
 		Advance current position in the buffer by one character and update self.pos
 		accordingly.
 		'''
-		if self.cc() == '\n':
+		if self.cc == '\n':
 			self.pos = self.pos.next_char_new_line()
 		else:
 			self.pos = self.pos.advance_same_line(1)
@@ -82,7 +83,7 @@ class Parser:
 		while state != 'END':
 			if state is 'WHITE':
 				# plain whitespace
-				if self.cc().isspace():
+				if self.cc.isspace():
 					self.advance1()
 				elif self.analyze_raw_synonyms(keywords.MULTILINE_COMMENT_START):
 					state = 'MULTI'
@@ -98,7 +99,7 @@ class Parser:
 					self.advance1()
 			elif state is 'SINGLE':
 				# inside single-line comment
-				if self.cc() == '\n':
+				if self.cc == '\n':
 					state = 'WHITE'
 				self.advance1()
 
@@ -124,7 +125,7 @@ class Parser:
 		for word in synonyms:
 			before_word = self.pos
 			if self.analyze_raw(word):
-				if is_ident_char_2(self.cc()):
+				if is_ident_char_2(self.cc):
 					# rewind
 					self.pos = before_word
 				else:
