@@ -7,5 +7,5 @@ import parser
 
 if __name__ == '__main__':
 	p = parser.Parser(sys.argv[1])
-	p.analyze_algorithm()
+	p.analyze_function()
 

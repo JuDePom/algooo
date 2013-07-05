@@ -1,18 +1,9 @@
-import keywords
+import re
+import keywords as kw
 import errors
 from position import Position
 
-def is_ident_char_1(c):
-	'''
-	Return True if c is a valid first character for an identifier.
-	'''
-	return c.isalpha() or c == '_'
-
-def is_ident_char_2(c):
-	'''
-	Return True if c is a valid identifier character past the first character.
-	'''
-	return is_ident_char_1(c) or c.isnumeric()
+re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
 
 class Parser:
 	'''
@@ -20,9 +11,9 @@ class Parser:
 
 	The "analyze_" functions check for the presence of a specific item at the
 	current position in the buffer. If the item was found, the current position
-	in the buffer is moved past the end of the item, and True is returned;
-	otherwise False is returned. These functions may raise an exception if a
-	syntax error was found.
+	in the buffer is moved past the end of the item, and True is returned.
+	Otherwise, the current position is left untouched, and False is returned.
+	These functions may raise an exception if a syntax error was found.
 	'''
 
 	def __init__(self, path):
@@ -36,6 +27,13 @@ class Parser:
 		Return the current character in the buffer.
 		'''
 		return self.buf[self.pos.char]
+	
+	@property
+	def sliced_buf(self):
+		'''
+		Return a sliced view of the buffer that starts at the current position.
+		'''
+		return self.buf[self.pos.char:]
 
 	def advance1(self):
 		'''
@@ -54,26 +52,6 @@ class Parser:
 		'''
 		self.pos = self.pos.advance_same_line(n)
 
-	def analyze_raw(self, raw):
-		'''
-		Analyze a raw string at the current position.
-		'''
-		if self.buf.startswith(raw, self.pos.char):
-			self.advance_same_line(len(raw))
-			return True
-		else:
-			return False
-
-	def analyze_raw_synonyms(self, synonyms):
-		'''
-		Analyze raw synonyms. That is, test for the presence of one of the
-		raw synonyms in the list passed as a parameter.
-		'''
-		for raw in synonyms:
-			if self.analyze_raw(raw):
-				return True
-		return False
-
 	def skip_white(self):
 		'''
 		Skip any whitespace and comments starting at the current position and
@@ -85,15 +63,15 @@ class Parser:
 				# plain whitespace
 				if self.cc.isspace():
 					self.advance1()
-				elif self.analyze_raw_synonyms(keywords.MULTILINE_COMMENT_START):
+				elif self.analyze_keyword(kw.MLC_START, False):
 					state = 'MULTI'
-				elif self.analyze_raw_synonyms(keywords.SINGLELINE_COMMENT_START):
+				elif self.analyze_keyword(kw.SLC_START, False):
 					state = 'SINGLE'
 				else:
 					state = 'END'
 			elif state is 'MULTI':
 				# inside multi-line comment
-				if self.analyze_raw_synonyms(keywords.MULTILINE_COMMENT_END):
+				if self.analyze_keyword(kw.MLC_END, False):
 					state = 'WHITE'
 				else:
 					self.advance1()
@@ -104,34 +82,98 @@ class Parser:
 				self.advance1()
 
 	def analyze_algorithm(self):
-		'''
-		Analyze an algorithm block.
-		'''
-		if not self.analyze_keyword(keywords.ALGORITHM):
+		if not self.analyze_keyword(kw.ALGORITHM):
 			return False
-		if not self.analyze_keyword(keywords.BEGIN):
-			raise errors.ExpectedError(self.pos, keywords.BEGIN)
+		self.analyze_mandatory_keyword(kw.BEGIN)
 		while self.analyze_instruction():
 # TODO !!! faire pour de vrai analyze_instruction()
 			pass
-		if not self.analyze_keyword(keywords.END):
-			raise errors.ExpectedError(self.pos, keywords.END)
+		self.analyze_mandatory_keyword(kw.END)
+		return True
 
-	def analyze_keyword(self, synonyms):
-		'''
-		Analyze a keyword (with synonyms).
-		'''
+	def analyze_function(self):
+		if not self.analyze_keyword(kw.FUNCTION):
+			return False
+
+		name = self.analyze_identifier()
+		if not name:
+			raise errors.IllegalIdentifier(self.pos)
+
+		self.analyze_mandatory_keyword(kw.LPAREN)
+
+		params = []
+
+		if not self.analyze_keyword(kw.RPAREN):
+			# non-empty parameter list
+			self.analyze_formal_parameter()
+			while self.analyze_keyword(kw.COMMA):
+				p = self.analyze_formal_parameter()
+				params.append(p)
+			self.analyze_mandatory_keyword(kw.RPAREN)
+
+		if self.analyze_keyword(kw.COLON):
+			raise errors.UnimplementedError(self.pos, \
+					"type de retour de la fonction")
+
+		self.analyze_mandatory_keyword(kw.BEGIN)
+		while self.analyze_instruction():
+# TODO
+			pass
+
+		self.analyze_mandatory_keyword(kw.END)
+
+	def analyze_formal_parameter(self):
+		name = self.analyze_identifier()
+		if not name:
+			raise errors.IllegalIdentifier(self.pos)
+
+		is_inout = self.analyze_keyword(kw.INOUT)
+
+		self.analyze_mandatory_keyword(kw.COLON)
+
+		is_array = self.analyze_keyword(kw.ARRAY)
+
+		type_kw = None
+		for candidate in kw.meta.all_types:
+			if self.analyze_keyword(candidate):
+				type_kw = candidate
+				break
+		if not type_kw:
+			raise errors.ExpectedItemError(self.pos, "un type")
+
+		if is_array:
+			self.analyze_mandatory_keyword(kw.LSBRACKET)
+			raise errors.UnimplementedError(self.pos, \
+					"taille du tableau paramètre effectif")
+
+		raise errors.UnimplementedError(self.pos, \
+				"création adéquate objet param formel")
+
+		#return FormalParameter(name, type_kw)
+
+	def analyze_identifier(self):
 		self.skip_white()
-		for word in synonyms:
-			before_word = self.pos
-			if self.analyze_raw(word):
-				if is_ident_char_2(self.cc):
-					# rewind
-					self.pos = before_word
-				else:
-					self.advance1()
-					return True
-		return False
+		match = re_identifier.match(self.sliced_buf)
+		if not match:
+			return False
+		identifier = match.group(0)
+		self.advance_same_line(len(identifier))
+		return identifier
+
+	def analyze_keyword(self, keyword, skip_white=True):
+		if skip_white:
+			self.skip_white()
+		found = keyword.find(self.sliced_buf)
+		if not found:
+			return False
+		self.advance_same_line(len(found))
+		return found
+
+	def analyze_mandatory_keyword(self, keyword):
+		found = self.analyze_keyword(keyword)
+		if not found:
+			raise errors.ExpectedKeywordError(self.pos, keyword)
+		return found
 
 	def analyze_instruction(self):
 		'''
