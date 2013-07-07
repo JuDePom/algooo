@@ -182,3 +182,13 @@ class Parser:
 # TODO ! à implémenter !
 		print ("TODO!!!")
 		return False
+
+	def analyze_assignment(self):
+		identifier = self.analyze_identifier()
+		if not identifier: 
+			return False
+		if not self.analyze_keyword(kw.ASSIGN):
+			return False
+		if not self.analyze_expression():
+			raise errors.ExpectedItemError(self.pos, "une expression")
+
