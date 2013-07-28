@@ -2,8 +2,10 @@ import re
 import keywords as kw
 import errors
 from position import Position
+from tree import *
 
 re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
+re_integer = re.compile(r'^[+\-]?\d+(?![\.\w])', re.UNICODE)
 
 class Parser:
 	'''
@@ -20,6 +22,7 @@ class Parser:
 		self.pos = Position(path)
 		with open(path, 'r') as input_file:
 			self.buf = input_file.read()
+			self.buflen = len(self.buf)
 
 	@property
 	def cc(self):
@@ -45,20 +48,20 @@ class Parser:
 		else:
 			self.pos = self.pos.advance_same_line(1)
 
-	def advance_same_line(self, n):
+	def advance(self, chars=0, skip_white=True):
 		'''
-		Advance current position in the buffer by n characters and update self.pos
-		accordingly.
-		'''
-		self.pos = self.pos.advance_same_line(n)
+		Advance current position in the buffer so that the cursor points on something 
+		significant (i.e. no whitespace, no comments)
 
-	def skip_white(self):
+		This function must be called at the very beginning of a source file, and 
+		after every operation that permanently consumes bytes from the buffer.
 		'''
-		Skip any whitespace and comments starting at the current position and
-		updates self.pos accordingly.
-		'''
+		if chars != 0:
+			self.pos = self.pos.advance_same_line(chars)
+		if not skip_white:
+			return
 		state = 'WHITE'
-		while state != 'END':
+		while state != 'END' and not self.eof():
 			if state is 'WHITE':
 				# plain whitespace
 				if self.cc.isspace():
@@ -81,20 +84,41 @@ class Parser:
 					state = 'WHITE'
 				self.advance1()
 
-	def analyze_algorithm(self):
-		if not self.analyze_keyword(kw.ALGORITHM):
+	def eof(self):
+		return self.pos.char >= self.buflen
+
+	def analyze_top_level(self):
+		def analyze_top_level_node():
+			for analyze in [self.analyze_function, self.analyze_algorithm]:
+				thing = analyze()
+				if thing:
+					return thing
 			return False
+		self.advance()
+		top_level_nodes = []
+		while not self.eof():
+			thing = analyze_top_level_node()
+			if thing:
+				top_level_nodes.append(thing)
+			else:
+				raise errors.ExpectedItemError(self.pos, "une fonction ou un algorithme")
+		return top_level_nodes
+
+	def analyze_algorithm(self):
+		start_kw = self.analyze_keyword(kw.ALGORITHM)
+		if not start_kw:
+			return False
+		# point of no-return
 		self.analyze_mandatory_keyword(kw.BEGIN)
-		while self.analyze_instruction():
-# TODO !!! faire pour de vrai analyze_instruction()
-			pass
-		self.analyze_mandatory_keyword(kw.END)
-		return True
+		body = self.analyze_instruction_block(kw.END)
+		return Algorithm(start_kw.pos, body)
 
 	def analyze_function(self):
-		if not self.analyze_keyword(kw.FUNCTION):
+		start_kw = self.analyze_keyword(kw.FUNCTION)
+		if not start_kw:
 			return False
 
+		# point of no-return
 		name = self.analyze_identifier()
 		if not name:
 			raise errors.IllegalIdentifier(self.pos)
@@ -116,11 +140,9 @@ class Parser:
 					"type de retour de la fonction")
 
 		self.analyze_mandatory_keyword(kw.BEGIN)
-		while self.analyze_instruction():
-# TODO
-			pass
 
-		self.analyze_mandatory_keyword(kw.END)
+		body = self.analyze_instruction_block(kw.END)
+		return Function(start_kw.pos, name, params, body)
 
 	def analyze_formal_parameter(self):
 		name = self.analyze_identifier()
@@ -149,25 +171,27 @@ class Parser:
 		raise errors.UnimplementedError(self.pos, \
 				"création adéquate objet param formel")
 
-		#return FormalParameter(name, type_kw)
+		return FormalParameter(name.pos, name, type_kw)
 
 	def analyze_identifier(self):
-		self.skip_white()
 		match = re_identifier.match(self.sliced_buf)
 		if not match:
 			return False
 		identifier = match.group(0)
-		self.advance_same_line(len(identifier))
-		return identifier
+		# invalid identifier if the string is a keyword
+		if identifier in kw.meta.all_keywords:
+			return False
+		pos0 = self.pos
+		self.advance(len(identifier))
+		return Identifier(pos0, identifier)
 
 	def analyze_keyword(self, keyword, skip_white=True):
-		if skip_white:
-			self.skip_white()
+		pos0 = self.pos
 		found = keyword.find(self.sliced_buf)
 		if not found:
 			return False
-		self.advance_same_line(len(found))
-		return found
+		self.advance(len(found), skip_white)
+		return Keyword(pos0, found)
 
 	def analyze_mandatory_keyword(self, keyword):
 		found = self.analyze_keyword(keyword)
@@ -175,20 +199,83 @@ class Parser:
 			raise errors.ExpectedKeywordError(self.pos, keyword)
 		return found
 
+	def analyze_instruction_block(self, end_marker_keyword):
+		block = []
+		while True:
+			instruction = self.analyze_instruction()
+			if instruction:
+				block.append(instruction)
+			else:
+				break
+		self.analyze_mandatory_keyword(end_marker_keyword)
+		return block
+
 	def analyze_instruction(self):
-		'''
-		Analyze an instruction.
-		'''
-# TODO ! à implémenter !
-		print ("TODO!!!")
+		instruction = self.analyze_assignment()
+		if instruction:
+			return instruction
+		instruction = self.analyze_function_call()
+		if instruction:
+			return instruction
 		return False
 
 	def analyze_assignment(self):
+		pos0 = self.pos
+
 		identifier = self.analyze_identifier()
 		if not identifier: 
 			return False
+
 		if not self.analyze_keyword(kw.ASSIGN):
+			self.pos = pos0
 			return False
-		if not self.analyze_expression():
+
+		# point of no return
+		rhs = self.analyze_expression()
+		if not rhs:
 			raise errors.ExpectedItemError(self.pos, "une expression")
+
+		return Assignment(pos0, identifier, rhs)
+
+	def analyze_function_call(self):
+		pos0 = self.pos
+
+		function_name = self.analyze_identifier()
+		if not function_name:
+			return False
+
+		if not self.analyze_keyword(kw.LPAREN):
+			self.pos = pos0
+			return False
+
+		# point of no return
+		effective_parameters = []
+		if not self.analyze_keyword(kw.RPAREN):
+			next_parameter = True
+			while next_parameter:
+				parameter = self.analyze_expression()
+				if not parameter:
+					raise errors.ExpectedItemError(self.pos,\
+							"une expression comme paramètre effectif")
+				effective_parameters.append(parameter)
+				next_parameter = self.analyze_keyword(kw.COMMA)
+			self.analyze_mandatory_keyword(kw.RPAREN)
+
+		return FunctionCall(pos0, function_name, effective_parameters)
+
+
+	def analyze_expression(self):
+		expression = self.analyze_literal_integer()
+		if expression:
+			return expression
+		else:
+			return False
+
+	def analyze_literal_integer(self):
+		match = re_integer.match(self.sliced_buf)
+		if not match:
+			return False
+		integer_string = match.group(0)
+		self.advance(len(integer_string))
+		return LiteralInteger(self.pos, int(integer_string))
 

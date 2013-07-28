@@ -14,18 +14,36 @@ keyword, we also allow the unaccented 'debut'.
 The first entry in each synonym list is the preferred spelling.
 '''
 
-class Keyword:
+class meta:
+	'''
+	Additional information about keywords.
+	'''
+
+	''' 
+	List of all spellings of every keyword. 
+	Useful to check for keyword infringement on a string.
+	'''
+	all_keywords = []
+
+	'''
+	List of all keywords denoting an LDA atomic type.
+	'''
+	all_types = []#[ INT, REAL, BOOL, CHAR, STRING ]
+
+class KeywordDef:
 	'''
 	Base class for keywords.
 
 	There are different subclasses of keywords, because they shall not all be
 	parsed according to the same rule.
 	'''
+
 	def __init__(self, *synonyms):
 		self.default_spelling = synonyms[0]
 		self.synonyms = synonyms
+		meta.all_keywords.extend(synonyms)
 
-class AlphaKeyword(Keyword):
+class AlphaKeywordDef(KeywordDef):
 	'''
 	Alphanumeric keyword.
 	
@@ -35,13 +53,13 @@ class AlphaKeyword(Keyword):
 	regexp = re.compile(r'^[^\d\W]\w*', re.UNICODE)
 
 	def find(self, buf):
-		match = AlphaKeyword.regexp.match(buf)
+		match = AlphaKeywordDef.regexp.match(buf)
 		if not match:
 			return False
 		found = match.group(0)
 		return (found if found in self.synonyms else False)
 
-class SymbolKeyword(Keyword):
+class SymbolKeywordDef(KeywordDef):
 	'''
 	Non-alphanumeric symbolic keyword.
 
@@ -62,63 +80,61 @@ class SymbolKeyword(Keyword):
 		return False
 
 
-ALGORITHM      = AlphaKeyword("algorithme")
-FUNCTION       = AlphaKeyword("fonction")
-BEGIN          = AlphaKeyword("début", "debut")
-END            = AlphaKeyword("fin")
-RETURN         = AlphaKeyword("return")
+ALGORITHM      = AlphaKeywordDef("algorithme")
+FUNCTION       = AlphaKeywordDef("fonction")
+BEGIN          = AlphaKeywordDef("début", "debut")
+END            = AlphaKeywordDef("fin")
+RETURN         = AlphaKeywordDef("return")
 
-FOR            = AlphaKeyword("pour")
-FROM           = AlphaKeyword("de")
-TO             = AlphaKeyword("jusque")
-DO             = AlphaKeyword("faire")
-END_FOR        = AlphaKeyword("fpour")
+FOR            = AlphaKeywordDef("pour")
+FROM           = AlphaKeywordDef("de")
+TO             = AlphaKeywordDef("jusque")
+DO             = AlphaKeywordDef("faire")
+END_FOR        = AlphaKeywordDef("fpour")
 
-WHILE          = AlphaKeyword("tantque")
-END_WHILE      = AlphaKeyword("ftantque", "ftant")
+WHILE          = AlphaKeywordDef("tantque")
+END_WHILE      = AlphaKeywordDef("ftantque", "ftant")
 
-IF             = AlphaKeyword("si")
-THEN           = AlphaKeyword("alors")
-ELSE           = AlphaKeyword("sinon")
-END_IF         = AlphaKeyword("fsi")
+IF             = AlphaKeywordDef("si")
+THEN           = AlphaKeywordDef("alors")
+ELSE           = AlphaKeywordDef("sinon")
+END_IF         = AlphaKeywordDef("fsi")
 
-INOUT          = AlphaKeyword("inout")
-ARRAY          = AlphaKeyword("tableau")
-INT            = AlphaKeyword("entier")
-REAL           = AlphaKeyword("réel", "reel")
-BOOL           = AlphaKeyword("booléen", "booleen")
-CHAR           = AlphaKeyword("caractère", "caractere")
-STRING         = AlphaKeyword("chaîne", "chaine")
+INOUT          = AlphaKeywordDef("inout")
+ARRAY          = AlphaKeywordDef("tableau")
+INT            = AlphaKeywordDef("entier")
+REAL           = AlphaKeywordDef("réel", "reel")
+BOOL           = AlphaKeywordDef("booléen", "booleen")
+CHAR           = AlphaKeywordDef("caractère", "caractere")
+STRING         = AlphaKeywordDef("chaîne", "chaine")
 
-TRUE           = AlphaKeyword("vrai")
-FALSE          = AlphaKeyword("faux")
-NOT            = AlphaKeyword("non")
+TRUE           = AlphaKeywordDef("vrai")
+FALSE          = AlphaKeywordDef("faux")
+NOT            = AlphaKeywordDef("non")
 
-LPAREN         = SymbolKeyword("(")
-RPAREN         = SymbolKeyword(")")
-LSBRACK        = SymbolKeyword("[")
-RSBRACK        = SymbolKeyword("]")
-COLON          = SymbolKeyword(":")
-COMMA          = SymbolKeyword(",")
-TIMES          = SymbolKeyword("*")
-PLUS           = SymbolKeyword("+")
-MINUS          = SymbolKeyword("-")
-SLASH          = SymbolKeyword("/")
-QUOTE1         = SymbolKeyword("'")
-QUOTE2         = SymbolKeyword("\"")
-ASSIGN         = SymbolKeyword("\u2190", "<-")
-LT             = SymbolKeyword("<")
-GT             = SymbolKeyword(">")
-LE             = SymbolKeyword("\u2264", "<=")
-GE             = SymbolKeyword("\u2265", ">=")
-EQ             = SymbolKeyword("=")
-NE             = SymbolKeyword("\u2260", "!=")
+LPAREN         = SymbolKeywordDef("(")
+RPAREN         = SymbolKeywordDef(")")
+LSBRACK        = SymbolKeywordDef("[")
+RSBRACK        = SymbolKeywordDef("]")
+COLON          = SymbolKeywordDef(":")
+COMMA          = SymbolKeywordDef(",")
+TIMES          = SymbolKeywordDef("*")
+PLUS           = SymbolKeywordDef("+")
+MINUS          = SymbolKeywordDef("-")
+SLASH          = SymbolKeywordDef("/")
+QUOTE1         = SymbolKeywordDef("'")
+QUOTE2         = SymbolKeywordDef("\"")
+ASSIGN         = SymbolKeywordDef("\u2190", "<-")
+LT             = SymbolKeywordDef("<")
+GT             = SymbolKeywordDef(">")
+LE             = SymbolKeywordDef("\u2264", "<=")
+GE             = SymbolKeywordDef("\u2265", ">=")
+EQ             = SymbolKeywordDef("=")
+NE             = SymbolKeywordDef("\u2260", "!=")
 
-MLC_START      = SymbolKeyword("(*")
-MLC_END        = SymbolKeyword("*)")
-SLC_START      = SymbolKeyword("//")
+MLC_START      = SymbolKeywordDef("(*")
+MLC_END        = SymbolKeywordDef("*)")
+SLC_START      = SymbolKeywordDef("//")
 
-
-class meta:
-	all_types = [ INT, REAL, BOOL, CHAR, STRING ]
+meta.all_types = [ INT, REAL, BOOL, CHAR, STRING ]
 

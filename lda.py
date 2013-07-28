@@ -7,5 +7,10 @@ import parser
 
 if __name__ == '__main__':
 	p = parser.Parser(sys.argv[1])
-	p.analyze_function()
+	top = p.analyze_top_level()
+	# quick & dirty output of the tree
+	for thing in top:
+		print("----------------------")
+		print(str(thing))
+		
 
