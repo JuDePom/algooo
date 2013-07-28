@@ -1,0 +1,22 @@
+fonction machin()
+début
+	a <- 1
+	b <- -352
+	c <- +124123
+	d <- 123
+fin
+
+fonction truc()
+début
+	e <- 24
+	f <- 102
+	g <- 1000
+	h <- 1234
+fin
+
+algorithme
+début
+	machin()
+	truc()
+fin
+
