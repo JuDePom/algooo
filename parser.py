@@ -7,6 +7,7 @@ from tree import *
 re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
 re_integer = re.compile(r'^[+\-]?\d+(?![\.\w])', re.UNICODE)
 re_real = re.compile(r'^[+\-]?\d+\.?\d*(?![\w])', re.UNICODE)
+re_string = re.compile(r'^".*?"', re.UNICODE) # TODO- escaping
 
 class Parser:
 	'''
@@ -272,6 +273,9 @@ class Parser:
 		expression = self.analyze_literal_real()
 		if expression:
 			return expression
+		expression = self.analyze_literal_string()
+		if expression:
+			return expression
 		return False
 
 	def analyze_literal_integer(self):
@@ -292,3 +296,13 @@ class Parser:
 		self.advance(len(real_string))
 		return LiteralReal(pos0, float(real_string))
 
+	def analyze_literal_string(self):
+		pos0 = self.pos
+		match = re_string.match(self.sliced_buf)
+		if not match:
+			return False
+		string_string = match.group(0)
+		self.advance(len(string_string))
+		# return string_string without the surrounding quotes
+		# TODO- when we allow escaping it'll be more complex than just removing the quotes
+		return LiteralString(pos0, string_string[1:-1])
