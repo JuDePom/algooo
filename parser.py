@@ -5,9 +5,9 @@ from position import Position
 from tree import *
 
 re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
-re_integer = re.compile(r'^[+\-]?\d+(?![\.\w])', re.UNICODE)
-re_real = re.compile(r'^[+\-]?\d+\.?\d*(?![\w])', re.UNICODE)
-re_string = re.compile(r'^".*?"', re.UNICODE) # TODO- escaping
+re_integer    = re.compile(r'^[+\-]?\d+[^\.\w]', re.UNICODE)
+re_real       = re.compile(r'^[+\-]?\d+\.?\d*[^\w]', re.UNICODE)
+re_string     = re.compile(r'^".*?"', re.UNICODE) # TODO- escaping
 
 class Parser:
 	'''
