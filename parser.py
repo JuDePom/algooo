@@ -16,7 +16,7 @@ class Parser:
 	The "analyze_" functions check for the presence of a specific item at the
 	current position in the buffer. If the item was found, the current position
 	in the buffer is moved past the end of the item, and True is returned.
-	Otherwise, the current position is left untouched, and False is returned.
+	Otherwise, the current position is left untouched, and None is returned.
 	These functions may raise an exception if a syntax error was found.
 	'''
 
@@ -93,23 +93,22 @@ class Parser:
 		def analyze_top_level_node():
 			for analyze in [self.analyze_function, self.analyze_algorithm]:
 				thing = analyze()
-				if thing:
-					return thing
-			return False
+				if thing is not None: return thing
+			return
 		self.advance()
 		top_level_nodes = []
 		while not self.eof():
 			thing = analyze_top_level_node()
-			if thing:
-				top_level_nodes.append(thing)
-			else:
+			if thing is None:
 				raise errors.ExpectedItemError(self.pos, "une fonction ou un algorithme")
+			top_level_nodes.append(thing)
 		return top_level_nodes
 
 	def analyze_algorithm(self):
 		start_kw = self.analyze_keyword(kw.ALGORITHM)
-		if not start_kw:
-			return False
+		if start_kw is None:
+			return
+
 		# point of no-return
 		self.analyze_mandatory_keyword(kw.BEGIN)
 		body = self.analyze_instruction_block(kw.END)
@@ -117,27 +116,28 @@ class Parser:
 
 	def analyze_function(self):
 		start_kw = self.analyze_keyword(kw.FUNCTION)
-		if not start_kw:
-			return False
+		if start_kw is None:
+			return
 
 		# point of no-return
 		name = self.analyze_identifier()
-		if not name:
+		if name is None:
 			raise errors.IllegalIdentifier(self.pos)
 
 		self.analyze_mandatory_keyword(kw.LPAREN)
 
 		params = []
 
-		if not self.analyze_keyword(kw.RPAREN):
+		if self.analyze_keyword(kw.RPAREN) is None:
 			# non-empty parameter list
 			self.analyze_formal_parameter()
-			while self.analyze_keyword(kw.COMMA):
+			# TODO corriger buggggg
+			while self.analyze_keyword(kw.COMMA) is not None:
 				p = self.analyze_formal_parameter()
 				params.append(p)
 			self.analyze_mandatory_keyword(kw.RPAREN)
 
-		if self.analyze_keyword(kw.COLON):
+		if self.analyze_keyword(kw.COLON) is not None:
 			raise errors.UnimplementedError(self.pos, \
 					"type de retour de la fonction")
 
@@ -148,7 +148,7 @@ class Parser:
 
 	def analyze_formal_parameter(self):
 		name = self.analyze_identifier()
-		if not name:
+		if name is None:
 			raise errors.IllegalIdentifier(self.pos)
 
 		is_inout = self.analyze_keyword(kw.INOUT)
@@ -159,13 +159,13 @@ class Parser:
 
 		type_kw = None
 		for candidate in kw.meta.all_types:
-			if self.analyze_keyword(candidate):
+			if self.analyze_keyword(candidate) is not None:
 				type_kw = candidate
 				break
-		if not type_kw:
+		if type_kw is None:
 			raise errors.ExpectedItemError(self.pos, "un type")
 
-		if is_array:
+		if is_array is not None:
 			self.analyze_mandatory_keyword(kw.LSBRACKET)
 			raise errors.UnimplementedError(self.pos, \
 					"taille du tableau paramètre effectif")
@@ -177,29 +177,28 @@ class Parser:
 
 	def analyze_identifier(self):
 		match = re_identifier.match(self.sliced_buf)
-		if not match:
-			return False
+		if match is None:
+			return
 		identifier = match.group(0)
-		# invalid identifier if the string is a keyword
 		if identifier in kw.meta.all_keywords:
-			return False
+			return # invalid identifier if the string is a keyword
 		pos0 = self.pos
 		self.advance(len(identifier))
 		return Identifier(pos0, identifier)
 
 	def analyze_keyword(self, keyword, skip_white=True):
 		pos0 = self.pos
-		found = keyword.find(self.sliced_buf)
-		if not found:
-			return False
-		self.advance(len(found), skip_white)
-		return Keyword(pos0, found)
+		found_string = keyword.find(self.sliced_buf)
+		if found_string is not None:
+			self.advance(len(found_string), skip_white)
+			return Keyword(pos0, found_string)
 
 	def analyze_mandatory_keyword(self, keyword):
-		found = self.analyze_keyword(keyword)
-		if not found:
+		found_kw = self.analyze_keyword(keyword)
+		if found_kw is not None:
+			return found_kw
+		else:
 			raise errors.ExpectedKeywordError(self.pos, keyword)
-		return found
 
 	def analyze_instruction_block(self, end_marker_keyword):
 		block = []
@@ -219,22 +218,20 @@ class Parser:
 		instruction = self.analyze_function_call()
 		if instruction:
 			return instruction
-		return False
 
 	def analyze_assignment(self):
 		pos0 = self.pos
 
 		identifier = self.analyze_identifier()
-		if not identifier: 
-			return False
+		if identifier is None: return
 
-		if not self.analyze_keyword(kw.ASSIGN):
-			self.pos = pos0
-			return False
+		if self.analyze_keyword(kw.ASSIGN) is None:
+			self.pos = pos0 # analyze_identifier had advanced the position
+			return
 
 		# point of no return
 		rhs = self.analyze_expression()
-		if not rhs:
+		if rhs is None:
 			raise errors.ExpectedItemError(self.pos, "une expression")
 
 		return Assignment(pos0, identifier, rhs)
@@ -243,20 +240,20 @@ class Parser:
 		pos0 = self.pos
 
 		function_name = self.analyze_identifier()
-		if not function_name:
-			return False
+		if function_name is None:
+			return
 
-		if not self.analyze_keyword(kw.LPAREN):
-			self.pos = pos0
-			return False
+		if self.analyze_keyword(kw.LPAREN) is None:
+			self.pos = pos0 # analyze_identifier had advanced the position
+			return
 
 		# point of no return
 		effective_parameters = []
-		if not self.analyze_keyword(kw.RPAREN):
+		if self.analyze_keyword(kw.RPAREN) is None:  # we have an effective parameter
 			next_parameter = True
 			while next_parameter:
 				parameter = self.analyze_expression()
-				if not parameter:
+				if parameter is None:
 					raise errors.ExpectedItemError(self.pos,\
 							"une expression comme paramètre effectif")
 				effective_parameters.append(parameter)
@@ -273,35 +270,31 @@ class Parser:
 		]
 		for analyze in analysis_order:
 			expression = analyze()
-			if expression:
+			if expression is not None:
 				return expression
-		return False
 
 	def analyze_literal_integer(self):
 		pos0 = self.pos
 		match = re_integer.match(self.sliced_buf)
-		if not match:
-			return False
-		integer_string = match.group(0)
-		self.advance(len(integer_string))
-		return LiteralInteger(pos0, int(integer_string))
+		if match is not None:
+			integer_string = match.group(0)
+			self.advance(len(integer_string))
+			return LiteralInteger(pos0, int(integer_string))
 
 	def analyze_literal_real(self):
 		pos0 = self.pos
 		match = re_real.match(self.sliced_buf)
-		if not match:
-			return False
-		real_string = match.group(0)
-		self.advance(len(real_string))
-		return LiteralReal(pos0, float(real_string))
+		if match is not None:
+			real_string = match.group(0)
+			self.advance(len(real_string))
+			return LiteralReal(pos0, float(real_string))
 
 	def analyze_literal_string(self):
 		pos0 = self.pos
 		match = re_string.match(self.sliced_buf)
-		if not match:
-			return False
-		string_string = match.group(0)
-		self.advance(len(string_string))
-		# return string_string without the surrounding quotes
-		# TODO- when we allow escaping it'll be more complex than just removing the quotes
-		return LiteralString(pos0, string_string[1:-1])
+		if match is not None:
+			string_string = match.group(0)
+			self.advance(len(string_string))
+			# return string_string without the surrounding quotes
+			# TODO- when we allow escaping it'll be more complex than just removing the quotes
+			return LiteralString(pos0, string_string[1:-1])

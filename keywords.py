@@ -54,10 +54,11 @@ class AlphaKeywordDef(KeywordDef):
 
 	def find(self, buf):
 		match = AlphaKeywordDef.regexp.match(buf)
-		if not match:
-			return False
+		if match is None:
+			return
 		found = match.group(0)
-		return (found if found in self.synonyms else False)
+		if found in self.synonyms:
+			return found
 
 class SymbolKeywordDef(KeywordDef):
 	'''
@@ -77,7 +78,6 @@ class SymbolKeywordDef(KeywordDef):
 		for symbol in self.synonyms:
 			if buf.startswith(symbol):
 				return symbol
-		return False
 
 
 ALGORITHM      = AlphaKeywordDef("algorithme")
