@@ -265,17 +265,16 @@ class Parser:
 
 		return FunctionCall(pos0, function_name, effective_parameters)
 
-
 	def analyze_expression(self):
-		expression = self.analyze_literal_integer()
-		if expression:
-			return expression
-		expression = self.analyze_literal_real()
-		if expression:
-			return expression
-		expression = self.analyze_literal_string()
-		if expression:
-			return expression
+		analysis_order = [
+				self.analyze_literal_integer,
+				self.analyze_literal_real,
+				self.analyze_literal_string,
+		]
+		for analyze in analysis_order:
+			expression = analyze()
+			if expression:
+				return expression
 		return False
 
 	def analyze_literal_integer(self):
