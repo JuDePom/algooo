@@ -130,11 +130,11 @@ class Parser:
 
 		if self.analyze_keyword(kw.RPAREN) is None:
 			# non-empty parameter list
-			self.analyze_formal_parameter()
-			# TODO corriger buggggg
-			while self.analyze_keyword(kw.COMMA) is not None:
+			has_next_param = True
+			while has_next_param:
 				p = self.analyze_formal_parameter()
 				params.append(p)
+				has_next_param = self.analyze_keyword(kw.COMMA) is not None
 			self.analyze_mandatory_keyword(kw.RPAREN)
 
 		if self.analyze_keyword(kw.COLON) is not None:
