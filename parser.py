@@ -6,6 +6,7 @@ from tree import *
 
 re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
 re_integer = re.compile(r'^[+\-]?\d+(?![\.\w])', re.UNICODE)
+re_real = re.compile(r'^[+\-]?\d+\.?\d*(?![\w])', re.UNICODE)
 
 class Parser:
 	'''
@@ -268,14 +269,26 @@ class Parser:
 		expression = self.analyze_literal_integer()
 		if expression:
 			return expression
-		else:
-			return False
+		expression = self.analyze_literal_real()
+		if expression:
+			return expression
+		return False
 
 	def analyze_literal_integer(self):
+		pos0 = self.pos
 		match = re_integer.match(self.sliced_buf)
 		if not match:
 			return False
 		integer_string = match.group(0)
 		self.advance(len(integer_string))
-		return LiteralInteger(self.pos, int(integer_string))
+		return LiteralInteger(pos0, int(integer_string))
+
+	def analyze_literal_real(self):
+		pos0 = self.pos
+		match = re_real.match(self.sliced_buf)
+		if not match:
+			return False
+		real_string = match.group(0)
+		self.advance(len(real_string))
+		return LiteralReal(pos0, float(real_string))
 

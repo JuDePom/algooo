@@ -93,3 +93,10 @@ class LiteralInteger(Expression):
 	def __repr__(self):
 		return "entier littéral " + str(self.value) 
 
+class LiteralReal(Expression):
+	def __init__(self, pos, value):
+		Expression.__init__(self, pos)
+		self.value = value
+	def __repr__(self):
+		return "réel littéral " + str(self.value)
+
