@@ -200,9 +200,6 @@ class Parser:
 		if not found:
 			raise errors.ExpectedKeywordError(self.pos, keyword)
 		return found
-	
-	def analyze_optional_keyword(self, keyword):
-		return self.analyze_keyword(keyword)
 
 	def analyze_instruction_block(self, *end_marker_keywords):
 		block = []
@@ -212,9 +209,10 @@ class Parser:
 				block.append(instruction)
 			else:
 				break
-		for emk in end_marker_keywords:
-			if self.analyze_keyword(emk) is not None:
-				return block, emk
+		for end_marker_keyword in end_marker_keywords:
+			if self.analyze_keyword(end_marker_keyword):
+				return block, end_marker_keyword
+		raise errors.ExpectedKeywordError(self.pos, end_marker_keywords[-1])
 
 	def analyze_instruction(self):
 		analyse_order = [
@@ -290,13 +288,12 @@ class Parser:
 
 		self.analyze_mandatory_keyword(kw.THEN)
 		
-		first_block,emk = self.analyze_instruction_block(kw.ELSE, kw.END_IF)
-		optional_block = None
+		first_block, emk = self.analyze_instruction_block(kw.ELSE, kw.END_IF)
 		
 		if emk == kw.ELSE :
 			optional_block,_ = self.analyze_instruction_block(kw.END_IF)
-			
-		return InstructionIf(pos0, bool_Expr, first_block, optional_block )
+			return InstructionIf(pos0, bool_Expr, first_block, optional_block )
+		return InstructionIf(pos0, bool_Expr, first_block)
 		
 	def analyze_instruction_for(self):
 		pos0 = self.pos
