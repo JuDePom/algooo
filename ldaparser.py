@@ -1,6 +1,6 @@
 import re
 import keywords as kw
-import errors
+from errors import *
 from position import Position
 from tree import *
 
@@ -100,7 +100,7 @@ class Parser:
 		while not self.eof():
 			thing = analyze_top_level_node()
 			if thing is None:
-				raise errors.ExpectedItemError(self.pos, "une fonction ou un algorithme")
+				raise ExpectedItemError(self.pos, "une fonction ou un algorithme")
 			top_level_nodes.append(thing)
 		return top_level_nodes
 
@@ -122,7 +122,7 @@ class Parser:
 		# point of no-return
 		name = self.analyze_identifier()
 		if name is None:
-			raise errors.IllegalIdentifier(self.pos)
+			raise IllegalIdentifier(self.pos)
 
 		self.analyze_mandatory_keyword(kw.LPAREN)
 
@@ -138,7 +138,7 @@ class Parser:
 			self.analyze_mandatory_keyword(kw.RPAREN)
 
 		if self.analyze_keyword(kw.COLON) is not None:
-			raise errors.UnimplementedError(self.pos, \
+			raise UnimplementedError(self.pos, \
 					"type de retour de la fonction")
 
 		self.analyze_mandatory_keyword(kw.BEGIN)
@@ -149,7 +149,7 @@ class Parser:
 	def analyze_formal_parameter(self):
 		name = self.analyze_identifier()
 		if name is None:
-			raise errors.IllegalIdentifier(self.pos)
+			raise IllegalIdentifier(self.pos)
 
 		is_inout = self.analyze_keyword(kw.INOUT)
 
@@ -163,14 +163,14 @@ class Parser:
 				type_kw = candidate
 				break
 		if type_kw is None:
-			raise errors.ExpectedItemError(self.pos, "un type")
+			raise ExpectedItemError(self.pos, "un type")
 
 		if is_array is not None:
 			self.analyze_mandatory_keyword(kw.LSBRACKET)
-			raise errors.UnimplementedError(self.pos, \
+			raise UnimplementedError(self.pos, \
 					"taille du tableau paramètre effectif")
 
-		raise errors.UnimplementedError(self.pos, \
+		raise UnimplementedError(self.pos, \
 				"création adéquate objet param formel")
 
 		return FormalParameter(name.pos, name, type_kw)
@@ -198,7 +198,7 @@ class Parser:
 		if found_kw is not None:
 			return found_kw
 		else:
-			raise errors.ExpectedKeywordError(self.pos, keyword)
+			raise ExpectedKeywordError(self.pos, keyword)
 
 	def analyze_instruction_block(self, *end_marker_keywords):
 		block = []
@@ -211,7 +211,7 @@ class Parser:
 		for marker in end_marker_keywords:
 			if self.analyze_keyword(marker) is not None:
 				return block, marker
-		raise errors.ExpectedKeywordError(self.pos, *end_marker_keywords)
+		raise ExpectedKeywordError(self.pos, *end_marker_keywords)
 
 	def analyze_instruction(self):
 		analyse_order = [
@@ -240,7 +240,7 @@ class Parser:
 		# point of no return
 		rhs = self.analyze_expression()
 		if rhs is None:
-			raise errors.ExpectedItemError(self.pos, "une expression")
+			raise ExpectedItemError(self.pos, "une expression")
 
 		return Assignment(pos0, identifier, rhs)
 
@@ -261,7 +261,7 @@ class Parser:
 			while next_parameter:
 				parameter = self.analyze_expression()
 				if parameter is None:
-					raise errors.ExpectedItemError(self.pos,\
+					raise ExpectedItemError(self.pos,\
 							"une expression comme paramètre effectif")
 				effective_parameters.append(parameter)
 				next_parameter = self.analyze_keyword(kw.COMMA)
@@ -277,7 +277,7 @@ class Parser:
 		# point of no return
 		bool_Expr = self.analyze_expression()
 		if bool_Expr is None:
-			raise errors.ExpectedItemError(self.pos,
+			raise ExpectedItemError(self.pos,
 					"l'expression de la condition")
 
 		self.analyze_mandatory_keyword(kw.THEN)
@@ -299,19 +299,19 @@ class Parser:
 		# point of no return
 		increment = self.analyze_identifier()
 		if increment is None:
-			raise errors.ExpectedItemError(self.pos, 
+			raise ExpectedItemError(self.pos, 
 					"l'identifieur du compteur de la boucle")
 		
 		self.analyze_mandatory_keyword(kw.FROM)
 		int_from = self.analyze_expression()
 		if int_from is None:
-			raise errors.ExpectedItemError(self.pos,
+			raise ExpectedItemError(self.pos,
 					"l'expression de la valeur de départ du compteur")
 
 		self.analyze_mandatory_keyword(kw.TO)
 		int_to = self.analyze_expression()
 		if int_to is None:
-			raise errors.ExpectedItemError(self.pos,
+			raise ExpectedItemError(self.pos,
 					"l'expression de la valeur finale du compteur")
 		
 		self.analyze_mandatory_keyword(kw.DO)
@@ -328,7 +328,7 @@ class Parser:
 		# point of no return
 		bool_Expr = self.analyze_expression()
 		if bool_Expr is None:
-			raise errors.ExpectedItemError(self.pos,
+			raise ExpectedItemError(self.pos,
 					"l'expression de la condition de la boucle")
 
 		self.analyze_mandatory_keyword(kw.DO)
@@ -346,7 +346,7 @@ class Parser:
 		block,_ = self.analyze_instruction_block(kw.TO)
 		bool_Expr = self.analyze_expression()
 		if bool_Expr is None:
-			raise errors.ExpectedItemError(self.pos,
+			raise ExpectedItemError(self.pos,
 					"l'expression de la condition de la boucle")
 		return InstructionDoWhile(pos0, block, bool_Expr)
 		
