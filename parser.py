@@ -111,7 +111,7 @@ class Parser:
 
 		# point of no-return
 		self.analyze_mandatory_keyword(kw.BEGIN)
-		body = self.analyze_instruction_block(kw.END)
+		body,_ = self.analyze_instruction_block(kw.END)
 		return Algorithm(start_kw.pos, body)
 
 	def analyze_function(self):
@@ -143,7 +143,7 @@ class Parser:
 
 		self.analyze_mandatory_keyword(kw.BEGIN)
 
-		body = self.analyze_instruction_block(kw.END)
+		body,_ = self.analyze_instruction_block(kw.END)
 		return Function(start_kw.pos, name, params, body)
 
 	def analyze_formal_parameter(self):
@@ -200,24 +200,32 @@ class Parser:
 		else:
 			raise errors.ExpectedKeywordError(self.pos, keyword)
 
-	def analyze_instruction_block(self, end_marker_keyword):
+	def analyze_instruction_block(self, *end_marker_keywords):
 		block = []
 		while True:
 			instruction = self.analyze_instruction()
-			if instruction:
+			if instruction is not None:
 				block.append(instruction)
 			else:
 				break
-		self.analyze_mandatory_keyword(end_marker_keyword)
-		return block
+		for marker in end_marker_keywords:
+			if self.analyze_keyword(marker) is not None:
+				return block, marker
+		raise errors.ExpectedKeywordError(self.pos, *end_marker_keywords)
 
 	def analyze_instruction(self):
-		instruction = self.analyze_assignment()
-		if instruction:
-			return instruction
-		instruction = self.analyze_function_call()
-		if instruction:
-			return instruction
+		analyse_order = [
+			self.analyze_assignment,
+			self.analyze_function_call,
+			self.analyze_if,
+			self.analyze_for,
+			self.analyze_while,
+			self.analyze_do_while
+		]
+		for analyze in analyse_order:
+			instruction = analyze()
+			if instruction:
+				return instruction
 
 	def analyze_assignment(self):
 		pos0 = self.pos
@@ -240,8 +248,7 @@ class Parser:
 		pos0 = self.pos
 
 		function_name = self.analyze_identifier()
-		if function_name is None:
-			return
+		if function_name is None: return
 
 		if self.analyze_keyword(kw.LPAREN) is None:
 			self.pos = pos0 # analyze_identifier had advanced the position
@@ -261,7 +268,88 @@ class Parser:
 			self.analyze_mandatory_keyword(kw.RPAREN)
 
 		return FunctionCall(pos0, function_name, effective_parameters)
+	
+	def analyze_if(self):
+		pos0 = self.pos
 
+		if self.analyze_keyword(kw.IF) is None: return
+
+		# point of no return
+		bool_Expr = self.analyze_expression()
+		if bool_Expr is None:
+			raise errors.ExpectedItemError(self.pos,
+					"l'expression de la condition")
+
+		self.analyze_mandatory_keyword(kw.THEN)
+		
+		first_block, emk = self.analyze_instruction_block(kw.ELSE, kw.END_IF)
+		
+		if emk == kw.ELSE:
+			optional_block,_ = self.analyze_instruction_block(kw.END_IF)
+		else:
+			optional_block = None
+
+		return InstructionIf(pos0, bool_Expr, first_block, optional_block)
+		
+	def analyze_for(self):
+		pos0 = self.pos
+
+		if self.analyze_keyword(kw.FOR) is None: return
+
+		# point of no return
+		increment = self.analyze_identifier()
+		if increment is None:
+			raise errors.ExpectedItemError(self.pos, 
+					"l'identifieur du compteur de la boucle")
+		
+		self.analyze_mandatory_keyword(kw.FROM)
+		int_from = self.analyze_expression()
+		if int_from is None:
+			raise errors.ExpectedItemError(self.pos,
+					"l'expression de la valeur de départ du compteur")
+
+		self.analyze_mandatory_keyword(kw.TO)
+		int_to = self.analyze_expression()
+		if int_to is None:
+			raise errors.ExpectedItemError(self.pos,
+					"l'expression de la valeur finale du compteur")
+		
+		self.analyze_mandatory_keyword(kw.DO)
+		
+		block,_ = self.analyze_instruction_block(kw.END_FOR)
+		
+		return InstructionFor(pos0, increment, int_from, int_to, block)
+	
+	def analyze_while(self):
+		pos0 = self.pos
+
+		if self.analyze_keyword(kw.WHILE) is None: return
+
+		# point of no return
+		bool_Expr = self.analyze_expression()
+		if bool_Expr is None:
+			raise errors.ExpectedItemError(self.pos,
+					"l'expression de la condition de la boucle")
+
+		self.analyze_mandatory_keyword(kw.DO)
+		
+		block,_ = self.analyze_instruction_block(kw.END_WHILE)
+		
+		return InstructionWhile(pos0, bool_Expr, block)
+		
+	def analyze_do_while(self):
+		pos0 = self.pos
+
+		if self.analyze_keyword(kw.DO) is None: return 
+
+		# point of no return
+		block,_ = self.analyze_instruction_block(kw.TO)
+		bool_Expr = self.analyze_expression()
+		if bool_Expr is None:
+			raise errors.ExpectedItemError(self.pos,
+					"l'expression de la condition de la boucle")
+		return InstructionDoWhile(pos0, block, bool_Expr)
+		
 	def analyze_expression(self):
 		analysis_order = [
 				self.analyze_literal_integer,

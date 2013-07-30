@@ -18,8 +18,16 @@ class ExpectedKeywordError(SyntaxError):
 	something else.
 	'''
 
-	def __init__(self, pos, expected_keyword):
-		message = "'" + expected_keyword.default_spelling + "' est attendu ici"
+	def __init__(self, pos, *expected_keywords):
+		if len(expected_keywords) == 1:
+			message = "le mot-clé \"{}\" est attendu ici".format(
+					expected_keywords[0].default_spelling)
+		else:
+			message = "l'un des mot-clés suivants est attendu ici : "
+			sep = ""
+			for keyword in expected_keywords:
+				message += "{}\"{}\"".format(sep, keyword.default_spelling)
+				sep = ", "
 		SyntaxError.__init__(self, pos, message)
 
 class ExpectedItemError(SyntaxError):
