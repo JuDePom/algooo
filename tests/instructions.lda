@@ -1,0 +1,10 @@
+fonction test()
+début
+	si 1 alors
+		pour i de 1 jusque 3 faire
+			test <- 1
+		fpour
+	sinon
+		test <- 2
+	fsi
+fin
