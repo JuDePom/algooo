@@ -82,6 +82,7 @@ class SymbolKeywordDef(KeywordDef):
 
 ALGORITHM      = AlphaKeywordDef("algorithme")
 FUNCTION       = AlphaKeywordDef("fonction")
+LEXICON        = AlphaKeywordDef("lexique")
 BEGIN          = AlphaKeywordDef("début", "debut")
 END            = AlphaKeywordDef("fin")
 RETURN         = AlphaKeywordDef("return")

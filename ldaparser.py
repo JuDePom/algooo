@@ -8,6 +8,7 @@ re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
 re_integer    = re.compile(r'^[+\-]?\d+[^\.\w]', re.UNICODE)
 re_real       = re.compile(r'^[+\-]?\d+\.?\d*[^\w]', re.UNICODE)
 re_string     = re.compile(r'^".*?"', re.UNICODE) # TODO- escaping
+re_boolean	  = re.compile(r'^(vrai|faux)', re.UNICODE)
 
 class Parser:
 	'''
@@ -104,12 +105,22 @@ class Parser:
 			top_level_nodes.append(thing)
 		return top_level_nodes
 
+	def analyze_lexicon(self):
+		start_kw = self.analyze_keyword(kw.LEXICON)
+		if start_kw is None:
+			return
+		body = self.analyze_declaration_block()
+		return Lexicon(start_kw.pos, body)	
+		
 	def analyze_algorithm(self):
 		start_kw = self.analyze_keyword(kw.ALGORITHM)
 		if start_kw is None:
 			return
 
 		# point of no-return
+		lexi = self.analyze_lexicon(self)
+		if lexi is None:
+			return
 		self.analyze_mandatory_keyword(kw.BEGIN)
 		body,_ = self.analyze_instruction_block(kw.END)
 		return Algorithm(start_kw.pos, body)
@@ -141,6 +152,9 @@ class Parser:
 			raise UnimplementedError(self.pos, \
 					"type de retour de la fonction")
 
+		lexi = self.analyze_lexicon(self)
+		if lexi is None:
+			return
 		self.analyze_mandatory_keyword(kw.BEGIN)
 
 		body,_ = self.analyze_instruction_block(kw.END)
@@ -200,6 +214,39 @@ class Parser:
 		else:
 			raise ExpectedKeywordError(self.pos, keyword)
 
+	def analyze_declaration_block(self):
+		block = []
+		while True:
+			declaration = self.analyze_declaration()
+			if declaration:
+				block.append(declaration)
+			else:
+				break
+		return block
+	
+	def analyze_declaration(self):
+		pos0 = self.pos
+
+		identifier = self.analyze_identifier()
+		if not identifier: 
+			return False
+			
+		if not self.analyze_keyword(kw.COLON):
+			self.pos = pos0
+			return False
+
+		# point of no return
+		rhs = self.analyze_type()
+		if not rhs:
+			raise errors.ExpectedItemError(self.pos, "un type")
+
+		return Declaration(pos0, identifier, rhs)
+
+	def analyze_type(self):
+		for analyze in kw.meta.all_types:
+			if self.analyze_keyword(analyze):
+				return analyze
+		
 	def analyze_instruction_block(self, *end_marker_keywords):
 		block = []
 		while True:
@@ -212,7 +259,7 @@ class Parser:
 			if self.analyze_keyword(marker) is not None:
 				return block, marker
 		raise ExpectedKeywordError(self.pos, *end_marker_keywords)
-
+		
 	def analyze_instruction(self):
 		analyse_order = [
 			self.analyze_assignment,
@@ -355,6 +402,7 @@ class Parser:
 				self.analyze_literal_integer,
 				self.analyze_literal_real,
 				self.analyze_literal_string,
+				self.analyze_literal_boolean,
 		]
 		for analyze in analysis_order:
 			expression = analyze()
@@ -386,3 +434,11 @@ class Parser:
 			# return string_string without the surrounding quotes
 			# TODO- when we allow escaping it'll be more complex than just removing the quotes
 			return LiteralString(pos0, string_string[1:-1])
+
+	def analyze_literal_boolean(self):
+		pos0 = self.pos
+		match = re_boolean.match(self.sliced_buf)
+		if match is not None:
+			boolean_string = match.group(0)
+			self.advance(len(boolean_string))
+			return LiteralBoolean(pos0, bool(boolean_string))

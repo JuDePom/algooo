@@ -49,6 +49,13 @@ class Function(SourceThing):
 	def __repr__(self):
 		return "fonction {} :\n{}".format(self.name, self.body)
 
+class Lexicon(SourceThing):
+	def __init__(self, pos, body):
+		SourceThing.__init__(self, pos)
+		self.body = body
+	def __repr__(self):
+		return "lexique : \n{}".format(self.body)
+		
 #######################################################################
 #
 # INSTRUCTIONS
@@ -67,6 +74,14 @@ class Assignment(Instruction):
 	def __repr__(self):
 		return "affectation ({} <- {})\n".format(self.lhs, self.rhs)
 
+class Declaration(SourceThing):
+	def __init__(self, pos, lhs, rhs):
+		SourceThing.__init__(self, pos)
+		self.lhs = lhs
+		self.rhs = rhs
+	def __repr__(self):
+		return "declaration ({} : {})\n".format(self.lhs, self.rhs)		
+		
 class FunctionCall(Instruction):
 	def __init__(self, pos, function_name, effective_parameters):
 		self.function_name = function_name
@@ -155,3 +170,9 @@ class LiteralString(Expression):
 	def __repr__(self):
 		return "chaîne littérale \"" + self.value + "\""
 
+class LiteralBoolean(Expression):
+	def __init__(self, pos, value):
+		Expression.__init__(self, pos)
+		self.value = value
+	def __repr__(self):
+		return "booléen littéral " + str(self.value)
