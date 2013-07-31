@@ -3,7 +3,7 @@ LDA compiler entry point.
 '''
 
 import sys
-import parser
+import ldaparser
 
 def pretty_tree(arbre):
 	padding = 0
@@ -22,7 +22,7 @@ def pretty_tree(arbre):
 		print(x[start:])
 
 if __name__ == '__main__':
-	p = parser.Parser(sys.argv[1])
+	p = ldaparser.Parser(sys.argv[1])
 	top = p.analyze_top_level()
 	for thing in top:
 		pretty_tree(thing)

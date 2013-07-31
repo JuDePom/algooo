@@ -1,5 +1,5 @@
 import re
-import keywords as kw
+import ldakeywords as kw
 from errors import *
 from position import Position
 from tree import *
