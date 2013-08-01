@@ -42,6 +42,9 @@ class KeywordDef:
 		self.default_spelling = synonyms[0]
 		self.synonyms = synonyms
 		meta.all_keywords.extend(synonyms)
+	
+	def __repr__(self):
+		return "kw<" + self.default_spelling + ">"
 
 class AlphaKeywordDef(KeywordDef):
 	'''
