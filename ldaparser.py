@@ -447,14 +447,6 @@ class Parser:
 			if op_kw is not None:
 				return OperatorToken(op_kw, op)
 
-	def analyze_expression_token(self):
-		op_tok = self.analyze_operator()
-		if op_tok is not None:
-			print("AET: op", op_tok)
-			return op_tok
-		print("AET: non-op")
-		return self.analyze_expression_non_op_token()
-
 	def analyze_expression_non_op_token(self):
 		analysis_order = [
 				self.analyze_literal_integer,
