@@ -9,12 +9,15 @@ class SourceThing:
 	def __init__(self, pos):
 		self.pos = pos
 
-class Keyword(SourceThing):
-	def __init__(self, pos, kwdef):
-		SourceThing.__init__(self, pos)
-		self.kwdef = kwdef
+class Token(SourceThing):
+	pass
 
-class Identifier(SourceThing):
+class KeywordToken(Token):
+	def __init__(self, pos, kw_def):
+		SourceThing.__init__(self, pos)
+		self.kw_def = kw_def
+
+class Identifier(Token):
 	def __init__(self, pos, name_string):
 		SourceThing.__init__(self, pos)
 		self.name_string = name_string
@@ -154,21 +157,39 @@ class InstructionDoWhile(Instruction):
 #######################################################################
 
 class Expression(SourceThing):
-	def __init__(self, pos):
-		SourceThing.__init__(self, pos)
+	pass
+
+class OperatorToken(Token):
+	def __init__(self, op_kw, op):
+		Token.__init__(self, op_kw.pos)
+		self.kw = op_kw
+		self.op = op
+	def __repr__(self):
+		return "<op '{}'>".format(self.op)
 
 class UnaryOpNode(Expression):
-	def __init__(self, pos, operator, operand):
-		Expression.__init__(self, pos)
-		self.operator = operator
+	def __init__(self, op_tok, operand):
+		Expression.__init__(self, op_tok.pos)
+		self.operator = op_tok.op
 		self.operand = operand
+	def __repr__(self):
+		return "(u{} {})".format(self.operator.symbol.default_spelling, self.operand)
+
+class BinaryOpNode(Expression):
+	def __init__(self, pos, op, lhs, rhs):
+		Expression.__init__(self, pos)
+		self.operator = op
+		self.lhs = lhs
+		self.rhs = rhs
+	def __repr__(self):
+		return "({} {} {})".format(self.operator.symbol.default_spelling, self.lhs, self.rhs)
 
 class LiteralInteger(Expression):
 	def __init__(self, pos, value):
 		Expression.__init__(self, pos)
 		self.value = value
 	def __repr__(self):
-		return "entier littéral " + str(self.value) 
+		return "#" + str(self.value) 
 
 class LiteralReal(Expression):
 	def __init__(self, pos, value):

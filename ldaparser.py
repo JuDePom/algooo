@@ -1,5 +1,6 @@
 import re
 import ldakeywords as kw
+import operators as ops
 from errors import *
 from position import Position
 from tree import *
@@ -151,7 +152,7 @@ class Parser:
 			raise ExpectedItemError(self.pos, "le lexique de la fonction")
 
 		self.analyze_mandatory_keyword(kw.BEGIN)
-		body,_ = self.analyze_instruction_block(kw.END)
+		body, _ = self.analyze_instruction_block(kw.END)
 
 		return Function(start_kw.pos, name, params, lexi, body)
 
@@ -213,7 +214,7 @@ class Parser:
 		found_string = keyword.find(self.sliced_buf)
 		if found_string is not None:
 			self.advance(len(found_string), skip_white)
-			return Keyword(pos0, found_string)
+			return KeywordToken(pos0, found_string)
 
 	def analyze_mandatory_keyword(self, keyword):
 		found_kw = self.analyze_keyword(keyword)
@@ -284,6 +285,8 @@ class Parser:
 		rhs = self.analyze_expression()
 		if rhs is None:
 			raise ExpectedItemError(self.pos, "une expression")
+
+		print("found expression ", rhs)
 
 		return Assignment(pos0, identifier, rhs)
 
@@ -392,9 +395,29 @@ class Parser:
 			raise ExpectedItemError(self.pos,
 					"l'expression de la condition de la boucle")
 		return InstructionDoWhile(pos0, block, bool_Expr)
-		
+	
 	def analyze_expression(self):
-		return self.analyze_primary_expression()
+		def analyze_partial_expression(lhs, t, min_p=0):
+			assert(t is None or (type(t) is OperatorToken and t.op.binary))
+			while t is not None and t.op.precedence >= min_p:
+				t_origin = t
+				op = t.op
+				if op.encompass_till is None:
+					rhs = self.analyze_primary_expression(op.precedence)
+				else:
+					rhs = self.analyze_expression()
+					self.analyze_mandatory_keyword(op.encompass_till)
+				t = self.analyze_binary_operator()
+				while t is not None and \
+						(t.op.precedence > op.precedence or \
+						(t.op.right_ass and t.op.precedence == op.precedence)):
+					rhs, t = analyze_partial_expression(rhs, t, t.op.precedence)
+				lhs = BinaryOpNode(t_origin.pos, op, lhs, rhs)
+			return lhs, t
+		lhs = self.analyze_primary_expression()
+		t   = self.analyze_binary_operator()
+		expr, _ = analyze_partial_expression(lhs, t)
+		return expr
 	
 	def analyze_primary_expression(self, min_unary_precedence=0):
 		lparen = self.analyze_keyword(kw.LPAREN)
@@ -403,14 +426,37 @@ class Parser:
 			self.analyze_mandatory_keyword(kw.RPAREN)
 			return sub_expr
 		
-		op = self.analyze_operator()
-		if op is not None and op.unary:
-			if op.precedence < min_unary_precedence:
+		unary = self.analyze_unary_operator()
+		if unary is not None:
+			if unary.op.precedence < min_unary_precedence:
 				raise LDASyntaxError("précédence trop faible") # TODO - mieux expliquer
 			# analyze primary after the unary operator
-			primary = self.analyze_primary_expression(op.precedence)
-			return UnaryOpNode(op, primary)
+			primary = self.analyze_primary_expression(unary.op.precedence)
+			return UnaryOpNode(unary, primary)
 
+		return self.analyze_expression_non_op_token()
+
+	def analyze_binary_operator(self):
+		for op in ops.binary_parsing_order:
+			op_kw = self.analyze_keyword(op.symbol)
+			if op_kw is not None:
+				return OperatorToken(op_kw, op)
+	
+	def analyze_unary_operator(self):
+		for op in ops.unary_parsing_order:
+			op_kw = self.analyze_keyword(op.symbol)
+			if op_kw is not None:
+				return OperatorToken(op_kw, op)
+
+	def analyze_expression_token(self):
+		op_tok = self.analyze_operator()
+		if op_tok is not None:
+			print("AET: op", op_tok)
+			return op_tok
+		print("AET: non-op")
+		return self.analyze_expression_non_op_token()
+
+	def analyze_expression_non_op_token(self):
 		analysis_order = [
 				self.analyze_literal_integer,
 				self.analyze_literal_real,
@@ -418,14 +464,10 @@ class Parser:
 				self.analyze_literal_boolean,
 				self.analyze_identifier,
 		]
-
 		for analyze in analysis_order:
 			primary = analyze()
 			if primary is not None:
 				return primary
-
-	def analyze_operator(self):
-		return None
 
 	def analyze_literal_integer(self):
 		pos0 = self.pos
