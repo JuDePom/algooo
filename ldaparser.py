@@ -129,7 +129,7 @@ class Parser:
 			raise ExpectedItemError(self.pos, "le lexique de la fonction")
 		self.analyze_mandatory_keyword(kw.BEGIN)
 		body,_ = self.analyze_instruction_block(kw.END)
-		return Algorithm(start_kw.pos, body)
+		return Algorithm(start_kw.pos, lexi, body)
 
 	def analyze_function(self):
 		start_kw = self.analyze_keyword(kw.FUNCTION)

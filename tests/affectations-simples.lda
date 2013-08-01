@@ -13,6 +13,10 @@ fin
 
 fonction truc()
 lexique
+	e : entier
+	f : entier
+	g : entier
+	h : entier
 début
 	e <- 24
 	f <- 102
@@ -22,7 +26,9 @@ fin
 
 algorithme
 lexique
+	b : booléen
 début
+	b <- vrai
 	machin()
 	truc()
 fin

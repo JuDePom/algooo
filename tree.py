@@ -34,11 +34,12 @@ class FormalParameter(SourceThing):
 #######################################################################
 
 class Algorithm(SourceThing):
-	def __init__(self, pos, body):
+	def __init__(self, pos, lexicon, body):
 		SourceThing.__init__(self, pos)
 		self.body = body
+		self.lexicon = lexicon
 	def __repr__(self):
-		return "algorithme :\n{}".format(self.body)
+		return "algorithme :\n{}\n{}".format(self.lexicon, self.body)
 
 class Function(SourceThing):
 	def __init__(self, pos, name, fp_list, lexicon, body):
