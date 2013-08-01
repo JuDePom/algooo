@@ -1,4 +1,9 @@
 fonction machin()
+lexique
+	a : entier
+	b : entier
+	c : entier
+	d : entier
 début
 	a <- 1
 	b <- -352
@@ -7,6 +12,7 @@ début
 fin
 
 fonction truc()
+lexique
 début
 	e <- 24
 	f <- 102
@@ -15,6 +21,7 @@ début
 fin
 
 algorithme
+lexique
 début
 	machin()
 	truc()

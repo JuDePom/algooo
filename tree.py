@@ -41,13 +41,14 @@ class Algorithm(SourceThing):
 		return "algorithme :\n{}".format(self.body)
 
 class Function(SourceThing):
-	def __init__(self, pos, name, fp_list, body):
+	def __init__(self, pos, name, fp_list, lexicon, body):
 		SourceThing.__init__(self, pos)
 		self.name = name
 		self.fp_list = fp_list
+		self.lexicon = lexicon
 		self.body = body
 	def __repr__(self):
-		return "fonction {} :\n{}".format(self.name, self.body)
+		return "fonction {} :\n{}\n{}".format(self.name, self.lexicon, self.body)
 
 class Lexicon(SourceThing):
 	def __init__(self, pos, body):
@@ -75,12 +76,12 @@ class Assignment(Instruction):
 		return "affectation ({} <- {})\n".format(self.lhs, self.rhs)
 
 class Declaration(SourceThing):
-	def __init__(self, pos, lhs, rhs):
+	def __init__(self, pos, identificateur, type):
 		SourceThing.__init__(self, pos)
-		self.lhs = lhs
-		self.rhs = rhs
+		self.identificateur = identificateur
+		self.type = type
 	def __repr__(self):
-		return "declaration ({} : {})\n".format(self.lhs, self.rhs)		
+		return "declaration ({} : {})\n".format(self.identificateur, self.type)		
 		
 class FunctionCall(Instruction):
 	def __init__(self, pos, function_name, effective_parameters):

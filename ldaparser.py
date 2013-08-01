@@ -108,9 +108,15 @@ class Parser:
 	def analyze_lexicon(self):
 		start_kw = self.analyze_keyword(kw.LEXICON)
 		if start_kw is None:
-			return
-		body = self.analyze_declaration_block()
-		return Lexicon(start_kw.pos, body)	
+			raise ExpectedItemError(self.pos, "le lexique de la fonction")
+		block = []
+		while True:
+			declaration = self.analyze_declaration()
+			if declaration:
+				block.append(declaration)
+			else:
+				break
+		return Lexicon(start_kw.pos, block)	
 		
 	def analyze_algorithm(self):
 		start_kw = self.analyze_keyword(kw.ALGORITHM)
@@ -118,9 +124,9 @@ class Parser:
 			return
 
 		# point of no-return
-		lexi = self.analyze_lexicon(self)
+		lexi = self.analyze_lexicon()
 		if lexi is None:
-			return
+			raise ExpectedItemError(self.pos, "le lexique de la fonction")
 		self.analyze_mandatory_keyword(kw.BEGIN)
 		body,_ = self.analyze_instruction_block(kw.END)
 		return Algorithm(start_kw.pos, body)
@@ -152,13 +158,13 @@ class Parser:
 			raise UnimplementedError(self.pos, \
 					"type de retour de la fonction")
 
-		lexi = self.analyze_lexicon(self)
+		lexi = self.analyze_lexicon()
 		if lexi is None:
-			return
+			raise ExpectedItemError(self.pos, "le lexique de la fonction")
 		self.analyze_mandatory_keyword(kw.BEGIN)
 
 		body,_ = self.analyze_instruction_block(kw.END)
-		return Function(start_kw.pos, name, params, body)
+		return Function(start_kw.pos, name, params, lexi, body)
 
 	def analyze_formal_parameter(self):
 		name = self.analyze_identifier()
@@ -213,16 +219,6 @@ class Parser:
 			return found_kw
 		else:
 			raise ExpectedKeywordError(self.pos, keyword)
-
-	def analyze_declaration_block(self):
-		block = []
-		while True:
-			declaration = self.analyze_declaration()
-			if declaration:
-				block.append(declaration)
-			else:
-				break
-		return block
 	
 	def analyze_declaration(self):
 		pos0 = self.pos
@@ -231,16 +227,14 @@ class Parser:
 		if not identifier: 
 			return False
 			
-		if not self.analyze_keyword(kw.COLON):
-			self.pos = pos0
-			return False
+		self.analyze_mandatory_keyword(kw.COLON)
 
 		# point of no return
-		rhs = self.analyze_type()
-		if not rhs:
-			raise errors.ExpectedItemError(self.pos, "un type")
+		type = self.analyze_type()
+		if not type:
+			raise ExpectedItemError(self.pos, "un type")
 
-		return Declaration(pos0, identifier, rhs)
+		return Declaration(pos0, identifier, type)
 
 	def analyze_type(self):
 		for analyze in kw.meta.all_types:
