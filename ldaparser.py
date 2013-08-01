@@ -394,16 +394,38 @@ class Parser:
 		return InstructionDoWhile(pos0, block, bool_Expr)
 		
 	def analyze_expression(self):
+		return self.analyze_primary_expression()
+	
+	def analyze_primary_expression(self, min_unary_precedence=0):
+		lparen = self.analyze_keyword(kw.LPAREN)
+		if lparen is not None:
+			sub_expr = self.analyze_expression()
+			self.analyze_mandatory_keyword(kw.RPAREN)
+			return sub_expr
+		
+		op = self.analyze_operator()
+		if op is not None and op.unary:
+			if op.precedence < min_unary_precedence:
+				raise LDASyntaxError("précédence trop faible") # TODO - mieux expliquer
+			# analyze primary after the unary operator
+			primary = self.analyze_primary_expression(op.precedence)
+			return UnaryOpNode(op, primary)
+
 		analysis_order = [
 				self.analyze_literal_integer,
 				self.analyze_literal_real,
 				self.analyze_literal_string,
 				self.analyze_literal_boolean,
+				self.analyze_identifier,
 		]
+
 		for analyze in analysis_order:
-			expression = analyze()
-			if expression is not None:
-				return expression
+			primary = analyze()
+			if primary is not None:
+				return primary
+
+	def analyze_operator(self):
+		return None
 
 	def analyze_literal_integer(self):
 		pos0 = self.pos

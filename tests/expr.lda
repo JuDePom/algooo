@@ -1,0 +1,8 @@
+fonction expr()
+lexique
+	a : entier
+	b : entier
+début
+	a <- 3
+fin
+

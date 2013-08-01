@@ -149,13 +149,19 @@ class InstructionDoWhile(Instruction):
 		
 #######################################################################
 #
-# EXPRESSIONS
+# EXPRESSION COMPONENTS
 #
 #######################################################################
 
 class Expression(SourceThing):
 	def __init__(self, pos):
 		SourceThing.__init__(self, pos)
+
+class UnaryOpNode(Expression):
+	def __init__(self, pos, operator, operand):
+		Expression.__init__(self, pos)
+		self.operator = operator
+		self.operand = operand
 
 class LiteralInteger(Expression):
 	def __init__(self, pos, value):
