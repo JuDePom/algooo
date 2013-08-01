@@ -50,12 +50,26 @@ class Function(SourceThing):
 	def __repr__(self):
 		return "fonction {} :\n{}\n{}".format(self.name, self.lexicon, self.body)
 
+#######################################################################
+#
+# LEXICON
+#
+#######################################################################
+
 class Lexicon(SourceThing):
 	def __init__(self, pos, body):
 		SourceThing.__init__(self, pos)
 		self.body = body
 	def __repr__(self):
 		return "lexique : \n{}".format(self.body)
+	
+class Declaration(SourceThing):
+	def __init__(self, pos, identifier, type_kw):
+		SourceThing.__init__(self, pos)
+		self.identifier = identifier
+		self.type_kw = type_kw
+	def __repr__(self):
+		return "déclaration ({} : {})\n".format(self.identifier, self.type_kw)
 		
 #######################################################################
 #
@@ -74,15 +88,7 @@ class Assignment(Instruction):
 		self.rhs = rhs
 	def __repr__(self):
 		return "affectation ({} <- {})\n".format(self.lhs, self.rhs)
-
-class Declaration(SourceThing):
-	def __init__(self, pos, identificateur, type):
-		SourceThing.__init__(self, pos)
-		self.identificateur = identificateur
-		self.type = type
-	def __repr__(self):
-		return "declaration ({} : {})\n".format(self.identificateur, self.type)		
-		
+	
 class FunctionCall(Instruction):
 	def __init__(self, pos, function_name, effective_parameters):
 		self.function_name = function_name
@@ -177,3 +183,4 @@ class LiteralBoolean(Expression):
 		self.value = value
 	def __repr__(self):
 		return "booléen littéral " + str(self.value)
+

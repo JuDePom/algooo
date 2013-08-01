@@ -105,18 +105,6 @@ class Parser:
 			top_level_nodes.append(thing)
 		return top_level_nodes
 
-	def analyze_lexicon(self):
-		start_kw = self.analyze_keyword(kw.LEXICON)
-		if start_kw is None:
-			raise ExpectedItemError(self.pos, "le lexique de la fonction")
-		block = []
-		while True:
-			declaration = self.analyze_declaration()
-			if declaration:
-				block.append(declaration)
-			else:
-				break
-		return Lexicon(start_kw.pos, block)	
 		
 	def analyze_algorithm(self):
 		start_kw = self.analyze_keyword(kw.ALGORITHM)
@@ -161,9 +149,10 @@ class Parser:
 		lexi = self.analyze_lexicon()
 		if lexi is None:
 			raise ExpectedItemError(self.pos, "le lexique de la fonction")
-		self.analyze_mandatory_keyword(kw.BEGIN)
 
+		self.analyze_mandatory_keyword(kw.BEGIN)
 		body,_ = self.analyze_instruction_block(kw.END)
+
 		return Function(start_kw.pos, name, params, lexi, body)
 
 	def analyze_formal_parameter(self):
@@ -194,6 +183,19 @@ class Parser:
 				"création adéquate objet param formel")
 
 		return FormalParameter(name.pos, name, type_kw)
+	
+	def analyze_lexicon(self):
+		start_kw = self.analyze_keyword(kw.LEXICON)
+		if start_kw is None:
+			raise ExpectedItemError(self.pos, "le lexique de la fonction")
+		block = []
+		while True:
+			declaration = self.analyze_declaration()
+			if declaration is not None:
+				block.append(declaration)
+			else:
+				break
+		return Lexicon(start_kw.pos, block)	
 
 	def analyze_identifier(self):
 		match = re_identifier.match(self.sliced_buf)
@@ -219,27 +221,27 @@ class Parser:
 			return found_kw
 		else:
 			raise ExpectedKeywordError(self.pos, keyword)
-	
+
 	def analyze_declaration(self):
 		pos0 = self.pos
 
 		identifier = self.analyze_identifier()
-		if not identifier: 
-			return False
+		if identifier is None: 
+			return
 			
 		self.analyze_mandatory_keyword(kw.COLON)
 
 		# point of no return
-		type = self.analyze_type()
-		if not type:
+		type_kw = self.analyze_type_kw()
+		if type_kw is None:
 			raise ExpectedItemError(self.pos, "un type")
 
-		return Declaration(pos0, identifier, type)
+		return Declaration(pos0, identifier, type_kw)
 
-	def analyze_type(self):
-		for analyze in kw.meta.all_types:
-			if self.analyze_keyword(analyze):
-				return analyze
+	def analyze_type_kw(self):
+		for type_kw in kw.meta.all_types:
+			if self.analyze_keyword(type_kw):
+				return type_kw
 		
 	def analyze_instruction_block(self, *end_marker_keywords):
 		block = []
@@ -436,3 +438,4 @@ class Parser:
 			boolean_string = match.group(0)
 			self.advance(len(boolean_string))
 			return LiteralBoolean(pos0, bool(boolean_string))
+
