@@ -9,7 +9,6 @@ re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
 re_integer    = re.compile(r'^\d+(?!\.\w)', re.UNICODE)
 re_real       = re.compile(r'^(\d+\.?\d*|\.\d+)(?!\w)', re.UNICODE)
 re_string     = re.compile(r'^".*?"', re.UNICODE) # TODO- escaping
-re_boolean	  = re.compile(r'^(vrai|faux)', re.UNICODE)
 
 class Parser:
 	'''
@@ -497,9 +496,8 @@ class Parser:
 
 	def analyze_literal_boolean(self):
 		pos0 = self.pos
-		match = re_boolean.match(self.sliced_buf)
-		if match is not None:
-			boolean_string = match.group(0)
-			self.advance(len(boolean_string))
-			return LiteralBoolean(pos0, bool(boolean_string))
-
+		true_kw = analyze_keyword(kw.TRUE)
+		if true_kw is None and analyze_keyword(kw.FALSE) is None:
+			return
+		value = true_kw is not None
+		return LiteralBoolean(pos0, value)
