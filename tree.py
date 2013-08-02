@@ -68,12 +68,21 @@ class Lexicon(SourceThing):
 		return "lexique : \n{}".format(self.body)
 	
 class Declaration(SourceThing):
-	def __init__(self, pos, identifier, type_kw):
+	def __init__(self, pos, identifier, type_kw, second_type=None, dimensions=None):
 		SourceThing.__init__(self, pos)
 		self.identifier = identifier
 		self.type_kw = type_kw
+		self.second_type = second_type
+		self.dimensions = dimensions
 	def __repr__(self):
-		return "déclaration ({} : {})\n".format(self.identifier, self.type_kw)
+		retour = "déclaration ({} : {} ".format(self.identifier, self.type_kw.default_spelling)
+		if self.second_type is not None :
+			retour += self.second_type.default_spelling + " "
+		if self.dimensions is not None:
+			retour += self.dimensions + " "
+		retour += ")\n"
+		return retour
+		
 		
 #######################################################################
 #

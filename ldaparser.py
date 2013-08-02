@@ -167,7 +167,7 @@ class Parser:
 		is_array = self.analyze_keyword(kw.ARRAY)
 
 		type_kw = None
-		for candidate in kw.meta.all_types:
+		for candidate in kw.meta.all_atomic_types:
 			if self.analyze_keyword(candidate) is not None:
 				type_kw = candidate
 				break
@@ -235,11 +235,37 @@ class Parser:
 		type_kw = self.analyze_type_kw()
 		if type_kw is None:
 			raise ExpectedItemError(self.pos, "un type")
-
+			
+		if type_kw is kw.ARRAY:
+			second_type_kw = self.analyze_type_kw()
+			if second_type_kw is None:
+				raise ExpectedItemError(self.pos, "un type")
+				
+			self.analyze_mandatory_keyword(kw.LSBRACK)
+			next_parameter = True
+			dimensions = "["
+			while next_parameter:
+				entier1 = self.analyze_expression()
+				if entier1 is None:
+					raise ExpectedItemError(self.pos,\
+							"un entier")
+				self.analyze_mandatory_keyword(kw.DOTDOT)
+				entier2 = self.analyze_expression()
+				if entier2 is None:
+					raise ExpectedItemError(self.pos,\
+							"un entier")
+				dimensions += entier1.__repr__() + ".." + entier2.__repr__()
+				next_parameter = self.analyze_keyword(kw.COMMA)
+				if next_parameter:
+					dimensions += ","
+			self.analyze_mandatory_keyword(kw.RSBRACK)
+			dimensions += "]"
+			return Declaration(pos0, identifier, type_kw, second_type_kw, dimensions)
+				
 		return Declaration(pos0, identifier, type_kw)
 
 	def analyze_type_kw(self):
-		for type_kw in kw.meta.all_types:
+		for type_kw in kw.meta.all_atomic_types:
 			if self.analyze_keyword(type_kw):
 				return type_kw
 		

@@ -28,7 +28,7 @@ class meta:
 	'''
 	List of all keywords denoting an LDA atomic type.
 	'''
-	all_types = []#[ INT, REAL, BOOL, CHAR, STRING ]
+	all_atomic_types = []#[ INT, REAL, BOOL, CHAR, STRING ]
 
 class KeywordDef:
 	'''
@@ -123,6 +123,7 @@ RPAREN         = SymbolKeywordDef(")")
 LSBRACK        = SymbolKeywordDef("[")
 RSBRACK        = SymbolKeywordDef("]")
 COLON          = SymbolKeywordDef(":")
+DOTDOT         = SymbolKeywordDef("..")
 COMMA          = SymbolKeywordDef(",")
 TIMES          = SymbolKeywordDef("*")
 PLUS           = SymbolKeywordDef("+")
@@ -144,5 +145,5 @@ MLC_START      = SymbolKeywordDef("(*")
 MLC_END        = SymbolKeywordDef("*)")
 SLC_START      = SymbolKeywordDef("//")
 
-meta.all_types = [ INT, REAL, BOOL, CHAR, STRING ]
+meta.all_atomic_types = [ INT, REAL, BOOL, CHAR, STRING, ARRAY ]
 
