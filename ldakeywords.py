@@ -30,6 +30,8 @@ class meta:
 	'''
 	all_scalar_types = []
 
+	all_symbols = []
+
 class KeywordDef:
 	'''
 	Base class for keywords.
@@ -71,11 +73,14 @@ class SymbolKeywordDef(KeywordDef):
 	sequence that will expand to two separate keywords: ()
 	'''
 
+	parsing_order = []
+
 	def __init__(self, *synonyms):
 		self.default_spelling = synonyms[0]
 		# sort synonyms by descending size so that longer synonyms get checked first
 		# bogus example: if ".." is a synonym for ".", we need to check for ".." first
 		self.synonyms = tuple(sorted(synonyms, key=len, reverse=True))
+		meta.all_symbols.append(self)
 
 	def find(self, buf):
 		for symbol in self.synonyms:
@@ -124,15 +129,16 @@ LSBRACK        = SymbolKeywordDef("[")
 RSBRACK        = SymbolKeywordDef("]")
 COLON          = SymbolKeywordDef(":")
 COMMA          = SymbolKeywordDef(",")
+DOT            = SymbolKeywordDef(".")
 TIMES          = SymbolKeywordDef("*")
 PLUS           = SymbolKeywordDef("+")
 MINUS          = SymbolKeywordDef("-")
 SLASH          = SymbolKeywordDef("/")
 POWER          = SymbolKeywordDef("**")
-MODULO         = SymbolKeywordDef("mod")
+MODULO         = AlphaKeywordDef("mod")
 QUOTE1         = SymbolKeywordDef("'")
 QUOTE2         = SymbolKeywordDef("\"")
-ASSIGN         = SymbolKeywordDef("\u2190", "<-")
+ASSIGN         = SymbolKeywordDef("\u2190", ":=")
 LT             = SymbolKeywordDef("<")
 GT             = SymbolKeywordDef(">")
 LE             = SymbolKeywordDef("\u2264", "<=")
@@ -145,4 +151,16 @@ MLC_END        = SymbolKeywordDef("*)")
 SLC_START      = SymbolKeywordDef("//")
 
 meta.all_scalar_types = [ INT, REAL, BOOL, CHAR, STRING ]
+
+"""
+_all_synonyms = []
+for skd in meta.all_symbols:
+	for s in skd.synonyms:
+		t = (skd, s)
+print (meta.symbol_parsing_order)
+		_all_synonyms.append(t)
+meta.symbol_parsing_order = sorted(
+		_all_synonyms, key=lambda s:len(s[1]), reverse=True)
+del _all_synonyms
+"""
 

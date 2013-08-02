@@ -34,6 +34,7 @@ class OpDef:
 
 _new_precedence_group()
 SUBSCRIPT      = OpDef(kw.LSBRACK, encompass_till=kw.RSBRACK)
+MEMBER_SELECT  = OpDef(kw.DOT)
 UNARY_MINUS    = OpDef(kw.MINUS, unary=True, right_ass=True)
 UNARY_PLUS     = OpDef(kw.PLUS, unary=True, right_ass=True)
 NOT            = OpDef(kw.NOT, unary=True, right_ass=True)
@@ -65,4 +66,7 @@ AND            = OpDef(kw.AND)
 
 _new_precedence_group()
 OR             = OpDef(kw.OR)
+
+#_new_precedence_group()
+#ASSIGNMENT     = OpDef(kw.ASSIGN, right_ass=True)
 

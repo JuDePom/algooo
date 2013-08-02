@@ -286,19 +286,20 @@ class Parser:
 	def analyze_assignment(self):
 		pos0 = self.pos
 
-		identifier = self.analyze_identifier()
-		if identifier is None: return
+		lhs = self.analyze_expression()
+		if lhs is None: 
+			return
 
 		if self.analyze_keyword(kw.ASSIGN) is None:
-			self.pos = pos0 # analyze_identifier had advanced the position
+			self.pos = pos0 # analyze_expression had advanced the position
 			return
 
 		# point of no return
 		rhs = self.analyze_expression()
 		if rhs is None:
 			raise ExpectedItemError(self.pos, "une expression")
-
-		return Assignment(pos0, identifier, rhs)
+	
+		return Assignment(pos0, lhs, rhs)
 
 	def analyze_function_call(self):
 		pos0 = self.pos

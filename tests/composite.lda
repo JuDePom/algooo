@@ -5,6 +5,7 @@ lexique
 	dégoûtant : Moule
 	délicieux : Frite
 début
-	// dégoûtant.viscosité <- 92
+	a:=3
+	dégoûtant.viscosité[12+3].écœurant := 92
 fin
 
