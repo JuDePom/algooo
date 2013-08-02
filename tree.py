@@ -63,14 +63,6 @@ class Lexicon(SourceThing):
 		return "lexdecl = {}\nlexmolds = {}".format(
 				self.declarations, self.molds)
 	
-class Declaration(SourceThing):
-	def __init__(self, pos, identifier, type_kw):
-		SourceThing.__init__(self, pos)
-		self.identifier = identifier
-		self.type_kw = type_kw
-	def __repr__(self):
-		return "déclaration ({} : {})\n".format(self.identifier, self.type_kw)
-
 class CompoundMold(SourceThing):
 	def __init__(self, name_id, fp_list):
 		SourceThing.__init__(self, name_id.pos)
@@ -80,12 +72,16 @@ class CompoundMold(SourceThing):
 		return "{}={}".format(self.name_id, self.components)
 
 class FormalParameter(SourceThing):
-	def __init__(self, name, type_, scalar, inout):
+	def __init__(self, name, type_, inout, array_dimensions=None):
 		SourceThing.__init__(self, name.pos)
 		self.name = name
 		self.type_ = type_
-		self.scalar = scalar
 		self.inout = inout
+		self.array_dimensions = array_dimensions
+		# useful automatic flags
+		self.custom_type = type(type_) is Identifier
+		self.scalar = not self.custom_type
+		self.array = self.array_dimensions is not None
 	def __repr__(self):
 		return "{}: {}".format(self.name, self.type_)
 

@@ -6,8 +6,16 @@ from position import Position
 from tree import *
 
 re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
+
+# match at least one digit;
+# must NOT followed by a dot, an alpha, or a _
 re_integer    = re.compile(r'^\d+(?!\.\w)', re.UNICODE)
-re_real       = re.compile(r'^(\d+\.?\d*|\.\d+)(?!\w)', re.UNICODE)
+
+# match at least one digit, one dot, and zero or more digits, 
+# **OR** match one dot, and at least one digit;
+# but either match must NOT be followed by another dot, an alpha, or a _
+re_real       = re.compile(r'^(\d+\.\d*|\.\d+)(?![\w\.])', re.UNICODE)
+
 re_string     = re.compile(r'^".*?"', re.UNICODE) # TODO- escaping
 
 class Parser:
@@ -180,22 +188,39 @@ class Parser:
 		for candidate in kw.meta.all_scalar_types:
 			if self.analyze_keyword(candidate) is not None:
 				type_ = candidate
-				is_scalar = True
 				break
 		if type_ is None:
 			type_ = self.analyze_identifier()
-			is_scalar = False
 		if type_ is None:
 			raise ExpectedItemError(self.pos, \
 					"un type scalaire ou composite")
 
 		if is_array:
-			self.analyze_mandatory_keyword(kw.LSBRACKET)
-			raise UnimplementedError(self.pos, \
-					"taille du tableau paramètre effectif")
+			array_dimensions = self.analyze_array_dimensions()
+		else:
+			array_dimensions = None
 
-		return FormalParameter(name, type_, is_scalar, is_inout)
-	
+		return FormalParameter(name, type_, is_inout, array_dimensions)
+
+	def analyze_array_dimensions(self):
+		array_dimensions = []
+		self.analyze_mandatory_keyword(kw.LSBRACK)
+		next_dimension = True
+		while next_dimension:
+			low_bound = self.analyze_expression()
+			if low_bound is None:
+				raise ExpectedItemError(self.pos, \
+						"l'expression entière de la borne inférieure du tableau")
+			self.analyze_mandatory_keyword(kw.DOTDOT)
+			high_bound = self.analyze_expression()
+			if high_bound is None:
+				raise ExpectedItemError(self.pos, \
+						"l'expression entière de la borne supérieure du tableau")
+			array_dimensions.append((low_bound, high_bound))
+			next_dimension = self.analyze_keyword(kw.COMMA) is not None
+		self.analyze_mandatory_keyword(kw.RSBRACK)
+		return array_dimensions
+
 	def analyze_lexicon(self):
 		start_kw = self.analyze_keyword(kw.LEXICON)
 		if start_kw is None:
