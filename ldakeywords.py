@@ -30,8 +30,6 @@ class meta:
 	'''
 	all_scalar_types = []
 
-	all_symbols = []
-
 class KeywordDef:
 	'''
 	Base class for keywords.
@@ -80,7 +78,6 @@ class SymbolKeywordDef(KeywordDef):
 		# sort synonyms by descending size so that longer synonyms get checked first
 		# bogus example: if ".." is a synonym for ".", we need to check for ".." first
 		self.synonyms = tuple(sorted(synonyms, key=len, reverse=True))
-		meta.all_symbols.append(self)
 
 	def find(self, buf):
 		for symbol in self.synonyms:
@@ -151,16 +148,4 @@ MLC_END        = SymbolKeywordDef("*)")
 SLC_START      = SymbolKeywordDef("//")
 
 meta.all_scalar_types = [ INT, REAL, BOOL, CHAR, STRING ]
-
-"""
-_all_synonyms = []
-for skd in meta.all_symbols:
-	for s in skd.synonyms:
-		t = (skd, s)
-print (meta.symbol_parsing_order)
-		_all_synonyms.append(t)
-meta.symbol_parsing_order = sorted(
-		_all_synonyms, key=lambda s:len(s[1]), reverse=True)
-del _all_synonyms
-"""
 
