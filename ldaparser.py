@@ -6,8 +6,16 @@ from position import Position
 from tree import *
 
 re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
+
+# match at least one digit;
+# must NOT followed by a dot, an alpha, or a _
 re_integer    = re.compile(r'^\d+(?!\.\w)', re.UNICODE)
-re_real       = re.compile(r'^(\d+\.?\d*|\.\d+)(?!\w)', re.UNICODE)
+
+# match at least one digit, one dot, and zero or more digits, 
+# **OR** match one dot, and at least one digit;
+# but either match must NOT be followed by another dot, an alpha, or a _
+re_real       = re.compile(r'^(\d+\.\d*|\.\d+)(?![\w\.])', re.UNICODE)
+
 re_string     = re.compile(r'^".*?"', re.UNICODE) # TODO- escaping
 
 class Parser:
@@ -131,16 +139,13 @@ class Parser:
 
 		self.analyze_mandatory_keyword(kw.LPAREN)
 
-		params = []
-
 		if self.analyze_keyword(kw.RPAREN) is None:
 			# non-empty parameter list
-			has_next_param = True
-			while has_next_param:
-				p = self.analyze_formal_parameter()
-				params.append(p)
-				has_next_param = self.analyze_keyword(kw.COMMA) is not None
+			params = self.analyze_formal_parameter_list()
 			self.analyze_mandatory_keyword(kw.RPAREN)
+		else:
+			# got an RPAREN right away: empty parameter list
+			params = []
 
 		if self.analyze_keyword(kw.COLON) is not None:
 			raise UnimplementedError(self.pos, \
@@ -155,47 +160,79 @@ class Parser:
 
 		return Function(start_kw.pos, name, params, lexi, body)
 
+	def analyze_formal_parameter_list(self):
+		params = []
+		has_next_param = True
+		while has_next_param:
+			p = self.analyze_formal_parameter()
+			params.append(p)
+			has_next_param = self.analyze_keyword(kw.COMMA) is not None
+		return params
+
 	def analyze_formal_parameter(self):
+		pos0 = self.pos
+
 		name = self.analyze_identifier()
 		if name is None:
-			raise IllegalIdentifier(self.pos)
+			return
 
-		is_inout = self.analyze_keyword(kw.INOUT)
+		is_inout = self.analyze_keyword(kw.INOUT) is not None
 
-		self.analyze_mandatory_keyword(kw.COLON)
+		if self.analyze_keyword(kw.COLON) is None:
+			self.pos = pos0
+			return
 
-		is_array = self.analyze_keyword(kw.ARRAY)
+		is_array = self.analyze_keyword(kw.ARRAY) is not None
 
-		type_kw = None
-		for candidate in kw.meta.all_atomic_types:
+		type_ = None
+		for candidate in kw.meta.all_scalar_types:
 			if self.analyze_keyword(candidate) is not None:
-				type_kw = candidate
+				type_ = candidate
 				break
-		if type_kw is None:
-			raise ExpectedItemError(self.pos, "un type")
+		if type_ is None:
+			type_ = self.analyze_identifier()
+		if type_ is None:
+			raise ExpectedItemError(self.pos, \
+					"un type scalaire ou composite")
 
-		if is_array is not None:
-			self.analyze_mandatory_keyword(kw.LSBRACKET)
-			raise UnimplementedError(self.pos, \
-					"taille du tableau paramètre effectif")
+		if is_array:
+			array_dimensions = self.analyze_array_dimensions()
+		else:
+			array_dimensions = None
 
-		raise UnimplementedError(self.pos, \
-				"création adéquate objet param formel")
+		return FormalParameter(name, type_, is_inout, array_dimensions)
 
-		return FormalParameter(name.pos, name, type_kw)
-	
+	def analyze_array_dimensions(self):
+		array_dimensions = []
+		self.analyze_mandatory_keyword(kw.LSBRACK)
+		next_dimension = True
+		while next_dimension:
+			range = self.analyze_expression()
+			if not (type(range) is BinaryOpNode and range.operator is ops.RANGE):
+				raise ExpectedItemError(self.pos, \
+						"une dimension du tableau sous forme d'intervalle d'entiers (exemple: 0..5)")
+			array_dimensions.append(range)
+			next_dimension = self.analyze_keyword(kw.COMMA) is not None
+		self.analyze_mandatory_keyword(kw.RSBRACK)
+		return array_dimensions
+
 	def analyze_lexicon(self):
 		start_kw = self.analyze_keyword(kw.LEXICON)
 		if start_kw is None:
 			raise ExpectedItemError(self.pos, "le lexique de la fonction")
-		block = []
+		declarations = []
+		molds = []
 		while True:
-			declaration = self.analyze_declaration()
-			if declaration is not None:
-				block.append(declaration)
-			else:
-				break
-		return Lexicon(start_kw.pos, block)	
+			d = self.analyze_formal_parameter()
+			if d is not None:
+				declarations.append(d)
+				continue
+			m = self.analyze_compound_mold_declaration()
+			if m is not None:
+				molds.append(m)
+				continue
+			break
+		return Lexicon(start_kw.pos, declarations, molds)	
 
 	def analyze_identifier(self):
 		match = re_identifier.match(self.sliced_buf)
@@ -222,53 +259,23 @@ class Parser:
 		else:
 			raise ExpectedKeywordError(self.pos, keyword)
 
-	def analyze_declaration(self):
+	def analyze_compound_mold_declaration(self):
 		pos0 = self.pos
-
-		identifier = self.analyze_identifier()
-		if identifier is None: 
+		
+		name_id = self.analyze_identifier()
+		if name_id is None:
 			return
-			
-		self.analyze_mandatory_keyword(kw.COLON)
+
+		if self.analyze_keyword(kw.EQ) is None:
+			self.pos = pos0
+			return
 
 		# point of no return
-		type_kw = self.analyze_type_kw()
-		if type_kw is None:
-			raise ExpectedItemError(self.pos, "un type")
-			
-		if type_kw is kw.ARRAY:
-			second_type_kw = self.analyze_type_kw()
-			if second_type_kw is None:
-				raise ExpectedItemError(self.pos, "un type")
-				
-			self.analyze_mandatory_keyword(kw.LSBRACK)
-			next_parameter = True
-			dimensions = "["
-			while next_parameter:
-				entier1 = self.analyze_expression()
-				if entier1 is None:
-					raise ExpectedItemError(self.pos,\
-							"un entier")
-				self.analyze_mandatory_keyword(kw.DOTDOT)
-				entier2 = self.analyze_expression()
-				if entier2 is None:
-					raise ExpectedItemError(self.pos,\
-							"un entier")
-				dimensions += entier1.__repr__() + ".." + entier2.__repr__()
-				next_parameter = self.analyze_keyword(kw.COMMA)
-				if next_parameter:
-					dimensions += ","
-			self.analyze_mandatory_keyword(kw.RSBRACK)
-			dimensions += "]"
-			return Declaration(pos0, identifier, type_kw, second_type_kw, dimensions)
-				
-		return Declaration(pos0, identifier, type_kw)
+		self.analyze_mandatory_keyword(kw.LT)
+		fp_list = self.analyze_formal_parameter_list()
+		self.analyze_mandatory_keyword(kw.GT)
+		return CompoundMold(name_id, fp_list)
 
-	def analyze_type_kw(self):
-		for type_kw in kw.meta.all_atomic_types:
-			if self.analyze_keyword(type_kw):
-				return type_kw
-		
 	def analyze_instruction_block(self, *end_marker_keywords):
 		block = []
 		while True:
@@ -284,8 +291,7 @@ class Parser:
 		
 	def analyze_instruction(self):
 		analyse_order = [
-			self.analyze_assignment,
-			self.analyze_function_call,
+			self.analyze_expression,
 			self.analyze_if,
 			self.analyze_for,
 			self.analyze_while,
@@ -296,50 +302,6 @@ class Parser:
 			if instruction:
 				return instruction
 
-	def analyze_assignment(self):
-		pos0 = self.pos
-
-		identifier = self.analyze_identifier()
-		if identifier is None: return
-
-		if self.analyze_keyword(kw.ASSIGN) is None:
-			self.pos = pos0 # analyze_identifier had advanced the position
-			return
-
-		# point of no return
-		rhs = self.analyze_expression()
-		if rhs is None:
-			raise ExpectedItemError(self.pos, "une expression")
-
-		print("found expression ", rhs)
-
-		return Assignment(pos0, identifier, rhs)
-
-	def analyze_function_call(self):
-		pos0 = self.pos
-
-		function_name = self.analyze_identifier()
-		if function_name is None: return
-
-		if self.analyze_keyword(kw.LPAREN) is None:
-			self.pos = pos0 # analyze_identifier had advanced the position
-			return
-
-		# point of no return
-		effective_parameters = []
-		if self.analyze_keyword(kw.RPAREN) is None:  # we have an effective parameter
-			next_parameter = True
-			while next_parameter:
-				parameter = self.analyze_expression()
-				if parameter is None:
-					raise ExpectedItemError(self.pos,\
-							"une expression comme paramètre effectif")
-				effective_parameters.append(parameter)
-				next_parameter = self.analyze_keyword(kw.COMMA)
-			self.analyze_mandatory_keyword(kw.RPAREN)
-
-		return FunctionCall(pos0, function_name, effective_parameters)
-	
 	def analyze_if(self):
 		pos0 = self.pos
 
@@ -422,28 +384,43 @@ class Parser:
 		return InstructionDoWhile(pos0, block, bool_Expr)
 	
 	def analyze_expression(self):
-		def analyze_partial_expression(lhs, t, min_p=0):
-			assert(t is None or (type(t) is OperatorToken and t.op.binary))
-			while t is not None and t.op.precedence >= min_p:
-				t_origin = t
-				op = t.op
-				if op.encompass_till is None:
-					rhs = self.analyze_primary_expression(op.precedence)
-				else:
-					rhs = self.analyze_expression()
-					self.analyze_mandatory_keyword(op.encompass_till)
-				t = self.analyze_binary_operator()
-				while t is not None and \
-						(t.op.precedence > op.precedence or \
-						(t.op.right_ass and t.op.precedence == op.precedence)):
-					rhs, t = analyze_partial_expression(rhs, t, t.op.precedence)
-				lhs = BinaryOpNode(t_origin.pos, op, lhs, rhs)
-			return lhs, t
 		lhs = self.analyze_primary_expression()
 		t   = self.analyze_binary_operator()
-		expr, _ = analyze_partial_expression(lhs, t)
+		expr, _ = self.analyze_partial_expression(lhs, t)
 		return expr
 	
+	def analyze_partial_expression(self, lhs, t, min_p=0):
+		assert(t is None or (type(t) is OperatorToken and t.op.binary))
+		while t is not None and t.op.precedence >= min_p:
+			t_origin = t
+			op = t.op
+			rhs = self.analyze_second_operand(op)
+			t = self.analyze_binary_operator()
+			while t is not None and \
+					(t.op.precedence > op.precedence or \
+					(t.op.right_ass and t.op.precedence == op.precedence)):
+				rhs, t = self.analyze_partial_expression(rhs, t, t.op.precedence)
+			lhs = BinaryOpNode(t_origin.pos, op, lhs, rhs)
+		return lhs, t
+
+	def analyze_second_operand(self, op):
+		if op.encompass_till is None:
+			return self.analyze_primary_expression(op.precedence)
+		if op.encompass_several:
+			rhs = []
+			next_arg = True
+			while next_arg:
+				arg = self.analyze_expression()
+				if arg is not None:
+					rhs.append(arg)
+				next_arg = self.analyze_keyword(kw.COMMA) is not None
+				if next_arg and arg is None:
+					raise LDASyntaxError(self.pos, "argument vide")
+		else:
+			rhs = self.analyze_expression()
+		self.analyze_mandatory_keyword(op.encompass_till)
+		return rhs
+
 	def analyze_primary_expression(self, min_unary_precedence=0):
 		lparen = self.analyze_keyword(kw.LPAREN)
 		if lparen is not None:
@@ -461,17 +438,17 @@ class Parser:
 
 		return self.analyze_expression_non_op_token()
 
-	def analyze_binary_operator(self):
-		for op in ops.binary_parsing_order:
+	def analyze_operator(self, operator_list):
+		for op in operator_list:
 			op_kw = self.analyze_keyword(op.symbol)
 			if op_kw is not None:
 				return OperatorToken(op_kw, op)
 	
+	def analyze_binary_operator(self):
+		return self.analyze_operator(ops.meta.all_binaries)
+
 	def analyze_unary_operator(self):
-		for op in ops.unary_parsing_order:
-			op_kw = self.analyze_keyword(op.symbol)
-			if op_kw is not None:
-				return OperatorToken(op_kw, op)
+		return self.analyze_operator(ops.meta.all_unaries)
 
 	def analyze_expression_non_op_token(self):
 		analysis_order = [
@@ -519,3 +496,4 @@ class Parser:
 			return
 		value = true_kw is not None
 		return LiteralBoolean(pos0, value)
+
