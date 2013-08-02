@@ -22,13 +22,7 @@ class Identifier(Token):
 		SourceThing.__init__(self, pos)
 		self.name_string = name_string
 	def __str__(self):
-		return "id \'{}\'".format(self.name_string)
-
-class FormalParameter(SourceThing):
-	def __init__(self, pos, name_identifier, type_kw):
-		SourceThing.__init__(self, pos)
-		self.name_id = name
-		self.type_kw = type_kw
+		return self.name_string
 
 #######################################################################
 #
@@ -61,11 +55,13 @@ class Function(SourceThing):
 #######################################################################
 
 class Lexicon(SourceThing):
-	def __init__(self, pos, body):
+	def __init__(self, pos, declarations, molds):
 		SourceThing.__init__(self, pos)
-		self.body = body
+		self.declarations = declarations
+		self.molds = molds
 	def __repr__(self):
-		return "lexique : \n{}".format(self.body)
+		return "lexdecl = {}\nlexmolds = {}".format(
+				self.declarations, self.molds)
 	
 class Declaration(SourceThing):
 	def __init__(self, pos, identifier, type_kw):
@@ -74,7 +70,25 @@ class Declaration(SourceThing):
 		self.type_kw = type_kw
 	def __repr__(self):
 		return "déclaration ({} : {})\n".format(self.identifier, self.type_kw)
-		
+
+class CompoundMold(SourceThing):
+	def __init__(self, name_id, fp_list):
+		SourceThing.__init__(self, name_id.pos)
+		self.name_id = name_id
+		self.components = fp_list
+	def __repr__(self):
+		return "{}={}".format(self.name_id, self.components)
+
+class FormalParameter(SourceThing):
+	def __init__(self, name, type_, scalar, inout):
+		SourceThing.__init__(self, name.pos)
+		self.name = name
+		self.type_ = type_
+		self.scalar = scalar
+		self.inout = inout
+	def __repr__(self):
+		return "{}: {}".format(self.name, self.type_)
+
 #######################################################################
 #
 # INSTRUCTIONS
@@ -91,7 +105,7 @@ class Assignment(Instruction):
 		self.lhs = lhs
 		self.rhs = rhs
 	def __repr__(self):
-		return "affectation ({} <- {})\n".format(self.lhs, self.rhs)
+		return "{} <- {}\n".format(self.lhs, self.rhs)
 	
 class FunctionCall(Instruction):
 	def __init__(self, pos, function_name, effective_parameters):
@@ -165,7 +179,7 @@ class OperatorToken(Token):
 		self.kw = op_kw
 		self.op = op
 	def __repr__(self):
-		return "<op '{}'>".format(self.op)
+		return "o_{}".format(self.op)
 
 class UnaryOpNode(Expression):
 	def __init__(self, op_tok, operand):
@@ -173,7 +187,7 @@ class UnaryOpNode(Expression):
 		self.operator = op_tok.op
 		self.operand = operand
 	def __repr__(self):
-		return "(u{} {})".format(self.operator.symbol.default_spelling, self.operand)
+		return "({}{})".format(self.operator.symbol.default_spelling, self.operand)
 
 class BinaryOpNode(Expression):
 	def __init__(self, pos, op, lhs, rhs):
@@ -182,33 +196,33 @@ class BinaryOpNode(Expression):
 		self.lhs = lhs
 		self.rhs = rhs
 	def __repr__(self):
-		return "({} {} {})".format(self.operator.symbol.default_spelling, self.lhs, self.rhs)
+		return "({1}{0}{2})".format(self.operator.symbol.default_spelling, self.lhs, self.rhs)
 
 class LiteralInteger(Expression):
 	def __init__(self, pos, value):
 		Expression.__init__(self, pos)
 		self.value = value
 	def __repr__(self):
-		return "#" + str(self.value) 
+		return str(self.value) 
 
 class LiteralReal(Expression):
 	def __init__(self, pos, value):
 		Expression.__init__(self, pos)
 		self.value = value
 	def __repr__(self):
-		return "réel littéral " + str(self.value)
+		return str(self.value)
 
 class LiteralString(Expression):
 	def __init__(self, pos, value):
 		Expression.__init__(self, pos)
 		self.value = value
 	def __repr__(self):
-		return "chaîne littérale \"" + self.value + "\""
+		return "\"" + self.value + "\""
 
 class LiteralBoolean(Expression):
 	def __init__(self, pos, value):
 		Expression.__init__(self, pos)
 		self.value = value
 	def __repr__(self):
-		return "booléen littéral " + str(self.value)
+		return str(self.value)
 

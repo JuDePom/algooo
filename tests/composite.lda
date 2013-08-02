@@ -1,0 +1,10 @@
+fonction coucou(a:entier, b:entier)
+lexique
+	Moule = <viscosité: réel, degré_écœurant: réel>
+	Frite = <nb_patates: entier, pourcentage_de_graisse: réel, huile_de_palme: booléen>
+	dégoûtant : Moule
+	délicieux : Frite
+début
+	// dégoûtant.viscosité <- 92
+fin
+

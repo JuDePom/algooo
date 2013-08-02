@@ -26,9 +26,9 @@ class meta:
 	all_keywords = []
 
 	'''
-	List of all keywords denoting an LDA atomic type.
+	List of all keywords denoting an LDA scalar type.
 	'''
-	all_types = []#[ INT, REAL, BOOL, CHAR, STRING ]
+	all_scalar_types = []
 
 class KeywordDef:
 	'''
@@ -44,7 +44,7 @@ class KeywordDef:
 		meta.all_keywords.extend(synonyms)
 	
 	def __repr__(self):
-		return "kw<" + self.default_spelling + ">"
+		return "k_" + self.default_spelling
 
 class AlphaKeywordDef(KeywordDef):
 	'''
@@ -144,5 +144,5 @@ MLC_START      = SymbolKeywordDef("(*")
 MLC_END        = SymbolKeywordDef("*)")
 SLC_START      = SymbolKeywordDef("//")
 
-meta.all_types = [ INT, REAL, BOOL, CHAR, STRING ]
+meta.all_scalar_types = [ INT, REAL, BOOL, CHAR, STRING ]
 

@@ -131,16 +131,13 @@ class Parser:
 
 		self.analyze_mandatory_keyword(kw.LPAREN)
 
-		params = []
-
 		if self.analyze_keyword(kw.RPAREN) is None:
 			# non-empty parameter list
-			has_next_param = True
-			while has_next_param:
-				p = self.analyze_formal_parameter()
-				params.append(p)
-				has_next_param = self.analyze_keyword(kw.COMMA) is not None
+			params = self.analyze_formal_parameter_list()
 			self.analyze_mandatory_keyword(kw.RPAREN)
+		else:
+			# got an RPAREN right away: empty parameter list
+			params = []
 
 		if self.analyze_keyword(kw.COLON) is not None:
 			raise UnimplementedError(self.pos, \
@@ -155,47 +152,67 @@ class Parser:
 
 		return Function(start_kw.pos, name, params, lexi, body)
 
+	def analyze_formal_parameter_list(self):
+		params = []
+		has_next_param = True
+		while has_next_param:
+			p = self.analyze_formal_parameter()
+			params.append(p)
+			has_next_param = self.analyze_keyword(kw.COMMA) is not None
+		return params
+
 	def analyze_formal_parameter(self):
+		pos0 = self.pos
+
 		name = self.analyze_identifier()
 		if name is None:
-			raise IllegalIdentifier(self.pos)
+			return
 
-		is_inout = self.analyze_keyword(kw.INOUT)
+		is_inout = self.analyze_keyword(kw.INOUT) is not None
 
-		self.analyze_mandatory_keyword(kw.COLON)
+		if self.analyze_keyword(kw.COLON) is None:
+			self.pos = pos0
+			return
 
-		is_array = self.analyze_keyword(kw.ARRAY)
+		is_array = self.analyze_keyword(kw.ARRAY) is not None
 
-		type_kw = None
-		for candidate in kw.meta.all_types:
+		type_ = None
+		for candidate in kw.meta.all_scalar_types:
 			if self.analyze_keyword(candidate) is not None:
-				type_kw = candidate
+				type_ = candidate
+				is_scalar = True
 				break
-		if type_kw is None:
-			raise ExpectedItemError(self.pos, "un type")
+		if type_ is None:
+			type_ = self.analyze_identifier()
+			is_scalar = False
+		if type_ is None:
+			raise ExpectedItemError(self.pos, \
+					"un type scalaire ou composite")
 
-		if is_array is not None:
+		if is_array:
 			self.analyze_mandatory_keyword(kw.LSBRACKET)
 			raise UnimplementedError(self.pos, \
 					"taille du tableau paramètre effectif")
 
-		raise UnimplementedError(self.pos, \
-				"création adéquate objet param formel")
-
-		return FormalParameter(name.pos, name, type_kw)
+		return FormalParameter(name, type_, is_scalar, is_inout)
 	
 	def analyze_lexicon(self):
 		start_kw = self.analyze_keyword(kw.LEXICON)
 		if start_kw is None:
 			raise ExpectedItemError(self.pos, "le lexique de la fonction")
-		block = []
+		declarations = []
+		molds = []
 		while True:
-			declaration = self.analyze_declaration()
-			if declaration is not None:
-				block.append(declaration)
-			else:
-				break
-		return Lexicon(start_kw.pos, block)	
+			d = self.analyze_formal_parameter()
+			if d is not None:
+				declarations.append(d)
+				continue
+			m = self.analyze_compound_mold_declaration()
+			if m is not None:
+				molds.append(m)
+				continue
+			break
+		return Lexicon(start_kw.pos, declarations, molds)	
 
 	def analyze_identifier(self):
 		match = re_identifier.match(self.sliced_buf)
@@ -222,27 +239,23 @@ class Parser:
 		else:
 			raise ExpectedKeywordError(self.pos, keyword)
 
-	def analyze_declaration(self):
+	def analyze_compound_mold_declaration(self):
 		pos0 = self.pos
-
-		identifier = self.analyze_identifier()
-		if identifier is None: 
+		
+		name_id = self.analyze_identifier()
+		if name_id is None:
 			return
-			
-		self.analyze_mandatory_keyword(kw.COLON)
+
+		if self.analyze_keyword(kw.EQ) is None:
+			self.pos = pos0
+			return
 
 		# point of no return
-		type_kw = self.analyze_type_kw()
-		if type_kw is None:
-			raise ExpectedItemError(self.pos, "un type")
+		self.analyze_mandatory_keyword(kw.LT)
+		fp_list = self.analyze_formal_parameter_list()
+		self.analyze_mandatory_keyword(kw.GT)
+		return CompoundMold(name_id, fp_list)
 
-		return Declaration(pos0, identifier, type_kw)
-
-	def analyze_type_kw(self):
-		for type_kw in kw.meta.all_types:
-			if self.analyze_keyword(type_kw):
-				return type_kw
-		
 	def analyze_instruction_block(self, *end_marker_keywords):
 		block = []
 		while True:
@@ -284,8 +297,6 @@ class Parser:
 		rhs = self.analyze_expression()
 		if rhs is None:
 			raise ExpectedItemError(self.pos, "une expression")
-
-		print("found expression ", rhs)
 
 		return Assignment(pos0, identifier, rhs)
 
@@ -488,8 +499,8 @@ class Parser:
 
 	def analyze_literal_boolean(self):
 		pos0 = self.pos
-		true_kw = analyze_keyword(kw.TRUE)
-		if true_kw is None and analyze_keyword(kw.FALSE) is None:
+		true_kw = self.analyze_keyword(kw.TRUE)
+		if true_kw is None and self.analyze_keyword(kw.FALSE) is None:
 			return
 		value = true_kw is not None
 		return LiteralBoolean(pos0, value)
