@@ -284,15 +284,38 @@ class Parser:
 				return instruction
 
 	def analyze_assignment(self):
+		# This function is an ugly hack to accomodate for the <- operator,
+		# in order to prevent it from being interpreted as "less than minus"
+		# when the user intends to use it as the assignment operator,
+		# while still allowing the sequence "<-" in expressions.
 		pos0 = self.pos
 
-		lhs = self.analyze_expression()
-		if lhs is None: 
+		# an assignment always starts with an identifier
+		lhs = self.analyze_identifier()
+		if lhs is None:
 			return
 
+		# If the assignment operator doesn't follow the identifier, we may have 
+		# a complex LHS made of several identifiers, such as "blah.blah[34+2].blah",
+		# so we have to parse it as an expression.
 		if self.analyze_keyword(kw.ASSIGN) is None:
-			self.pos = pos0 # analyze_expression had advanced the position
-			return
+			bin_op = self.analyze_binary_operator()
+			# The member selection operator "." and the array subscription 
+			# operator "[]" are considered to be binary operators.
+			if bin_op is None:
+				self.pos = pos0
+				return
+			lhs, k = self.analyze_partial_expression(lhs, bin_op, bin_op.op.precedence)
+			# k is the operator which stopped the expression analyzer. Its precedence 
+			# is lower than bin_op's. If the user wants to assign using the <- operator,
+			# then k is probably < (which is incorrect). We're going to discard k and 
+			# check for the presence of the assignment operator manually.
+			self.pos = k.pos # discard k
+			if self.analyze_keyword(kw.ASSIGN) is None:
+				# no assignment keyword after complex LHS, 
+				# this time it's not an assignment for sure
+				self.pos = pos0 # analyze_expression had advanced the position
+				return
 
 		# point of no return
 		rhs = self.analyze_expression()
@@ -408,28 +431,29 @@ class Parser:
 		return InstructionDoWhile(pos0, block, bool_Expr)
 	
 	def analyze_expression(self):
-		def analyze_partial_expression(lhs, t, min_p=0):
-			assert(t is None or (type(t) is OperatorToken and t.op.binary))
-			while t is not None and t.op.precedence >= min_p:
-				t_origin = t
-				op = t.op
-				if op.encompass_till is None:
-					rhs = self.analyze_primary_expression(op.precedence)
-				else:
-					rhs = self.analyze_expression()
-					self.analyze_mandatory_keyword(op.encompass_till)
-				t = self.analyze_binary_operator()
-				while t is not None and \
-						(t.op.precedence > op.precedence or \
-						(t.op.right_ass and t.op.precedence == op.precedence)):
-					rhs, t = analyze_partial_expression(rhs, t, t.op.precedence)
-				lhs = BinaryOpNode(t_origin.pos, op, lhs, rhs)
-			return lhs, t
 		lhs = self.analyze_primary_expression()
 		t   = self.analyze_binary_operator()
-		expr, _ = analyze_partial_expression(lhs, t)
+		expr, _ = self.analyze_partial_expression(lhs, t)
 		return expr
 	
+	def analyze_partial_expression(self, lhs, t, min_p=0):
+		assert(t is None or (type(t) is OperatorToken and t.op.binary))
+		while t is not None and t.op.precedence >= min_p:
+			t_origin = t
+			op = t.op
+			if op.encompass_till is None:
+				rhs = self.analyze_primary_expression(op.precedence)
+			else:
+				rhs = self.analyze_expression()
+				self.analyze_mandatory_keyword(op.encompass_till)
+			t = self.analyze_binary_operator()
+			while t is not None and \
+					(t.op.precedence > op.precedence or \
+					(t.op.right_ass and t.op.precedence == op.precedence)):
+				rhs, t = self.analyze_partial_expression(rhs, t, t.op.precedence)
+			lhs = BinaryOpNode(t_origin.pos, op, lhs, rhs)
+		return lhs, t
+
 	def analyze_primary_expression(self, min_unary_precedence=0):
 		lparen = self.analyze_keyword(kw.LPAREN)
 		if lparen is not None:
