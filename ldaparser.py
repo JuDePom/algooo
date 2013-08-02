@@ -514,8 +514,8 @@ class Parser:
 
 	def analyze_literal_boolean(self):
 		pos0 = self.pos
-		true_kw = analyze_keyword(kw.TRUE)
-		if true_kw is None and analyze_keyword(kw.FALSE) is None:
+		true_kw = self.analyze_keyword(kw.TRUE)
+		if true_kw is None and self.analyze_keyword(kw.FALSE) is None:
 			return
 		value = true_kw is not None
 		return LiteralBoolean(pos0, value)
