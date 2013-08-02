@@ -292,7 +292,6 @@ class Parser:
 	def analyze_instruction(self):
 		analyse_order = [
 			self.analyze_expression,
-			self.analyze_function_call,
 			self.analyze_if,
 			self.analyze_for,
 			self.analyze_while,
@@ -303,31 +302,6 @@ class Parser:
 			if instruction:
 				return instruction
 
-	def analyze_function_call(self):
-		pos0 = self.pos
-
-		function_name = self.analyze_identifier()
-		if function_name is None: return
-
-		if self.analyze_keyword(kw.LPAREN) is None:
-			self.pos = pos0 # analyze_identifier had advanced the position
-			return
-
-		# point of no return
-		effective_parameters = []
-		if self.analyze_keyword(kw.RPAREN) is None:  # we have an effective parameter
-			next_parameter = True
-			while next_parameter:
-				parameter = self.analyze_expression()
-				if parameter is None:
-					raise ExpectedItemError(self.pos,\
-							"une expression comme paramètre effectif")
-				effective_parameters.append(parameter)
-				next_parameter = self.analyze_keyword(kw.COMMA)
-			self.analyze_mandatory_keyword(kw.RPAREN)
-
-		return FunctionCall(pos0, function_name, effective_parameters)
-	
 	def analyze_if(self):
 		pos0 = self.pos
 
@@ -420,11 +394,7 @@ class Parser:
 		while t is not None and t.op.precedence >= min_p:
 			t_origin = t
 			op = t.op
-			if op.encompass_till is None:
-				rhs = self.analyze_primary_expression(op.precedence)
-			else:
-				rhs = self.analyze_expression()
-				self.analyze_mandatory_keyword(op.encompass_till)
+			rhs = self.analyze_second_operand(op)
 			t = self.analyze_binary_operator()
 			while t is not None and \
 					(t.op.precedence > op.precedence or \
@@ -432,6 +402,24 @@ class Parser:
 				rhs, t = self.analyze_partial_expression(rhs, t, t.op.precedence)
 			lhs = BinaryOpNode(t_origin.pos, op, lhs, rhs)
 		return lhs, t
+
+	def analyze_second_operand(self, op):
+		if op.encompass_till is None:
+			return self.analyze_primary_expression(op.precedence)
+		if op.encompass_several:
+			rhs = []
+			next_arg = True
+			while next_arg:
+				arg = self.analyze_expression()
+				if arg is not None:
+					rhs.append(arg)
+				next_arg = self.analyze_keyword(kw.COMMA) is not None
+				if next_arg and arg is None:
+					raise LDASyntaxError(self.pos, "argument vide")
+		else:
+			rhs = self.analyze_expression()
+		self.analyze_mandatory_keyword(op.encompass_till)
+		return rhs
 
 	def analyze_primary_expression(self, min_unary_precedence=0):
 		lparen = self.analyze_keyword(kw.LPAREN)
@@ -508,3 +496,4 @@ class Parser:
 			return
 		value = true_kw is not None
 		return LiteralBoolean(pos0, value)
+

@@ -1,0 +1,12 @@
+fonction blabla()
+lexique
+	t: tableau entier[0..4,0..n]
+	u: tableau entier[0..3*n-1]
+début
+	t[3,2] <- 4
+	u[0] <- 4
+	hi(t,u)
+	//hi(,,,) // passe pas!
+	hi()
+	psst_lapin <- hi(t,u-1)
+fin

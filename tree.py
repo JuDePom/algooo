@@ -21,7 +21,7 @@ class Identifier(Token):
 	def __init__(self, pos, name_string):
 		SourceThing.__init__(self, pos)
 		self.name_string = name_string
-	def __str__(self):
+	def __repr__(self):
 		return self.name_string
 
 #######################################################################
@@ -99,23 +99,6 @@ class FormalParameter(SourceThing):
 class Instruction(SourceThing):
 	def __init__(self, pos):
 		SourceThing.__init__(self, pos)
-
-class Assignment(Instruction):
-	def __init__(self, pos, lhs, rhs):
-		Instruction.__init__(self, pos)
-		self.lhs = lhs
-		self.rhs = rhs
-	def __repr__(self):
-		return "{} <- {}\n".format(self.lhs, self.rhs)
-	
-class FunctionCall(Instruction):
-	def __init__(self, pos, function_name, effective_parameters):
-		self.function_name = function_name
-		self.effective_parameters = effective_parameters
-	def __repr__(self):
-		return "appel de fonction {} avec paramètres {}\n".format(
-				self.function_name, 
-				self.effective_parameters)
 
 class InstructionIf(Instruction):
 	def __init__(self, pos, bool_Expr, first_block, optional_block=None ):

@@ -11,8 +11,8 @@ class meta:
 	all_binaries = []
 
 class OpDef:
-	def __init__(self, symbol, precedence=None, unary=False,\
-	             right_ass=False, encompass_till=None):
+	def __init__(self, symbol, precedence=None, unary=False, right_ass=False,
+	             encompass_till=None, encompass_several=False):
 		if precedence is None:
 			# we can't put _current_pg as the default value for precedence
 			# because it's not resolved at runtime...
@@ -22,6 +22,7 @@ class OpDef:
 		self.unary          = unary 
 		self.right_ass      = right_ass
 		self.encompass_till = encompass_till
+		self.encompass_several = encompass_several
 		self.binary         = not unary
 		self.left_ass       = not right_ass
 		if self.binary:
@@ -34,7 +35,10 @@ class OpDef:
 
 
 _new_precedence_group()
-SUBSCRIPT      = OpDef(kw.LSBRACK, encompass_till=kw.RSBRACK)
+SUBSCRIPT      = OpDef(kw.LSBRACK, encompass_till=kw.RSBRACK,
+                       encompass_several=True)
+FUNCTION_CALL  = OpDef(kw.LPAREN, encompass_till=kw.RPAREN,
+                       encompass_several=True)
 MEMBER_SELECT  = OpDef(kw.DOT)
 UNARY_MINUS    = OpDef(kw.MINUS, unary=True, right_ass=True)
 UNARY_PLUS     = OpDef(kw.PLUS, unary=True, right_ass=True)
