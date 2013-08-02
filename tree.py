@@ -83,7 +83,12 @@ class FormalParameter(SourceThing):
 		self.scalar = not self.custom_type
 		self.array = self.array_dimensions is not None
 	def __repr__(self):
-		return "{}: {}".format(self.name, self.type_)
+		inout_str = "inout " if self.inout else ""
+		if self.array:
+			return "{}: {}tableau {}{}".format(\
+					self.name, inout_str, self.type_, self.array_dimensions)
+		else:
+			return "{}: {}{}".format(self.name, inout_str, self.type_)
 
 #######################################################################
 #

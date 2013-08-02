@@ -30,6 +30,11 @@ class meta:
 	'''
 	all_scalar_types = []
 
+	'''
+	List of all SymbolKeywordDef objects declared in this module.
+	'''
+	all_symbols = []
+
 class KeywordDef:
 	'''
 	Base class for keywords.
@@ -71,15 +76,34 @@ class SymbolKeywordDef(KeywordDef):
 	sequence that will expand to two separate keywords: ()
 	'''
 
-	parsing_order = []
-
 	def __init__(self, *synonyms):
+		self.give_way = [] # List of SymbolKeywordDefs that must be checked before 
+		                   # self. Will be populated at the end of the module.
 		self.default_spelling = synonyms[0]
 		# sort synonyms by descending size so that longer synonyms get checked first
 		# bogus example: if ".." is a synonym for ".", we need to check for ".." first
 		self.synonyms = tuple(sorted(synonyms, key=len, reverse=True))
+		meta.all_symbols.append(self)
+
+	def must_give_way(self, other):
+		'''
+		Return True if the presence of other must be checked before the presence 
+		of self in the input stream.
+
+		For example, if << and < exist as distinct keywords, then the presence of 
+		<< shall be checked before the presence of < to limit keyword conflicts.
+		'''
+		for mine in self.synonyms:
+			for theirs in other.synonyms:
+				if theirs.startswith(mine):
+					return True
+		return False
 
 	def find(self, buf):
+		for priority in self.give_way:
+			if priority.find(buf):
+				print ("giveway", priority, "took over", self)
+				return
 		for symbol in self.synonyms:
 			if buf.startswith(symbol):
 				return symbol
@@ -149,4 +173,15 @@ MLC_END        = SymbolKeywordDef("*)")
 SLC_START      = SymbolKeywordDef("//")
 
 meta.all_scalar_types = [ INT, REAL, BOOL, CHAR, STRING ]
+
+# build give_way lists
+for i in range(len(meta.all_symbols)):
+	a = meta.all_symbols[i]
+	for b in meta.all_symbols[i+1:]:
+		if a.must_give_way(b):
+			a.give_way.append(b)
+			print(a, "must give way to", b)
+		elif b.must_give_way(a):
+			b.give_way.append(a)
+			print(b, "must give way to", a)
 

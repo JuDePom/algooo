@@ -207,16 +207,11 @@ class Parser:
 		self.analyze_mandatory_keyword(kw.LSBRACK)
 		next_dimension = True
 		while next_dimension:
-			low_bound = self.analyze_expression()
-			if low_bound is None:
+			range = self.analyze_expression()
+			if not (type(range) is BinaryOpNode and range.operator is ops.RANGE):
 				raise ExpectedItemError(self.pos, \
-						"l'expression entière de la borne inférieure du tableau")
-			self.analyze_mandatory_keyword(kw.DOTDOT)
-			high_bound = self.analyze_expression()
-			if high_bound is None:
-				raise ExpectedItemError(self.pos, \
-						"l'expression entière de la borne supérieure du tableau")
-			array_dimensions.append((low_bound, high_bound))
+						"une dimension du tableau sous forme d'intervalle d'entiers (exemple: 0..5)")
+			array_dimensions.append(range)
 			next_dimension = self.analyze_keyword(kw.COMMA) is not None
 		self.analyze_mandatory_keyword(kw.RSBRACK)
 		return array_dimensions
@@ -296,7 +291,7 @@ class Parser:
 		
 	def analyze_instruction(self):
 		analyse_order = [
-			self.analyze_assignment,
+			self.analyze_expression,
 			self.analyze_function_call,
 			self.analyze_if,
 			self.analyze_for,
@@ -307,47 +302,6 @@ class Parser:
 			instruction = analyze()
 			if instruction:
 				return instruction
-
-	def analyze_assignment(self):
-		# This function is an ugly hack to accomodate for the <- operator,
-		# in order to prevent it from being interpreted as "less than minus"
-		# when the user intends to use it as the assignment operator,
-		# while still allowing the sequence "<-" in expressions.
-		pos0 = self.pos
-
-		# an assignment always starts with an identifier
-		lhs = self.analyze_identifier()
-		if lhs is None:
-			return
-
-		# If the assignment operator doesn't follow the identifier, we may have 
-		# a complex LHS made of several identifiers, such as "blah.blah[34+2].blah",
-		# so we have to parse it as an expression.
-		if self.analyze_keyword(kw.ASSIGN) is None:
-			bin_op = self.analyze_binary_operator()
-			# The member selection operator "." and the array subscription 
-			# operator "[]" are considered to be binary operators.
-			if bin_op is None:
-				self.pos = pos0
-				return
-			lhs, k = self.analyze_partial_expression(lhs, bin_op, bin_op.op.precedence)
-			# k is the operator which stopped the expression analyzer. Its precedence 
-			# is lower than bin_op's. If the user wants to assign using the <- operator,
-			# then k is probably < (which is incorrect). We're going to discard k and 
-			# check for the presence of the assignment operator manually.
-			self.pos = k.pos # discard k
-			if self.analyze_keyword(kw.ASSIGN) is None:
-				# no assignment keyword after complex LHS, 
-				# this time it's not an assignment for sure
-				self.pos = pos0 # analyze_expression had advanced the position
-				return
-
-		# point of no return
-		rhs = self.analyze_expression()
-		if rhs is None:
-			raise ExpectedItemError(self.pos, "une expression")
-	
-		return Assignment(pos0, lhs, rhs)
 
 	def analyze_function_call(self):
 		pos0 = self.pos
@@ -496,17 +450,17 @@ class Parser:
 
 		return self.analyze_expression_non_op_token()
 
-	def analyze_binary_operator(self):
-		for op in ops.binary_parsing_order:
+	def analyze_operator(self, operator_list):
+		for op in operator_list:
 			op_kw = self.analyze_keyword(op.symbol)
 			if op_kw is not None:
 				return OperatorToken(op_kw, op)
 	
+	def analyze_binary_operator(self):
+		return self.analyze_operator(ops.meta.all_binaries)
+
 	def analyze_unary_operator(self):
-		for op in ops.unary_parsing_order:
-			op_kw = self.analyze_keyword(op.symbol)
-			if op_kw is not None:
-				return OperatorToken(op_kw, op)
+		return self.analyze_operator(ops.meta.all_unaries)
 
 	def analyze_expression_non_op_token(self):
 		analysis_order = [
