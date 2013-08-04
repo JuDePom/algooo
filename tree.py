@@ -28,47 +28,53 @@ class Identifier(Token):
 	def put_node(self, cluster):
 		return dot.Node(str(self), cluster)
 
-#######################################################################
-#
-# TOP-LEVEL
-#
-#######################################################################
-
-class Algorithm(SourceThing):
-	def __init__(self, pos, lexicon, body):
+class StatementBlock(SourceThing):
+	def __init__(self, pos, body):
 		SourceThing.__init__(self, pos)
 		self.body = body
-		self.lexicon = lexicon
-	def __repr__(self):
-		return "algorithme :\n{}\n{}".format(self.lexicon, self.body)
-
-class Function(SourceThing):
-	def __init__(self, pos, name, fp_list, lexicon, body):
-		SourceThing.__init__(self, pos)
-		self.name = name
-		self.fp_list = fp_list
-		self.lexicon = lexicon
-		self.body = body
-	def __repr__(self):
-		return "fonction {} :\n{}\n{}".format(self.name, self.lexicon, self.body)
-	def put_node(self, pcluster):
-		fcluster = dot.Cluster("fonction " + str(self.name), pcluster)
-		#stmt_nodes = []
+	def put_node(self, cluster):
 		prev_outer_node = None
 		rank_chain = []
 		i = 0
 		for statement in self.body:
-			ncluster = dot.Cluster("", fcluster)
+			ncluster = dot.Cluster("", cluster)
 			node = statement.put_node(ncluster)
-			outer_node = dot.Node("statement "+str(i), fcluster)
+			outer_node = dot.Node("statement "+str(i), cluster)
 			outer_node.children.append(node)
 			if prev_outer_node is not None:
 				prev_outer_node.children.append(outer_node)
 			prev_outer_node = outer_node
 			rank_chain.append(outer_node)
 			i += 1
-		#self.lexicon.put_node(fcluster)
-		fcluster.rank_chains.append(rank_chain)
+		cluster.rank_chains.append(rank_chain)
+
+#######################################################################
+#
+# TOP-LEVEL
+#
+#######################################################################
+
+class Algorithm(StatementBlock):
+	def __init__(self, pos, lexicon, body):
+		StatementBlock.__init__(self, pos, body)
+		self.lexicon = lexicon
+	def __repr__(self):
+		return "algorithme :\n{}\n{}".format(self.lexicon, self.body)
+	def put_node(self, cluster):
+		algorithm_cluster = dot.Cluster("algorithme", cluster)
+		return StatementBlock.put_node(self, algorithm_cluster)
+
+class Function(StatementBlock):
+	def __init__(self, pos, name, fp_list, lexicon, body):
+		StatementBlock.__init__(self, pos, body)
+		self.name = name
+		self.fp_list = fp_list
+		self.lexicon = lexicon
+	def __repr__(self):
+		return "fonction {} :\n{}\n{}".format(self.name, self.lexicon, self.body)
+	def put_node(self, cluster):
+		function_cluster = dot.Cluster("fonction " + str(self.name), cluster)
+		return StatementBlock.put_node(self, function_cluster)
 
 #######################################################################
 #
