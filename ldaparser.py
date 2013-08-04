@@ -259,12 +259,10 @@ class Parser:
 	def analyze_instruction_block(self, *end_marker_keywords):
 		pos0 = self.pos
 		statements = []
-		while True:
+		instruction = self.analyze_instruction()
+		while instruction is not None:
+			statements.append(instruction)
 			instruction = self.analyze_instruction()
-			if instruction is not None:
-				statements.append(instruction)
-			else:
-				break
 		for marker in end_marker_keywords:
 			if self.analyze_keyword(marker) is not None:
 				return StatementBlock(pos0, statements), marker
