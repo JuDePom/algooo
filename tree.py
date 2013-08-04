@@ -1,3 +1,5 @@
+import dot
+
 '''
 Items that make up the abstract syntax tree.
 '''
@@ -14,15 +16,44 @@ class Token(SourceThing):
 
 class KeywordToken(Token):
 	def __init__(self, pos, kw_def):
-		SourceThing.__init__(self, pos)
+		super().__init__(pos)
 		self.kw_def = kw_def
 
 class Identifier(Token):
 	def __init__(self, pos, name_string):
-		SourceThing.__init__(self, pos)
+		super().__init__(pos)
 		self.name_string = name_string
 	def __repr__(self):
 		return self.name_string
+	def put_node(self, cluster):
+		return dot.Node(str(self), cluster)
+
+class StatementBlock(SourceThing):
+	def __init__(self, pos, body):
+		super().__init__(pos)
+		self.body = body
+	def __iter__(self):
+		for statement in self.body:
+			yield statement
+	def put_node(self, cluster):
+		prev_outer_node = None
+		first_outer_node = None
+		rank_chain = []
+		i = 0
+		for statement in self:
+			ncluster = dot.Cluster("", cluster)
+			node = statement.put_node(ncluster)
+			outer_node = dot.Node("statement "+str(i), cluster)
+			outer_node.children.append(node)
+			if prev_outer_node is not None:
+				prev_outer_node.children.append(outer_node)
+			else:
+				first_outer_node = outer_node
+			prev_outer_node = outer_node
+			rank_chain.append(outer_node)
+			i += 1
+		cluster.rank_chains.append(rank_chain)
+		return first_outer_node
 
 #######################################################################
 #
@@ -30,23 +61,27 @@ class Identifier(Token):
 #
 #######################################################################
 
-class Algorithm(SourceThing):
+class Algorithm(StatementBlock):
 	def __init__(self, pos, lexicon, body):
-		SourceThing.__init__(self, pos)
-		self.body = body
+		super().__init__(pos, body)
 		self.lexicon = lexicon
 	def __repr__(self):
 		return "algorithme :\n{}\n{}".format(self.lexicon, self.body)
+	def put_node(self, cluster):
+		algorithm_cluster = dot.Cluster("algorithme", cluster)
+		return super().put_node(algorithm_cluster)
 
-class Function(SourceThing):
+class Function(StatementBlock):
 	def __init__(self, pos, name, fp_list, lexicon, body):
-		SourceThing.__init__(self, pos)
+		super().__init__(pos, body)
 		self.name = name
 		self.fp_list = fp_list
 		self.lexicon = lexicon
-		self.body = body
 	def __repr__(self):
 		return "fonction {} :\n{}\n{}".format(self.name, self.lexicon, self.body)
+	def put_node(self, cluster):
+		function_cluster = dot.Cluster("fonction " + str(self.name), cluster)
+		return super().put_node(function_cluster)
 
 #######################################################################
 #
@@ -56,7 +91,7 @@ class Function(SourceThing):
 
 class Lexicon(SourceThing):
 	def __init__(self, pos, declarations, molds):
-		SourceThing.__init__(self, pos)
+		super().__init__(pos)
 		self.declarations = declarations
 		self.molds = molds
 	def __repr__(self):
@@ -65,7 +100,7 @@ class Lexicon(SourceThing):
 	
 class CompoundMold(SourceThing):
 	def __init__(self, name_id, fp_list):
-		SourceThing.__init__(self, name_id.pos)
+		super().__init__(name_id.pos)
 		self.name_id = name_id
 		self.components = fp_list
 	def __repr__(self):
@@ -73,7 +108,7 @@ class CompoundMold(SourceThing):
 
 class FormalParameter(SourceThing):
 	def __init__(self, name, type_, inout, array_dimensions=None):
-		SourceThing.__init__(self, name.pos)
+		super().__init__(name.pos)
 		self.name = name
 		self.type_ = type_
 		self.inout = inout
@@ -97,12 +132,11 @@ class FormalParameter(SourceThing):
 #######################################################################
 
 class Instruction(SourceThing):
-	def __init__(self, pos):
-		SourceThing.__init__(self, pos)
+	pass
 
 class InstructionIf(Instruction):
-	def __init__(self, pos, bool_Expr, first_block, optional_block=None ):
-		Instruction.__init__(self, pos)
+	def __init__(self, pos, bool_Expr, first_block, optional_block=None):
+		super().__init__(pos)
 		self.bool_Expr = bool_Expr
 		self.first_block = first_block
 		self.optional_block = optional_block
@@ -111,20 +145,37 @@ class InstructionIf(Instruction):
 			return "si {} alors \n{}fsi\n".format(self.bool_Expr, self.first_block)
 		else :
 			return "si {} alors \n{}sinon \n{}fsi\n".format(self.bool_Expr, self.first_block, self.optional_block)
+	def put_node(self, cluster):
+		condition = self.bool_Expr.put_node(cluster)
+		then_cluster = dot.Cluster("alors", cluster)
+		consequent = self.first_block.put_node(then_cluster)
+		children = [condition, consequent]
+		if self.optional_block is not None:
+			else_cluster = dot.Cluster("sinon", cluster)
+			alternative = self.optional_block.put_node(else_cluster)
+			children.append(alternative)
+		return dot.Node("si", cluster, *children)
 
 class InstructionFor(Instruction):
 	def __init__(self, pos, increment, int_from, int_to, block):
-		Instruction.__init__(self, pos)
+		super().__init__(pos)
 		self.increment = increment
 		self.int_from = int_from
 		self.int_to = int_to
-		self.block = block		
+		self.block = block
 	def __repr__(self):
-		return "pour {} de {} a {} faire \n{}fpour\n".format(self.increment, self.int_from, self.int_to, self.block)
+		return "pour {} de {} a {} faire \n{}fpour\n".format(self.increment, self.int_from, self.int_to, self.block) 
+	def put_node(self, cluster):
+		counter = self.increment.put_node(cluster)
+		initial = self.int_from.put_node(cluster)
+		final = self.int_to.put_node(cluster)
+		block_cluster = dot.Cluster("faire", cluster)
+		block = self.block.put_node(block_cluster)
+		return dot.Node("pour", cluster, counter, initial, final, block)
 
 class InstructionForEach(Instruction):
 	def __init__(self, pos, element, list_element, block):
-		Instruction.__init__(self, pos)
+		super().__init__(pos)
 		self.element = element
 		self.list_element = list_element
 		self.block = block	
@@ -133,20 +184,24 @@ class InstructionForEach(Instruction):
 
 class InstructionWhile(Instruction):
 	def __init__(self, pos, bool_Expr, block):
-		Instruction.__init__(self, pos)
+		super().__init__(pos)
 		self.bool_Expr = bool_Expr
 		self.block = block	
 	def __repr__(self):
 		return "tantque {} faire \n{}ftant\n".format(self.bool_Expr, self.block)
+	def put_node(self, cluster):
+		condition = self.bool_Expr.put_node(cluster)
+		block_cluster = dot.Cluster("faire", cluster)
+		block = self.block.put_node(block_cluster)
+		return dot.Node("tantque", cluster, condition, block)
 
 class InstructionDoWhile(Instruction):
 	def __init__(self, pos, block, bool_Expr):
-		Instruction.__init__(self, pos)
+		super().__init__(pos)
 		self.block = block
 		self.bool_Expr = bool_Expr	
 	def __repr__(self):
 		return "répéter \n{} \njusqu'à {}\n".format(self.block, self.bool_Expr)
-		
 		
 #######################################################################
 #
@@ -159,7 +214,7 @@ class Expression(SourceThing):
 
 class OperatorToken(Token):
 	def __init__(self, op_kw, op):
-		Token.__init__(self, op_kw.pos)
+		super().__init__(op_kw.pos)
 		self.kw = op_kw
 		self.op = op
 	def __repr__(self):
@@ -167,46 +222,84 @@ class OperatorToken(Token):
 
 class UnaryOpNode(Expression):
 	def __init__(self, op_tok, operand):
-		Expression.__init__(self, op_tok.pos)
+		super().__init__(op_tok.pos)
+		self.operator_token = op_tok
 		self.operator = op_tok.op
 		self.operand = operand
 	def __repr__(self):
-		return "({}{})".format(self.operator.symbol.default_spelling, self.operand)
+		return "({}{})".format(
+				self.operator.symbol.default_spelling, 
+				self.operand)
+	def put_node(self, pcluster):
+		op_node = dot.Node(self.operator.symbol.default_spelling,
+				pcluster,
+				self.operand.put_node(pcluster))
+		op_node.shape = "circle"
+		return op_node
 
 class BinaryOpNode(Expression):
-	def __init__(self, pos, op, lhs, rhs):
-		Expression.__init__(self, pos)
-		self.operator = op
+	def __init__(self, op_tok, lhs, rhs):
+		super().__init__(op_tok.pos)
+		self.operator_token = op_tok
+		self.operator = op_tok.op
 		self.lhs = lhs
 		self.rhs = rhs
 	def __repr__(self):
-		return "({1}{0}{2})".format(self.operator.symbol.default_spelling, self.lhs, self.rhs)
+		return "({1}{0}{2})".format(
+				self.operator.symbol.default_spelling, 
+				self.lhs, 
+				self.rhs)
+	def put_node(self, pcluster):
+		op_node = dot.Node(self.operator.symbol.default_spelling,
+				pcluster,
+				self.lhs.put_node(pcluster),
+				self.rhs.put_node(pcluster))
+		op_node.shape = "circle"
+		return op_node
 
-class LiteralInteger(Expression):
+class Varargs(Expression):
+	def __init__(self, pos, arg_list):
+		super().__init__(pos)
+		self.arg_list = arg_list
+	def put_node(self, pcluster):
+		arg_nodes = []
+		old_arg_node = None
+		rhs_cluster = dot.Cluster("", pcluster)
+		i = 0
+		for item in self.arg_list:
+			arg_node = dot.Node("arg"+str(i), pcluster)
+			rhs_node = item.put_node(rhs_cluster)
+			arg_node.children.append(rhs_node)
+			arg_nodes.append(arg_node)
+			if old_arg_node is not None:
+				old_arg_node.children.append(arg_node)
+			old_arg_node = arg_node
+			i += 1
+		pcluster.rank_chains.append(arg_nodes)
+		if len(arg_nodes) > 0:
+			return arg_nodes[0]
+		else:
+			return dot.Node("\u2205", pcluster)
+
+class _Literal(Expression):
 	def __init__(self, pos, value):
-		Expression.__init__(self, pos)
+		super().__init__(pos)
 		self.value = value
 	def __repr__(self):
 		return str(self.value) 
+	def put_node(self, pcluster):
+		return dot.Node(str(self), pcluster)
 
-class LiteralReal(Expression):
-	def __init__(self, pos, value):
-		Expression.__init__(self, pos)
-		self.value = value
-	def __repr__(self):
-		return str(self.value)
+class LiteralInteger(_Literal):
+	pass
 
-class LiteralString(Expression):
-	def __init__(self, pos, value):
-		Expression.__init__(self, pos)
-		self.value = value
+class LiteralReal(_Literal):
+	pass
+
+class LiteralString(_Literal):
 	def __repr__(self):
 		return "\"" + self.value + "\""
 
-class LiteralBoolean(Expression):
-	def __init__(self, pos, value):
-		Expression.__init__(self, pos)
-		self.value = value
-	def __repr__(self):
-		return str(self.value)
+class LiteralBoolean(_Literal):
+	pass
 
