@@ -431,37 +431,19 @@ class Parser:
 
 	def analyze_expression_non_op_token(self):
 		return self.analyze_multiple(
-				self.analyze_literal_integer,
-				self.analyze_literal_real,
-				self.analyze_literal_string,
-				self.analyze_literal_boolean,
-				self.analyze_identifier,)
+			lambda: self.analyze_literal(re_integer, LiteralInteger, int),
+			lambda: self.analyze_literal(re_real, LiteralReal, float),
+			lambda: self.analyze_literal(re_string, LiteralString, lambda s: s[1:-1]),
+			self.analyze_literal_boolean,
+			self.analyze_identifier,)
 
-	def analyze_literal_integer(self):
+	def analyze_literal(self, compiled_regexp, literal_class, converter):
 		pos0 = self.pos
-		match = re_integer.match(self.sliced_buf)
+		match = compiled_regexp.match(self.sliced_buf)
 		if match is not None:
-			integer_string = match.group(0)
-			self.advance(len(integer_string))
-			return LiteralInteger(pos0, int(integer_string))
-
-	def analyze_literal_real(self):
-		pos0 = self.pos
-		match = re_real.match(self.sliced_buf)
-		if match is not None:
-			real_string = match.group(0)
-			self.advance(len(real_string))
-			return LiteralReal(pos0, float(real_string))
-
-	def analyze_literal_string(self):
-		pos0 = self.pos
-		match = re_string.match(self.sliced_buf)
-		if match is not None:
-			string_string = match.group(0)
-			self.advance(len(string_string))
-			# return string_string without the surrounding quotes
-			# TODO- when we allow escaping it'll be more complex than just removing the quotes
-			return LiteralString(pos0, string_string[1:-1])
+			string = match.group(0) 
+			self.advance(len(string))
+			return literal_class(pos0, converter(string))
 
 	def analyze_literal_boolean(self):
 		pos0 = self.pos
