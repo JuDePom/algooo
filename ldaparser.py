@@ -99,20 +99,14 @@ class Parser:
 		return self.pos.char >= self.buflen
 
 	def analyze_top_level(self):
-		def analyze_top_level_node():
-			for analyze in [self.analyze_function, self.analyze_algorithm]:
-				thing = analyze()
-				if thing is not None: return thing
-			return
 		self.advance()
 		top_level_nodes = []
 		while not self.eof():
-			thing = analyze_top_level_node()
-			if thing is None:
+			top = self.analyze_multiple(self.analyze_function, self.analyze_algorithm)
+			if top is None:
 				raise ExpectedItemError(self.pos, "une fonction ou un algorithme")
-			top_level_nodes.append(thing)
+			top_level_nodes.append(top)
 		return top_level_nodes
-
 		
 	def analyze_algorithm(self):
 		start_kw = self.analyze_keyword(kw.ALGORITHM)
@@ -267,19 +261,19 @@ class Parser:
 			if self.analyze_keyword(marker) is not None:
 				return StatementBlock(pos0, statements), marker
 		raise ExpectedKeywordError(self.pos, *end_marker_keywords)
-		
+	
+	def analyze_multiple(self, *analysis_order):
+		for thing in (analyze() for analyze in analysis_order):
+			if thing is not None:
+				return thing
+
 	def analyze_instruction(self):
-		analyse_order = [
+		return self.analyze_multiple(
 			self.analyze_expression,
 			self.analyze_if,
 			self.analyze_for,
 			self.analyze_while,
-			self.analyze_do_while
-		]
-		for analyze in analyse_order:
-			instruction = analyze()
-			if instruction:
-				return instruction
+			self.analyze_do_while)
 
 	def analyze_if(self):
 		pos0 = self.pos
@@ -436,17 +430,12 @@ class Parser:
 		return self.analyze_operator(ops.meta.all_unaries)
 
 	def analyze_expression_non_op_token(self):
-		analysis_order = [
+		return self.analyze_multiple(
 				self.analyze_literal_integer,
 				self.analyze_literal_real,
 				self.analyze_literal_string,
 				self.analyze_literal_boolean,
-				self.analyze_identifier,
-		]
-		for analyze in analysis_order:
-			primary = analyze()
-			if primary is not None:
-				return primary
+				self.analyze_identifier,)
 
 	def analyze_literal_integer(self):
 		pos0 = self.pos
