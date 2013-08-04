@@ -29,6 +29,6 @@ output = formatter.format_tree(top)
 if args.output is None:
 	print (output)
 else:
-	with open(args.output, 'w') as outfile:
+	with open(args.output, 'wt', encoding='utf8') as outfile:
 		outfile.write(output)
 
