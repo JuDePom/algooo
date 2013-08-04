@@ -233,10 +233,10 @@ class UnaryOpNode(Expression):
 		return "({}{})".format(
 				self.operator.symbol.default_spelling, 
 				self.operand)
-	def put_node(self, pcluster):
+	def put_node(self, cluster):
 		op_node = dot.Node(self.operator.symbol.default_spelling,
-				pcluster,
-				self.operand.put_node(pcluster))
+				cluster,
+				self.operand.put_node(cluster))
 		op_node.shape = "circle"
 		return op_node
 
@@ -252,11 +252,11 @@ class BinaryOpNode(Expression):
 				self.operator.symbol.default_spelling, 
 				self.lhs, 
 				self.rhs)
-	def put_node(self, pcluster):
+	def put_node(self, cluster):
 		op_node = dot.Node(self.operator.symbol.default_spelling,
-				pcluster,
-				self.lhs.put_node(pcluster),
-				self.rhs.put_node(pcluster))
+				cluster,
+				self.lhs.put_node(cluster),
+				self.rhs.put_node(cluster))
 		op_node.shape = "circle"
 		return op_node
 
@@ -264,23 +264,23 @@ class Varargs(Expression):
 	def __init__(self, pos, arg_list):
 		super().__init__(pos)
 		self.arg_list = arg_list
-	def put_node(self, pcluster):
+	def put_node(self, cluster):
 		arg_nodes = []
 		old_arg_node = None
-		rhs_cluster = dot.Cluster("", pcluster)
+		rhs_cluster = dot.Cluster("", cluster)
 		for i, item in enumerate(self.arg_list):
-			arg_node = dot.Node("arg"+str(i), pcluster)
+			arg_node = dot.Node("arg"+str(i), cluster)
 			rhs_node = item.put_node(rhs_cluster)
 			arg_node.children.append(rhs_node)
 			arg_nodes.append(arg_node)
 			if old_arg_node is not None:
 				old_arg_node.children.append(arg_node)
 			old_arg_node = arg_node
-		pcluster.rank_chains.append(arg_nodes)
+		cluster.rank_chains.append(arg_nodes)
 		if len(arg_nodes) > 0:
 			return arg_nodes[0]
 		else:
-			return dot.Node("\u2205", pcluster)
+			return dot.Node("\u2205", cluster)
 
 class _Literal(Expression):
 	def __init__(self, pos, value):
@@ -288,8 +288,8 @@ class _Literal(Expression):
 		self.value = value
 	def __repr__(self):
 		return str(self.value) 
-	def put_node(self, pcluster):
-		return dot.Node(str(self), pcluster)
+	def put_node(self, cluster):
+		return dot.Node(str(self), cluster)
 
 class LiteralInteger(_Literal):
 	pass
