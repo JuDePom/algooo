@@ -1,31 +1,34 @@
+#!/usr/bin/python3
+
 '''
 LDA compiler entry point.
 '''
 
-import sys
 import ldaparser
-import dot_export
+import argparse
 
-def pretty_tree(arbre):
-	padding = 0
-	for x in (str(arbre)).split("\n"):
-		start = 0
-		if x[0] == '[':
-			start = 1
-			padding += 1
-		elif x[0] == ']':
-			start=1
-			padding -= 1
-		elif x[0] == ',':
-			start=2
-		for i in range(0, padding):
-			sys.stdout.write("|   ")
-		print(x[start:])
+ap = argparse.ArgumentParser(
+	description="Compilateur de LDA (langage de description d'algorithme)")
+ap.add_argument('path', metavar='LDA', help="chemin vers un fichier LDA")
+ap.add_argument('--format', '-f', default='js', help="format de sortie")
+ap.add_argument('--output', '-o', help="fichier de sortie. \
+		Si omis, le résultat sera émis sur stdout.")
 
-if __name__ == '__main__':
-	p = ldaparser.Parser(sys.argv[1])
-	top = p.analyze_top_level()
-	#for thing in top:
-	#	pretty_tree(thing)
-	print(dot_export.graph_program(top))
+args = ap.parse_args()
+
+if   args.format == 'quick': import quick as formatter
+elif args.format == 'dot'  : import dot   as formatter
+elif args.format == 'js'   : import js    as formatter
+else:
+	raise Exception("Format de sortie inconnu : " + args.format)
+
+parser = ldaparser.Parser(args.path)
+top    = parser.analyze_top_level()
+output = formatter.format_tree(top)
+
+if args.output is None:
+	print (output)
+else:
+	with open(args.output, 'w') as outfile:
+		outfile.write(output)
 

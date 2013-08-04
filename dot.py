@@ -60,7 +60,7 @@ class Cluster:
 			cascade.extend(sc.node_cascade())
 		return cascade
 
-def graph_program(top_level):
+def format_tree(top_level):
 	supercluster = Cluster("programme")
 	for t in top_level:
 		t.put_node(supercluster)

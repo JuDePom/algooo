@@ -1,4 +1,4 @@
-import dot_export as dot
+import dot
 
 '''
 Items that make up the abstract syntax tree.
