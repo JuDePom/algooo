@@ -7,10 +7,13 @@ def _fresh_id():
 	_node_id_counter += 1
 	return i
 
+def _sanitize_label(label):
+	return label.replace('"', '\\"')
+
 class Node:
 	def __init__(self, label, cluster, *children):
 		self.oid = str(_fresh_id())
-		self.label = label
+		self.label = _sanitize_label(label)
 		self.cluster = cluster
 		self.children = list(children)
 		self.cluster.nodes.append(self)
@@ -29,7 +32,7 @@ class Node:
 class Cluster:
 	def __init__(self, label, parent_cluster=None):
 		self.oid = "cluster" + str(_fresh_id())
-		self.label = label
+		self.label = _sanitize_label(label)
 		self.nodes = []
 		self.subclusters = []
 		self.rank_chains = []

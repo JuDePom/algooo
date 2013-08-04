@@ -257,16 +257,17 @@ class Parser:
 		return CompoundMold(name_id, fp_list)
 
 	def analyze_instruction_block(self, *end_marker_keywords):
-		block = []
+		pos0 = self.pos
+		statements = []
 		while True:
 			instruction = self.analyze_instruction()
 			if instruction is not None:
-				block.append(instruction)
+				statements.append(instruction)
 			else:
 				break
 		for marker in end_marker_keywords:
 			if self.analyze_keyword(marker) is not None:
-				return block, marker
+				return StatementBlock(pos0, statements), marker
 		raise ExpectedKeywordError(self.pos, *end_marker_keywords)
 		
 	def analyze_instruction(self):
@@ -288,8 +289,8 @@ class Parser:
 		if self.analyze_keyword(kw.IF) is None: return
 
 		# point of no return
-		bool_Expr = self.analyze_expression()
-		if bool_Expr is None:
+		condition = self.analyze_expression()
+		if condition is None:
 			raise ExpectedItemError(self.pos,
 					"l'expression de la condition")
 
@@ -302,7 +303,7 @@ class Parser:
 		else:
 			optional_block = None
 
-		return InstructionIf(pos0, bool_Expr, first_block, optional_block)
+		return InstructionIf(pos0, condition, first_block, optional_block)
 		
 	def analyze_for(self):
 		pos0 = self.pos

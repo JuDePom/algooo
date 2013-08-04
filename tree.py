@@ -32,21 +32,28 @@ class StatementBlock(SourceThing):
 	def __init__(self, pos, body):
 		super().__init__(pos)
 		self.body = body
+	def __iter__(self):
+		for statement in self.body:
+			yield statement
 	def put_node(self, cluster):
 		prev_outer_node = None
+		first_outer_node = None
 		rank_chain = []
 		i = 0
-		for statement in self.body:
+		for statement in self:
 			ncluster = dot.Cluster("", cluster)
 			node = statement.put_node(ncluster)
 			outer_node = dot.Node("statement "+str(i), cluster)
 			outer_node.children.append(node)
 			if prev_outer_node is not None:
 				prev_outer_node.children.append(outer_node)
+			else:
+				first_outer_node = outer_node
 			prev_outer_node = outer_node
 			rank_chain.append(outer_node)
 			i += 1
 		cluster.rank_chains.append(rank_chain)
+		return first_outer_node
 
 #######################################################################
 #
@@ -128,7 +135,7 @@ class Instruction(SourceThing):
 	pass
 
 class InstructionIf(Instruction):
-	def __init__(self, pos, bool_Expr, first_block, optional_block=None ):
+	def __init__(self, pos, bool_Expr, first_block, optional_block=None):
 		super().__init__(pos)
 		self.bool_Expr = bool_Expr
 		self.first_block = first_block
@@ -138,6 +145,16 @@ class InstructionIf(Instruction):
 			return "si {} alors \n{}fsi\n".format(self.bool_Expr, self.first_block)
 		else :
 			return "si {} alors \n{}sinon \n{}fsi\n".format(self.bool_Expr, self.first_block, self.optional_block)
+	def put_node(self, cluster):
+		condition = self.bool_Expr.put_node(cluster)
+		then_cluster = dot.Cluster("alors", cluster)
+		consequent = self.first_block.put_node(then_cluster)
+		children = [condition, consequent]
+		if self.optional_block is not None:
+			else_cluster = dot.Cluster("sinon", cluster)
+			alternative = self.optional_block.put_node(else_cluster)
+			children.append(alternative)
+		return dot.Node("si", cluster, *children)
 
 class InstructionFor(Instruction):
 	def __init__(self, pos, increment, int_from, int_to, block):
@@ -145,9 +162,16 @@ class InstructionFor(Instruction):
 		self.increment = increment
 		self.int_from = int_from
 		self.int_to = int_to
-		self.block = block		
+		self.block = block
 	def __repr__(self):
-		return "pour {} de {} a {} faire \n{}fpour\n".format(self.increment, self.int_from, self.int_to, self.block)
+		return "pour {} de {} a {} faire \n{}fpour\n".format(self.increment, self.int_from, self.int_to, self.block) 
+	def put_node(self, cluster):
+		counter = self.increment.put_node(cluster)
+		initial = self.int_from.put_node(cluster)
+		final = self.int_to.put_node(cluster)
+		block_cluster = dot.Cluster("faire", cluster)
+		block = self.block.put_node(block_cluster)
+		return dot.Node("pour", cluster, counter, initial, final, block)
 
 class InstructionForEach(Instruction):
 	def __init__(self, pos, element, list_element, block):
@@ -165,6 +189,11 @@ class InstructionWhile(Instruction):
 		self.block = block	
 	def __repr__(self):
 		return "tantque {} faire \n{}ftant\n".format(self.bool_Expr, self.block)
+	def put_node(self, cluster):
+		condition = self.bool_Expr.put_node(cluster)
+		block_cluster = dot.Cluster("faire", cluster)
+		block = self.block.put_node(block_cluster)
+		return dot.Node("tantque", cluster, condition, block)
 
 class InstructionDoWhile(Instruction):
 	def __init__(self, pos, block, bool_Expr):
@@ -173,7 +202,6 @@ class InstructionDoWhile(Instruction):
 		self.bool_Expr = bool_Expr	
 	def __repr__(self):
 		return "répéter \n{} \njusqu'à {}\n".format(self.block, self.bool_Expr)
-		
 		
 #######################################################################
 #
