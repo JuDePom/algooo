@@ -4,6 +4,7 @@ LDA compiler entry point.
 
 import sys
 import ldaparser
+import dot_export
 
 def pretty_tree(arbre):
 	padding = 0
@@ -24,6 +25,7 @@ def pretty_tree(arbre):
 if __name__ == '__main__':
 	p = ldaparser.Parser(sys.argv[1])
 	top = p.analyze_top_level()
-	for thing in top:
-		pretty_tree(thing)
+	#for thing in top:
+	#	pretty_tree(thing)
+	print(dot_export.graph_program(top))
 

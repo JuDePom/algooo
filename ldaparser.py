@@ -9,7 +9,7 @@ re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
 
 # match at least one digit;
 # must NOT followed by a dot, an alpha, or a _
-re_integer    = re.compile(r'^\d+(?!\.\w)', re.UNICODE)
+re_integer    = re.compile(r'^\d+(?![\w\.])', re.UNICODE)
 
 # match at least one digit, one dot, and zero or more digits, 
 # **OR** match one dot, and at least one digit;
@@ -392,7 +392,7 @@ class Parser:
 	def analyze_partial_expression(self, lhs, t, min_p=0):
 		assert(t is None or (type(t) is OperatorToken and t.op.binary))
 		while t is not None and t.op.precedence >= min_p:
-			t_origin = t
+			op_tok = t
 			op = t.op
 			rhs = self.analyze_second_operand(op)
 			t = self.analyze_binary_operator()
@@ -400,7 +400,7 @@ class Parser:
 					(t.op.precedence > op.precedence or \
 					(t.op.right_ass and t.op.precedence == op.precedence)):
 				rhs, t = self.analyze_partial_expression(rhs, t, t.op.precedence)
-			lhs = BinaryOpNode(t_origin.pos, op, lhs, rhs)
+			lhs = BinaryOpNode(op_tok, lhs, rhs)
 		return lhs, t
 
 	def analyze_second_operand(self, op):

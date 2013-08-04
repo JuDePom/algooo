@@ -1,3 +1,5 @@
+import dot_export as dot
+
 '''
 Items that make up the abstract syntax tree.
 '''
@@ -8,6 +10,8 @@ class SourceThing:
 	'''
 	def __init__(self, pos):
 		self.pos = pos
+	def dot_id(self):
+		return "SourceThing_{:08x}".format(id(self))
 
 class Token(SourceThing):
 	pass
@@ -23,6 +27,8 @@ class Identifier(Token):
 		self.name_string = name_string
 	def __repr__(self):
 		return self.name_string
+	def put_node(self, cluster):
+		return dot.Node(str(self), cluster)
 
 #######################################################################
 #
@@ -47,6 +53,24 @@ class Function(SourceThing):
 		self.body = body
 	def __repr__(self):
 		return "fonction {} :\n{}\n{}".format(self.name, self.lexicon, self.body)
+	def put_node(self, pcluster):
+		fcluster = dot.Cluster("fonction " + str(self.name), pcluster)
+		#stmt_nodes = []
+		prev_outer_node = None
+		rank_chain = []
+		i = 0
+		for statement in self.body:
+			ncluster = dot.Cluster("", fcluster)
+			node = statement.put_node(ncluster)
+			outer_node = dot.Node("statement "+str(i), fcluster)
+			outer_node.children.append(node)
+			if prev_outer_node is not None:
+				prev_outer_node.children.append(outer_node)
+			prev_outer_node = outer_node
+			rank_chain.append(outer_node)
+			i += 1
+		#self.lexicon.put_node(fcluster)
+		fcluster.rank_chains.append(rank_chain)
 
 #######################################################################
 #
@@ -62,6 +86,17 @@ class Lexicon(SourceThing):
 	def __repr__(self):
 		return "lexdecl = {}\nlexmolds = {}".format(
 				self.declarations, self.molds)
+	def put_node(self, pcluster):
+		lcluster = dot.Cluster("lexique", pcluster)
+		dcluster = dot.Cluster("déclarations", lcluster)
+		for d in self.declarations:
+			d.put_node(dcluster)
+		mcluster = dot.Cluster("moules", lcluster)
+		for m in self.molds:
+			m.put_node(mcluster)
+		#return dot.Node("lexique",
+				#dot.Node("déclarations", *decl_nodes),
+				#dot.Node("moules", *mold_nodes))
 	
 class CompoundMold(SourceThing):
 	def __init__(self, name_id, fp_list):
@@ -70,6 +105,12 @@ class CompoundMold(SourceThing):
 		self.components = fp_list
 	def __repr__(self):
 		return "{}={}".format(self.name_id, self.components)
+	def put_node(self, pcluster):
+		raise Exception("à faire!!!")
+		component_nodes = []
+		for c in self.components:
+			component_nodes.append(c.dot_node())
+		return dot.Node("moule composite " + str(self.name_id), *component_nodes)
 
 class FormalParameter(SourceThing):
 	def __init__(self, name, type_, inout, array_dimensions=None):
@@ -89,6 +130,8 @@ class FormalParameter(SourceThing):
 					self.name, inout_str, self.type_, self.array_dimensions)
 		else:
 			return "{}: {}{}".format(self.name, inout_str, self.type_)
+	def put_node(self, pcluster):
+		return dot.Node(str(self), pcluster)
 
 #######################################################################
 #
@@ -168,45 +211,82 @@ class OperatorToken(Token):
 class UnaryOpNode(Expression):
 	def __init__(self, op_tok, operand):
 		Expression.__init__(self, op_tok.pos)
+		self.operator_token = op_tok
 		self.operator = op_tok.op
 		self.operand = operand
 	def __repr__(self):
-		return "({}{})".format(self.operator.symbol.default_spelling, self.operand)
+		return "({}{})".format(
+				self.operator.symbol.default_spelling, 
+				self.operand)
+	def put_node(self, pcluster):
+		op_node = dot.Node(self.operator.symbol.default_spelling,
+				pcluster,
+				self.operand.put_node(pcluster))
+		op_node.shape = "circle"
+		return op_node
 
 class BinaryOpNode(Expression):
-	def __init__(self, pos, op, lhs, rhs):
-		Expression.__init__(self, pos)
-		self.operator = op
+	def __init__(self, op_tok, lhs, rhs):
+		Expression.__init__(self, op_tok.pos)
+		self.operator_token = op_tok
+		self.operator = op_tok.op
 		self.lhs = lhs
 		self.rhs = rhs
 	def __repr__(self):
-		return "({1}{0}{2})".format(self.operator.symbol.default_spelling, self.lhs, self.rhs)
+		return "({1}{0}{2})".format(
+				self.operator.symbol.default_spelling, 
+				self.lhs, 
+				self.rhs)
+	def put_node(self, pcluster):
+		if type(self.rhs) is not list:
+			rhs_node = self.rhs.put_node(pcluster)
+		elif len(self.rhs) > 0:
+			arg_nodes = []
+			old_arg_node = None
+			if len(self.rhs) > 1:
+				rhs_cluster = dot.Cluster("", pcluster)
+			else:
+				rhs_cluster = pcluster
+			i = 0
+			for item in self.rhs:
+				arg_node = dot.Node("arg"+str(i), pcluster)
+				rhs_node = item.put_node(rhs_cluster)
+				arg_node.children.append(rhs_node)
+				arg_nodes.append(arg_node)
+				if old_arg_node is not None:
+					old_arg_node.children.append(arg_node)
+				old_arg_node = arg_node
+				i += 1
+			rhs_node = arg_nodes[0]
+			pcluster.rank_chains.append(arg_nodes)
+		else:
+			rhs_node = None
+		op_node = dot.Node(self.operator.symbol.default_spelling,
+				pcluster,
+				self.lhs.put_node(pcluster),
+				rhs_node)
+		op_node.shape = "circle"
+		return op_node
 
-class LiteralInteger(Expression):
+class _Literal(Expression):
 	def __init__(self, pos, value):
 		Expression.__init__(self, pos)
 		self.value = value
 	def __repr__(self):
 		return str(self.value) 
+	def put_node(self, pcluster):
+		return dot.Node(str(self), pcluster)
 
-class LiteralReal(Expression):
-	def __init__(self, pos, value):
-		Expression.__init__(self, pos)
-		self.value = value
-	def __repr__(self):
-		return str(self.value)
+class LiteralInteger(_Literal):
+	pass
 
-class LiteralString(Expression):
-	def __init__(self, pos, value):
-		Expression.__init__(self, pos)
-		self.value = value
+class LiteralReal(_Literal):
+	pass
+
+class LiteralString(_Literal):
 	def __repr__(self):
 		return "\"" + self.value + "\""
 
-class LiteralBoolean(Expression):
-	def __init__(self, pos, value):
-		Expression.__init__(self, pos)
-		self.value = value
-	def __repr__(self):
-		return str(self.value)
+class LiteralBoolean(_Literal):
+	pass
 

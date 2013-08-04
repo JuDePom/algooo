@@ -102,7 +102,6 @@ class SymbolKeywordDef(KeywordDef):
 	def find(self, buf):
 		for priority in self.give_way:
 			if priority.find(buf):
-				print ("giveway", priority, "took over", self)
 				return
 		for symbol in self.synonyms:
 			if buf.startswith(symbol):
@@ -180,8 +179,6 @@ for i in range(len(meta.all_symbols)):
 	for b in meta.all_symbols[i+1:]:
 		if a.must_give_way(b):
 			a.give_way.append(b)
-			print(a, "must give way to", b)
 		elif b.must_give_way(a):
 			b.give_way.append(a)
-			print(b, "must give way to", a)
 
