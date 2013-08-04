@@ -404,18 +404,20 @@ class Parser:
 		return lhs, t
 
 	def analyze_second_operand(self, op):
+		pos0 = self.pos
 		if op.encompass_till is None:
 			return self.analyze_primary_expression(op.precedence)
 		if op.encompass_several:
-			rhs = []
+			arg_list = []
 			next_arg = True
 			while next_arg:
 				arg = self.analyze_expression()
 				if arg is not None:
-					rhs.append(arg)
+					arg_list.append(arg)
 				next_arg = self.analyze_keyword(kw.COMMA) is not None
 				if next_arg and arg is None:
 					raise LDASyntaxError(self.pos, "argument vide")
+			rhs = Varargs(pos0, arg_list)
 		else:
 			rhs = self.analyze_expression()
 		self.analyze_mandatory_keyword(op.encompass_till)

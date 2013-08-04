@@ -238,35 +238,36 @@ class BinaryOpNode(Expression):
 				self.lhs, 
 				self.rhs)
 	def put_node(self, pcluster):
-		if type(self.rhs) is not list:
-			rhs_node = self.rhs.put_node(pcluster)
-		elif len(self.rhs) > 0:
-			arg_nodes = []
-			old_arg_node = None
-			if len(self.rhs) > 1:
-				rhs_cluster = dot.Cluster("", pcluster)
-			else:
-				rhs_cluster = pcluster
-			i = 0
-			for item in self.rhs:
-				arg_node = dot.Node("arg"+str(i), pcluster)
-				rhs_node = item.put_node(rhs_cluster)
-				arg_node.children.append(rhs_node)
-				arg_nodes.append(arg_node)
-				if old_arg_node is not None:
-					old_arg_node.children.append(arg_node)
-				old_arg_node = arg_node
-				i += 1
-			rhs_node = arg_nodes[0]
-			pcluster.rank_chains.append(arg_nodes)
-		else:
-			rhs_node = None
 		op_node = dot.Node(self.operator.symbol.default_spelling,
 				pcluster,
 				self.lhs.put_node(pcluster),
-				rhs_node)
+				self.rhs.put_node(pcluster))
 		op_node.shape = "circle"
 		return op_node
+
+class Varargs(Expression):
+	def __init__(self, pos, arg_list):
+		Expression.__init__(self, pos)
+		self.arg_list = arg_list
+	def put_node(self, pcluster):
+		arg_nodes = []
+		old_arg_node = None
+		rhs_cluster = dot.Cluster("", pcluster)
+		i = 0
+		for item in self.arg_list:
+			arg_node = dot.Node("arg"+str(i), pcluster)
+			rhs_node = item.put_node(rhs_cluster)
+			arg_node.children.append(rhs_node)
+			arg_nodes.append(arg_node)
+			if old_arg_node is not None:
+				old_arg_node.children.append(arg_node)
+			old_arg_node = arg_node
+			i += 1
+		pcluster.rank_chains.append(arg_nodes)
+		if len(arg_nodes) > 0:
+			return arg_nodes[0]
+		else:
+			return dot.Node("\u2205", pcluster)
 
 class _Literal(Expression):
 	def __init__(self, pos, value):
