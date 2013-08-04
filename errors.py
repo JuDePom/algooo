@@ -10,7 +10,7 @@ class LDASyntaxError(Exception):
 
 	def __init__(self, pos, message):
 		message = pos.pretty() + ": erreur de syntaxe: " + message
-		Exception.__init__(self, message)
+		super().__init__(message)
 
 class ExpectedKeywordError(LDASyntaxError):
 	'''
@@ -28,7 +28,7 @@ class ExpectedKeywordError(LDASyntaxError):
 			for keyword in expected_keywords:
 				message += "{}\"{}\"".format(sep, keyword.default_spelling)
 				sep = ", "
-		LDASyntaxError.__init__(self, pos, message)
+		super().__init__(pos, message)
 
 class ExpectedItemError(LDASyntaxError):
 	'''
@@ -38,7 +38,7 @@ class ExpectedItemError(LDASyntaxError):
 
 	def __init__(self, pos, item_name):
 		message = item_name + " est attendu(e) ici"
-		LDASyntaxError.__init__(self, pos, message)
+		super().__init__(pos, message)
 
 class IllegalIdentifier(LDASyntaxError):
 	'''
@@ -48,7 +48,7 @@ class IllegalIdentifier(LDASyntaxError):
 
 	def __init__(self, pos):
 		message = "mauvais format d'identifieur"
-		LDASyntaxError.__init__(self, pos, message)
+		super().__init__(pos, message)
 
 class UnimplementedError(LDASyntaxError):
 	'''
@@ -58,5 +58,5 @@ class UnimplementedError(LDASyntaxError):
 	def __init__(self, pos, feature_name):
 		message = "la fonctionnalité \"" + feature_name + \
 				"\" n'a pas encore été implémentée dans le compilateur ! à faire !"
-		LDASyntaxError.__init__(self, pos, message)
+		super().__init__(pos, message)
 

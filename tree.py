@@ -16,12 +16,12 @@ class Token(SourceThing):
 
 class KeywordToken(Token):
 	def __init__(self, pos, kw_def):
-		SourceThing.__init__(self, pos)
+		super().__init__(pos)
 		self.kw_def = kw_def
 
 class Identifier(Token):
 	def __init__(self, pos, name_string):
-		SourceThing.__init__(self, pos)
+		super().__init__(pos)
 		self.name_string = name_string
 	def __repr__(self):
 		return self.name_string
@@ -30,7 +30,7 @@ class Identifier(Token):
 
 class StatementBlock(SourceThing):
 	def __init__(self, pos, body):
-		SourceThing.__init__(self, pos)
+		super().__init__(pos)
 		self.body = body
 	def put_node(self, cluster):
 		prev_outer_node = None
@@ -56,17 +56,17 @@ class StatementBlock(SourceThing):
 
 class Algorithm(StatementBlock):
 	def __init__(self, pos, lexicon, body):
-		StatementBlock.__init__(self, pos, body)
+		super().__init__(pos, body)
 		self.lexicon = lexicon
 	def __repr__(self):
 		return "algorithme :\n{}\n{}".format(self.lexicon, self.body)
 	def put_node(self, cluster):
 		algorithm_cluster = dot.Cluster("algorithme", cluster)
-		return StatementBlock.put_node(self, algorithm_cluster)
+		return super().put_node(algorithm_cluster)
 
 class Function(StatementBlock):
 	def __init__(self, pos, name, fp_list, lexicon, body):
-		StatementBlock.__init__(self, pos, body)
+		super().__init__(pos, body)
 		self.name = name
 		self.fp_list = fp_list
 		self.lexicon = lexicon
@@ -74,7 +74,7 @@ class Function(StatementBlock):
 		return "fonction {} :\n{}\n{}".format(self.name, self.lexicon, self.body)
 	def put_node(self, cluster):
 		function_cluster = dot.Cluster("fonction " + str(self.name), cluster)
-		return StatementBlock.put_node(self, function_cluster)
+		return super().put_node(function_cluster)
 
 #######################################################################
 #
@@ -84,7 +84,7 @@ class Function(StatementBlock):
 
 class Lexicon(SourceThing):
 	def __init__(self, pos, declarations, molds):
-		SourceThing.__init__(self, pos)
+		super().__init__(pos)
 		self.declarations = declarations
 		self.molds = molds
 	def __repr__(self):
@@ -93,7 +93,7 @@ class Lexicon(SourceThing):
 	
 class CompoundMold(SourceThing):
 	def __init__(self, name_id, fp_list):
-		SourceThing.__init__(self, name_id.pos)
+		super().__init__(name_id.pos)
 		self.name_id = name_id
 		self.components = fp_list
 	def __repr__(self):
@@ -101,7 +101,7 @@ class CompoundMold(SourceThing):
 
 class FormalParameter(SourceThing):
 	def __init__(self, name, type_, inout, array_dimensions=None):
-		SourceThing.__init__(self, name.pos)
+		super().__init__(name.pos)
 		self.name = name
 		self.type_ = type_
 		self.inout = inout
@@ -125,12 +125,11 @@ class FormalParameter(SourceThing):
 #######################################################################
 
 class Instruction(SourceThing):
-	def __init__(self, pos):
-		SourceThing.__init__(self, pos)
+	pass
 
 class InstructionIf(Instruction):
 	def __init__(self, pos, bool_Expr, first_block, optional_block=None ):
-		Instruction.__init__(self, pos)
+		super().__init__(pos)
 		self.bool_Expr = bool_Expr
 		self.first_block = first_block
 		self.optional_block = optional_block
@@ -142,7 +141,7 @@ class InstructionIf(Instruction):
 
 class InstructionFor(Instruction):
 	def __init__(self, pos, increment, int_from, int_to, block):
-		Instruction.__init__(self, pos)
+		super().__init__(pos)
 		self.increment = increment
 		self.int_from = int_from
 		self.int_to = int_to
@@ -152,7 +151,7 @@ class InstructionFor(Instruction):
 
 class InstructionForEach(Instruction):
 	def __init__(self, pos, element, list_element, block):
-		Instruction.__init__(self, pos)
+		super().__init__(pos)
 		self.element = element
 		self.list_element = list_element
 		self.block = block	
@@ -161,7 +160,7 @@ class InstructionForEach(Instruction):
 
 class InstructionWhile(Instruction):
 	def __init__(self, pos, bool_Expr, block):
-		Instruction.__init__(self, pos)
+		super().__init__(pos)
 		self.bool_Expr = bool_Expr
 		self.block = block	
 	def __repr__(self):
@@ -169,7 +168,7 @@ class InstructionWhile(Instruction):
 
 class InstructionDoWhile(Instruction):
 	def __init__(self, pos, block, bool_Expr):
-		Instruction.__init__(self, pos)
+		super().__init__(pos)
 		self.block = block
 		self.bool_Expr = bool_Expr	
 	def __repr__(self):
@@ -187,7 +186,7 @@ class Expression(SourceThing):
 
 class OperatorToken(Token):
 	def __init__(self, op_kw, op):
-		Token.__init__(self, op_kw.pos)
+		super().__init__(op_kw.pos)
 		self.kw = op_kw
 		self.op = op
 	def __repr__(self):
@@ -195,7 +194,7 @@ class OperatorToken(Token):
 
 class UnaryOpNode(Expression):
 	def __init__(self, op_tok, operand):
-		Expression.__init__(self, op_tok.pos)
+		super().__init__(op_tok.pos)
 		self.operator_token = op_tok
 		self.operator = op_tok.op
 		self.operand = operand
@@ -212,7 +211,7 @@ class UnaryOpNode(Expression):
 
 class BinaryOpNode(Expression):
 	def __init__(self, op_tok, lhs, rhs):
-		Expression.__init__(self, op_tok.pos)
+		super().__init__(op_tok.pos)
 		self.operator_token = op_tok
 		self.operator = op_tok.op
 		self.lhs = lhs
@@ -232,7 +231,7 @@ class BinaryOpNode(Expression):
 
 class Varargs(Expression):
 	def __init__(self, pos, arg_list):
-		Expression.__init__(self, pos)
+		super().__init__(pos)
 		self.arg_list = arg_list
 	def put_node(self, pcluster):
 		arg_nodes = []
@@ -256,7 +255,7 @@ class Varargs(Expression):
 
 class _Literal(Expression):
 	def __init__(self, pos, value):
-		Expression.__init__(self, pos)
+		super().__init__(pos)
 		self.value = value
 	def __repr__(self):
 		return str(self.value) 
