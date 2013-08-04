@@ -10,8 +10,6 @@ class SourceThing:
 	'''
 	def __init__(self, pos):
 		self.pos = pos
-	def dot_id(self):
-		return "SourceThing_{:08x}".format(id(self))
 
 class Token(SourceThing):
 	pass
@@ -86,17 +84,6 @@ class Lexicon(SourceThing):
 	def __repr__(self):
 		return "lexdecl = {}\nlexmolds = {}".format(
 				self.declarations, self.molds)
-	def put_node(self, pcluster):
-		lcluster = dot.Cluster("lexique", pcluster)
-		dcluster = dot.Cluster("déclarations", lcluster)
-		for d in self.declarations:
-			d.put_node(dcluster)
-		mcluster = dot.Cluster("moules", lcluster)
-		for m in self.molds:
-			m.put_node(mcluster)
-		#return dot.Node("lexique",
-				#dot.Node("déclarations", *decl_nodes),
-				#dot.Node("moules", *mold_nodes))
 	
 class CompoundMold(SourceThing):
 	def __init__(self, name_id, fp_list):
@@ -105,12 +92,6 @@ class CompoundMold(SourceThing):
 		self.components = fp_list
 	def __repr__(self):
 		return "{}={}".format(self.name_id, self.components)
-	def put_node(self, pcluster):
-		raise Exception("à faire!!!")
-		component_nodes = []
-		for c in self.components:
-			component_nodes.append(c.dot_node())
-		return dot.Node("moule composite " + str(self.name_id), *component_nodes)
 
 class FormalParameter(SourceThing):
 	def __init__(self, name, type_, inout, array_dimensions=None):
@@ -130,8 +111,6 @@ class FormalParameter(SourceThing):
 					self.name, inout_str, self.type_, self.array_dimensions)
 		else:
 			return "{}: {}{}".format(self.name, inout_str, self.type_)
-	def put_node(self, pcluster):
-		return dot.Node(str(self), pcluster)
 
 #######################################################################
 #
