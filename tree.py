@@ -39,8 +39,7 @@ class StatementBlock(SourceThing):
 		prev_outer_node = None
 		first_outer_node = None
 		rank_chain = []
-		i = 0
-		for statement in self:
+		for i, statement in enumerate(self):
 			ncluster = dot.Cluster("", cluster)
 			node = statement.put_node(ncluster)
 			outer_node = dot.Node("statement "+str(i), cluster)
@@ -51,7 +50,6 @@ class StatementBlock(SourceThing):
 				first_outer_node = outer_node
 			prev_outer_node = outer_node
 			rank_chain.append(outer_node)
-			i += 1
 		cluster.rank_chains.append(rank_chain)
 		return first_outer_node
 
@@ -265,8 +263,7 @@ class Varargs(Expression):
 		arg_nodes = []
 		old_arg_node = None
 		rhs_cluster = dot.Cluster("", pcluster)
-		i = 0
-		for item in self.arg_list:
+		for i, item in enumerate(self.arg_list):
 			arg_node = dot.Node("arg"+str(i), pcluster)
 			rhs_node = item.put_node(rhs_cluster)
 			arg_node.children.append(rhs_node)
@@ -274,7 +271,6 @@ class Varargs(Expression):
 			if old_arg_node is not None:
 				old_arg_node.children.append(arg_node)
 			old_arg_node = arg_node
-			i += 1
 		pcluster.rank_chains.append(arg_nodes)
 		if len(arg_nodes) > 0:
 			return arg_nodes[0]
