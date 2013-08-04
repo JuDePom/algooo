@@ -152,8 +152,9 @@ class Parser:
 					"type de retour de la fonction")
 
 		lexi = self.analyze_lexicon()
-		if lexi is None:
-			raise ExpectedItemError(self.pos, "le lexique de la fonction")
+		# TODO - on laisse les lexiques vides jusqu'à l'analyse sémantique ?
+		#if lexi is None:
+			#raise ExpectedItemError(self.pos, "le lexique de la fonction")
 
 		self.analyze_mandatory_keyword(kw.BEGIN)
 		body, _ = self.analyze_instruction_block(kw.END)
@@ -198,7 +199,7 @@ class Parser:
 	def analyze_lexicon(self):
 		start_kw = self.analyze_keyword(kw.LEXICON)
 		if start_kw is None:
-			raise ExpectedItemError(self.pos, "le lexique de la fonction")
+			return
 		declarations = []
 		molds = []
 		while True:
