@@ -31,7 +31,7 @@ class Parser:
 
 	def __init__(self, path):
 		self.pos = Position(path)
-		with open(path, 'r', encoding='utf-8') as input_file:
+		with open(path, 'rt', encoding='utf8') as input_file:
 			self.buf = input_file.read()
 			self.buflen = len(self.buf)
 
