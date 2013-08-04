@@ -174,8 +174,7 @@ SLC_START      = SymbolKeywordDef("//")
 meta.all_scalar_types = [ INT, REAL, BOOL, CHAR, STRING ]
 
 # build give_way lists
-for i in range(len(meta.all_symbols)):
-	a = meta.all_symbols[i]
+for i, a in enumerate(meta.all_symbols):
 	for b in meta.all_symbols[i+1:]:
 		if a.must_give_way(b):
 			a.give_way.append(b)
