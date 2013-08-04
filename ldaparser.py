@@ -112,27 +112,26 @@ class Parser:
 		start_kw = self.analyze_keyword(kw.ALGORITHM)
 		if start_kw is None:
 			return
-
 		# point of no-return
+		# lexicon
 		lexi = self.analyze_lexicon()
-		if lexi is None:
-			raise ExpectedItemError(self.pos, "le lexique de la fonction")
+		# statement block
 		self.analyze_mandatory_keyword(kw.BEGIN)
-		body,_ = self.analyze_instruction_block(kw.END)
+		body, _ = self.analyze_instruction_block(kw.END)
 		return Algorithm(start_kw.pos, lexi, body)
 
 	def analyze_function(self):
 		start_kw = self.analyze_keyword(kw.FUNCTION)
 		if start_kw is None:
 			return
-
 		# point of no-return
+		# identifier
 		name = self.analyze_identifier()
 		if name is None:
 			raise IllegalIdentifier(self.pos)
-
+		# mandatory left parenthesis
 		self.analyze_mandatory_keyword(kw.LPAREN)
-
+		# formal parameters, or lack thereof
 		if self.analyze_keyword(kw.RPAREN) is None:
 			# non-empty parameter list
 			params = self.analyze_comma_separated_args(self.analyze_formal_parameter)
@@ -140,36 +139,31 @@ class Parser:
 		else:
 			# got an RPAREN right away: empty parameter list
 			params = []
-
+		# optional colon before return type (if omitted, no return type)
 		if self.analyze_keyword(kw.COLON) is not None:
-			raise UnimplementedError(self.pos, \
-					"type de retour de la fonction")
-
+			raise UnimplementedError(self.pos, "type de retour de la fonction")
+		# lexicon
 		lexi = self.analyze_lexicon()
-		# TODO - on laisse les lexiques vides jusqu'à l'analyse sémantique ?
-		#if lexi is None:
-			#raise ExpectedItemError(self.pos, "le lexique de la fonction")
-
+		# statement block
 		self.analyze_mandatory_keyword(kw.BEGIN)
 		body, _ = self.analyze_instruction_block(kw.END)
-
 		return Function(start_kw.pos, name, params, lexi, body)
 
 	def analyze_formal_parameter(self):
 		pos0 = self.pos
-
+		# identifier
 		name = self.analyze_identifier()
 		if name is None:
 			return
-
+		# inout
 		is_inout = self.analyze_keyword(kw.INOUT) is not None
-
+		# mandatory colon
 		if self.analyze_keyword(kw.COLON) is None:
 			self.pos = pos0
 			return
-
+		# array
 		is_array = self.analyze_keyword(kw.ARRAY) is not None
-
+		# enclosed type
 		type_ = None
 		for candidate in kw.meta.all_scalar_types:
 			if self.analyze_keyword(candidate) is not None:
@@ -178,16 +172,14 @@ class Parser:
 		if type_ is None:
 			type_ = self.analyze_identifier()
 		if type_ is None:
-			raise ExpectedItemError(self.pos, \
-					"un type scalaire ou composite")
-
+			raise ExpectedItemError(self.pos, "un type scalaire ou composite")
+		# array dimensions
 		if is_array:
 			self.analyze_mandatory_keyword(kw.LSBRACK)
 			array_dimensions = self.analyze_comma_separated_args(self.analyze_expression)
 			self.analyze_mandatory_keyword(kw.RSBRACK)
 		else:
 			array_dimensions = None
-
 		return FormalParameter(name, type_, is_inout, array_dimensions)
 
 	def analyze_lexicon(self):
@@ -230,20 +222,16 @@ class Parser:
 		found_kw = self.analyze_keyword(keyword)
 		if found_kw is not None:
 			return found_kw
-		else:
-			raise ExpectedKeywordError(self.pos, keyword)
+		raise ExpectedKeywordError(self.pos, keyword)
 
 	def analyze_compound_mold_declaration(self):
 		pos0 = self.pos
-		
 		name_id = self.analyze_identifier()
 		if name_id is None:
 			return
-
 		if self.analyze_keyword(kw.EQ) is None:
 			self.pos = pos0
 			return
-
 		# point of no return
 		self.analyze_mandatory_keyword(kw.LT)
 		fp_list = self.analyze_comma_separated_args(self.analyze_formal_parameter)
@@ -277,84 +265,69 @@ class Parser:
 
 	def analyze_if(self):
 		pos0 = self.pos
-
 		if self.analyze_keyword(kw.IF) is None: return
-
 		# point of no return
+		# condition
 		condition = self.analyze_expression()
 		if condition is None:
-			raise ExpectedItemError(self.pos,
-					"l'expression de la condition")
-
+			raise ExpectedItemError(self.pos, "condition")
+		# then block
 		self.analyze_mandatory_keyword(kw.THEN)
-		
-		first_block, emk = self.analyze_instruction_block(kw.ELSE, kw.END_IF)
-		
-		if emk == kw.ELSE:
-			optional_block,_ = self.analyze_instruction_block(kw.END_IF)
+		then_block, emk = self.analyze_instruction_block(kw.ELSE, kw.END_IF)
+		# else block
+		if emk is kw.ELSE:
+			else_block, _ = self.analyze_instruction_block(kw.END_IF)
 		else:
-			optional_block = None
-
-		return InstructionIf(pos0, condition, first_block, optional_block)
+			else_block = None
+		return InstructionIf(pos0, condition, then_block, else_block)
 		
 	def analyze_for(self):
 		pos0 = self.pos
-
 		if self.analyze_keyword(kw.FOR) is None: return
-
 		# point of no return
-		increment = self.analyze_identifier()
-		if increment is None:
-			raise ExpectedItemError(self.pos, 
-					"l'identifieur du compteur de la boucle")
-		
+		# counter
+		counter = self.analyze_identifier()
+		if counter is None:
+			raise ExpectedItemError(self.pos, "compteur de la boucle")
+		# initial value
 		self.analyze_mandatory_keyword(kw.FROM)
-		int_from = self.analyze_expression()
-		if int_from is None:
-			raise ExpectedItemError(self.pos,
-					"l'expression de la valeur de départ du compteur")
-
+		initial = self.analyze_expression()
+		if initial is None:
+			raise ExpectedItemError(self.pos, "valeur de départ du compteur")
+		# final value
 		self.analyze_mandatory_keyword(kw.TO)
-		int_to = self.analyze_expression()
-		if int_to is None:
-			raise ExpectedItemError(self.pos,
-					"l'expression de la valeur finale du compteur")
-		
+		final = self.analyze_expression()
+		if final is None:
+			raise ExpectedItemError(self.pos, "valeur finale du compteur")
+		# statement block
 		self.analyze_mandatory_keyword(kw.DO)
-		
-		block,_ = self.analyze_instruction_block(kw.END_FOR)
-		
-		return InstructionFor(pos0, increment, int_from, int_to, block)
+		block, _ = self.analyze_instruction_block(kw.END_FOR)
+		return InstructionFor(pos0, counter, initial, final, block)
 	
 	def analyze_while(self):
 		pos0 = self.pos
-
 		if self.analyze_keyword(kw.WHILE) is None: return
-
 		# point of no return
-		bool_Expr = self.analyze_expression()
-		if bool_Expr is None:
-			raise ExpectedItemError(self.pos,
-					"l'expression de la condition de la boucle")
-
+		# condition
+		condition = self.analyze_expression()
+		if condition is None:
+			raise ExpectedItemError(self.pos, "condition de la boucle")
+		# statement block
 		self.analyze_mandatory_keyword(kw.DO)
-		
-		block,_ = self.analyze_instruction_block(kw.END_WHILE)
-		
-		return InstructionWhile(pos0, bool_Expr, block)
+		block, _ = self.analyze_instruction_block(kw.END_WHILE)
+		return InstructionWhile(pos0, condition, block)
 		
 	def analyze_do_while(self):
 		pos0 = self.pos
-
 		if self.analyze_keyword(kw.DO) is None: return 
-
 		# point of no return
-		block,_ = self.analyze_instruction_block(kw.TO)
-		bool_Expr = self.analyze_expression()
-		if bool_Expr is None:
-			raise ExpectedItemError(self.pos,
-					"l'expression de la condition de la boucle")
-		return InstructionDoWhile(pos0, block, bool_Expr)
+		# statement block
+		block, _ = self.analyze_instruction_block(kw.TO)
+		# condition
+		condition = self.analyze_expression()
+		if condition is None:
+			raise ExpectedItemError(self.pos, "condition de la boucle")
+		return InstructionDoWhile(pos0, block, condition)
 	
 	def analyze_expression(self):
 		lhs = self.analyze_primary_expression()
@@ -401,12 +374,13 @@ class Parser:
 		return arg_list
 
 	def analyze_primary_expression(self, min_unary_precedence=0):
+		# check for sub-expression enclosed in parenthesis
 		lparen = self.analyze_keyword(kw.LPAREN)
 		if lparen is not None:
 			sub_expr = self.analyze_expression()
 			self.analyze_mandatory_keyword(kw.RPAREN)
 			return sub_expr
-		
+		# check for a unary operator
 		unary = self.analyze_unary_operator()
 		if unary is not None:
 			if unary.op.precedence < min_unary_precedence:
@@ -414,8 +388,13 @@ class Parser:
 			# analyze primary after the unary operator
 			primary = self.analyze_primary_expression(unary.op.precedence)
 			return UnaryOpNode(unary, primary)
-
-		return self.analyze_expression_non_op_token()
+		# terminal symbol
+		return self.analyze_multiple(
+			lambda: self.analyze_literal(re_integer, LiteralInteger, int),
+			lambda: self.analyze_literal(re_real, LiteralReal, float),
+			lambda: self.analyze_literal(re_string, LiteralString, lambda s: s[1:-1]),
+			self.analyze_literal_boolean,
+			self.analyze_identifier,)
 
 	def analyze_operator(self, operator_list):
 		for op in operator_list:
@@ -428,14 +407,6 @@ class Parser:
 
 	def analyze_unary_operator(self):
 		return self.analyze_operator(ops.meta.all_unaries)
-
-	def analyze_expression_non_op_token(self):
-		return self.analyze_multiple(
-			lambda: self.analyze_literal(re_integer, LiteralInteger, int),
-			lambda: self.analyze_literal(re_real, LiteralReal, float),
-			lambda: self.analyze_literal(re_string, LiteralString, lambda s: s[1:-1]),
-			self.analyze_literal_boolean,
-			self.analyze_identifier,)
 
 	def analyze_literal(self, compiled_regexp, literal_class, converter):
 		pos0 = self.pos
