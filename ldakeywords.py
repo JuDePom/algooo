@@ -174,6 +174,7 @@ SLC_START      = SymbolKeywordDef("//")
 meta.all_scalar_types = [ INT, REAL, BOOL, CHAR, STRING ]
 
 # build give_way lists
+# TODO: écrémer ... si * gw ** gw ***, alors * gw *** est redondant et *** sera vérifié une fois de trop
 for i, a in enumerate(meta.all_symbols):
 	for b in meta.all_symbols[i+1:]:
 		if a.must_give_way(b):
