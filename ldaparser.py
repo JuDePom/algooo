@@ -141,7 +141,7 @@ class Parser:
 
 		if self.analyze_keyword(kw.RPAREN) is None:
 			# non-empty parameter list
-			params = self.analyze_formal_parameter_list()
+			params = self.analyze_comma_separated_args(self.analyze_formal_parameter)
 			self.analyze_mandatory_keyword(kw.RPAREN)
 		else:
 			# got an RPAREN right away: empty parameter list
@@ -159,15 +159,6 @@ class Parser:
 		body, _ = self.analyze_instruction_block(kw.END)
 
 		return Function(start_kw.pos, name, params, lexi, body)
-
-	def analyze_formal_parameter_list(self):
-		params = []
-		has_next_param = True
-		while has_next_param:
-			p = self.analyze_formal_parameter()
-			params.append(p)
-			has_next_param = self.analyze_keyword(kw.COMMA) is not None
-		return params
 
 	def analyze_formal_parameter(self):
 		pos0 = self.pos
@@ -196,25 +187,13 @@ class Parser:
 					"un type scalaire ou composite")
 
 		if is_array:
-			array_dimensions = self.analyze_array_dimensions()
+			self.analyze_mandatory_keyword(kw.LSBRACK)
+			array_dimensions = self.analyze_comma_separated_args(self.analyze_expression)
+			self.analyze_mandatory_keyword(kw.RSBRACK)
 		else:
 			array_dimensions = None
 
 		return FormalParameter(name, type_, is_inout, array_dimensions)
-
-	def analyze_array_dimensions(self):
-		array_dimensions = []
-		self.analyze_mandatory_keyword(kw.LSBRACK)
-		next_dimension = True
-		while next_dimension:
-			range = self.analyze_expression()
-			if not (type(range) is BinaryOpNode and range.operator is ops.RANGE):
-				raise ExpectedItemError(self.pos, \
-						"une dimension du tableau sous forme d'intervalle d'entiers (exemple: 0..5)")
-			array_dimensions.append(range)
-			next_dimension = self.analyze_keyword(kw.COMMA) is not None
-		self.analyze_mandatory_keyword(kw.RSBRACK)
-		return array_dimensions
 
 	def analyze_lexicon(self):
 		start_kw = self.analyze_keyword(kw.LEXICON)
@@ -272,7 +251,7 @@ class Parser:
 
 		# point of no return
 		self.analyze_mandatory_keyword(kw.LT)
-		fp_list = self.analyze_formal_parameter_list()
+		fp_list = self.analyze_comma_separated_args(self.analyze_formal_parameter)
 		self.analyze_mandatory_keyword(kw.GT)
 		return CompoundMold(name_id, fp_list)
 
@@ -407,21 +386,25 @@ class Parser:
 		pos0 = self.pos
 		if op.encompass_till is None:
 			return self.analyze_primary_expression(op.precedence)
-		if op.encompass_several:
-			arg_list = []
-			next_arg = True
-			while next_arg:
-				arg = self.analyze_expression()
-				if arg is not None:
-					arg_list.append(arg)
-				next_arg = self.analyze_keyword(kw.COMMA) is not None
-				if next_arg and arg is None:
-					raise LDASyntaxError(self.pos, "argument vide")
+		elif op.encompass_several:
+			arg_list = self.analyze_comma_separated_args(self.analyze_expression)
 			rhs = Varargs(pos0, arg_list)
 		else:
 			rhs = self.analyze_expression()
 		self.analyze_mandatory_keyword(op.encompass_till)
 		return rhs
+
+	def analyze_comma_separated_args(self, analyze_arg):
+		arg_list = []
+		next_arg = True
+		while next_arg:
+			arg = analyze_arg()
+			if arg is not None:
+				arg_list.append(arg)
+			next_arg = self.analyze_keyword(kw.COMMA) is not None
+			if next_arg and arg is None:
+				raise LDASyntaxError(self.pos, "argument vide")
+		return arg_list
 
 	def analyze_primary_expression(self, min_unary_precedence=0):
 		lparen = self.analyze_keyword(kw.LPAREN)
