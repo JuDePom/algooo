@@ -58,10 +58,10 @@ class AlphaKeywordDef(KeywordDef):
 	Alphanumeric keywords cannot be glued to one another and must be separated by
 	at least one non-alphanumeric character.
 	'''
-	regexp = re.compile(r'^[^\d\W]\w*', re.UNICODE)
+	regexp = re.compile(r'[^\d\W]\w*', re.UNICODE)
 
-	def find(self, buf):
-		match = AlphaKeywordDef.regexp.match(buf)
+	def find(self, buf, pos):
+		match = AlphaKeywordDef.regexp.match(buf, pos)
 		if match is None:
 			return
 		found = match.group(0)
@@ -99,12 +99,12 @@ class SymbolKeywordDef(KeywordDef):
 					return True
 		return False
 
-	def find(self, buf):
+	def find(self, buf, pos):
 		for priority in self.give_way:
-			if priority.find(buf):
+			if priority.find(buf, pos):
 				return
 		for symbol in self.synonyms:
-			if buf.startswith(symbol):
+			if buf.startswith(symbol, pos):
 				return symbol
 
 
