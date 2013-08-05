@@ -14,28 +14,6 @@ class Position(tuple):
 		self.line = line
 		self.column = column
 
-	def advance_same_line(self, n):
-		'''
-		Return a Position object that is offset from self by n characters. No line
-		breaks occur.
-		'''
-		return Position(
-				self.path, 
-				self.char+n, 
-				self.line, 
-				self.column+n)
-
-	def next_char_new_line(self):
-		'''
-		Return a Position object that is offset from self by one line break
-		character.
-		'''
-		return Position(
-				self.path, 
-				self.char+1, 
-				self.line+1, 
-				1)
-	
 	def pretty(self):
 		'''
 		Return a pretty, human-readable string for this Position.
