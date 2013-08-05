@@ -30,10 +30,14 @@ class Parser:
 	'''
 
 	def __init__(self, path):
-		self.pos = Position(path)
+		self.path = path
 		with open(path, 'rt', encoding='utf8') as input_file:
 			self.buf = input_file.read()
 			self.buflen = len(self.buf)
+		self.reset_pos()
+
+	def reset_pos(self):
+		self.pos = Position(self.path)
 
 	@property
 	def cc(self):
