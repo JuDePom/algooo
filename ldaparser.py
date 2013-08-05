@@ -53,7 +53,7 @@ class Parser:
 		'''
 		return self.buf[self.pos.char:]
 
-	def advance(self, chars=0, skip_white=True):
+	def advance(self, chars=0):
 		'''
 		Advance current position in the buffer so that the cursor points on something 
 		significant (i.e. no whitespace, no comments)
@@ -63,45 +63,33 @@ class Parser:
 		'''
 		if chars != 0:
 			self.pos = self.pos.advance_same_line(chars)
-		if not skip_white:
-			return
-		state = 'WHITE'
-		feeds = 0
-		feed_at = -1
 		bpos = self.pos.char
-		while state is not 'END' and bpos < self.buflen:
-			if self.buf[bpos] == '\n':
-				feeds += 1
-				feed_at = bpos
-			if state is 'WHITE':
-				# plain whitespace
-				if self.buf[bpos].isspace():
-					bpos += 1
-				elif self.buf[bpos:bpos+2] == '(*':
-					bpos += 2
-					state = 'MULTI'
-				elif self.buf[bpos:bpos+2] == '//':
-					bpos += 2
-					state = 'SINGLE'
-				else:
-					state = 'END'
-			elif state is 'MULTI':
-				# inside multi-line comment
-				if self.buf[bpos:bpos+2] == '*)':
-					bpos += 2
-					state = 'WHITE'
-				else:
-					bpos += 1
-			elif state is 'SINGLE':
-				# inside single-line comment
-				if self.buf[bpos] == '\n':
-					state = 'WHITE'
+		while bpos != -1 and bpos < self.buflen:
+			if self.buf[bpos].isspace():
 				bpos += 1
-		if feed_at == -1:
+			elif self.buf[bpos:bpos+2] == '(*':
+				bpos += 2
+				bpos = self.buf.find('*)', bpos)
+				if bpos == -1:
+					raise Exception("unclosed multiline comment")
+				bpos += 2
+			elif self.buf[bpos:bpos+2] == '//':
+				bpos += 2
+				bpos = self.buf.find('\n', bpos)
+				if bpos != -1:
+					bpos += 1
+			else:
+				break
+		if bpos == -1:
+			bpos = self.buflen
+		feeds = self.buf.count('\n', self.pos.char, bpos)
+		if feeds == 0:
 			column = self.pos.column + bpos - self.pos.char
+			line = self.pos.line
 		else:
-			column = 1 + bpos - feed_at
-		line = self.pos.line + feeds
+			last_feed = self.buf.rfind('\n', self.pos.char, bpos)
+			column = 1 + bpos - last_feed
+			line = self.pos.line + feeds
 		self.pos = Position(self.pos.path, bpos, line, column)
 
 	def eof(self):
@@ -220,11 +208,11 @@ class Parser:
 		self.advance(len(identifier))
 		return Identifier(pos0, identifier)
 
-	def analyze_keyword(self, keyword, skip_white=True):
+	def analyze_keyword(self, keyword):
 		pos0 = self.pos
 		found_string = keyword.find(self.sliced_buf)
 		if found_string is not None:
-			self.advance(len(found_string), skip_white)
+			self.advance(len(found_string))
 			return KeywordToken(pos0, found_string)
 
 	def analyze_mandatory_keyword(self, keyword):
