@@ -1,11 +1,26 @@
+   (* 
+    *
+    *   Trois fonctions simples 
+    * avec quelques commentaires
+	* et un peu de whitespace inutile
+	*
+	*)
+
+// la fonction machin
+
 fonction machin()
 lexique
 	a : entier
 	b : entier
+	(*
+		Fin du lexique de machin
+	*)
 début
 	a <- 1
 	b <- 2 + a + 2
 fin
+
+// la fonction bidule
 
 fonction bidule()
 lexique
@@ -13,6 +28,9 @@ lexique
 	b : entier
 	c : entier
 	d : entier
+	(*
+		Fin du lexique de bidule
+	*)
 début
 	a <- 1
 	b <- -352.1
@@ -20,12 +38,17 @@ début
 	d <- 123
 fin
 
+// la fonction truc
+
 fonction truc()
 lexique
 	e : entier
 	f : entier
 	g : entier
 	h : entier
+	(*
+		Fin du lexique de truc
+	*)
 début
 	e <- 24
 	f <- 102.0000001
