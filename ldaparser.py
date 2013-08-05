@@ -5,18 +5,18 @@ from errors import *
 from position import Position
 from tree import *
 
-re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
+re_identifier = re.compile(r'[^\d\W]\w*', re.UNICODE)
 
 # match at least one digit;
 # must NOT followed by a dot, an alpha, or a _
-re_integer    = re.compile(r'^\d+(?![\w\.])', re.UNICODE)
+re_integer    = re.compile(r'\d+(?![\w\.])', re.UNICODE)
 
 # match at least one digit, one dot, and zero or more digits, 
 # **OR** match one dot, and at least one digit;
 # but either match must NOT be followed by another dot, an alpha, or a _
-re_real       = re.compile(r'^(\d+\.\d*|\.\d+)(?![\w\.])', re.UNICODE)
+re_real       = re.compile(r'(\d+\.\d*|\.\d+)(?![\w\.])', re.UNICODE)
 
-re_string     = re.compile(r'^".*?"', re.UNICODE) # TODO- escaping
+re_string     = re.compile(r'".*?"', re.UNICODE) # TODO- escaping
 
 class Parser:
 	'''
@@ -42,13 +42,6 @@ class Parser:
 		'''
 		return self.buf[self.pos.char]
 	
-	@property
-	def sliced_buf(self):
-		'''
-		Return a sliced view of the buffer that starts at the current position.
-		'''
-		return self.buf[self.pos.char:]
-
 	def advance1(self):
 		'''
 		Advance current position in the buffer by one character and update self.pos
@@ -123,6 +116,7 @@ class Parser:
 	def analyze_function(self):
 		start_kw = self.analyze_keyword(kw.FUNCTION)
 		if start_kw is None:
+			print("no match :(", kw.FUNCTION, self.buf[self.pos.char:self.pos.char+10])
 			return
 		# point of no-return
 		# identifier
@@ -201,7 +195,7 @@ class Parser:
 		return Lexicon(start_kw.pos, declarations, molds)	
 
 	def analyze_identifier(self):
-		match = re_identifier.match(self.sliced_buf)
+		match = re_identifier.match(self.buf, self.pos.char)
 		if match is None:
 			return
 		identifier = match.group(0)
@@ -213,7 +207,7 @@ class Parser:
 
 	def analyze_keyword(self, keyword, skip_white=True):
 		pos0 = self.pos
-		found_string = keyword.find(self.sliced_buf)
+		found_string = keyword.find(self.buf, self.pos.char)
 		if found_string is not None:
 			self.advance(len(found_string), skip_white)
 			return KeywordToken(pos0, found_string)
@@ -410,7 +404,7 @@ class Parser:
 
 	def analyze_literal(self, compiled_regexp, literal_class, converter):
 		pos0 = self.pos
-		match = compiled_regexp.match(self.sliced_buf)
+		match = compiled_regexp.match(self.buf, self.pos.char)
 		if match is not None:
 			string = match.group(0) 
 			self.advance(len(string))
