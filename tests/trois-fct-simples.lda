@@ -1,0 +1,35 @@
+fonction machin()
+lexique
+	a : entier
+	b : entier
+début
+	a <- 1
+	b <- 2 + a + 2
+fin
+
+fonction bidule()
+lexique
+	a : entier
+	b : entier
+	c : entier
+	d : entier
+début
+	a <- 1
+	b <- -352.1
+	c <- +124123.123
+	d <- 123
+fin
+
+fonction truc()
+lexique
+	e : entier
+	f : entier
+	g : entier
+	h : entier
+début
+	e <- 24
+	f <- 102.0000001
+	g <- 1000.
+	h <- 1234
+fin
+
