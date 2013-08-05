@@ -5,18 +5,18 @@ from errors import *
 from position import Position
 from tree import *
 
-re_identifier = re.compile(r'^[^\d\W]\w*', re.UNICODE)
+re_identifier = re.compile(r'[^\d\W]\w*', re.UNICODE)
 
 # match at least one digit;
 # must NOT followed by a dot, an alpha, or a _
-re_integer    = re.compile(r'^\d+(?![\w\.])', re.UNICODE)
+re_integer    = re.compile(r'\d+(?![\w\.])', re.UNICODE)
 
 # match at least one digit, one dot, and zero or more digits, 
 # **OR** match one dot, and at least one digit;
 # but either match must NOT be followed by another dot, an alpha, or a _
-re_real       = re.compile(r'^(\d+\.\d*|\.\d+)(?![\w\.])', re.UNICODE)
+re_real       = re.compile(r'(\d+\.\d*|\.\d+)(?![\w\.])', re.UNICODE)
 
-re_string     = re.compile(r'^".*?"', re.UNICODE) # TODO- escaping
+re_string     = re.compile(r'".*?"', re.UNICODE) # TODO- escaping
 
 class Parser:
 	'''
@@ -39,31 +39,7 @@ class Parser:
 	def reset_pos(self):
 		self.pos = Position(self.path)
 
-	@property
-	def cc(self):
-		'''
-		Return the current character in the buffer.
-		'''
-		return self.buf[self.pos.char]
-	
-	@property
-	def sliced_buf(self):
-		'''
-		Return a sliced view of the buffer that starts at the current position.
-		'''
-		return self.buf[self.pos.char:]
-
-	def advance1(self):
-		'''
-		Advance current position in the buffer by one character and update self.pos
-		accordingly.
-		'''
-		if self.cc == '\n':
-			self.pos = self.pos.next_char_new_line()
-		else:
-			self.pos = self.pos.advance_same_line(1)
-
-	def advance(self, chars=0, skip_white=True):
+	def advance(self, chars=0):
 		'''
 		Advance current position in the buffer so that the cursor points on something 
 		significant (i.e. no whitespace, no comments)
@@ -71,33 +47,37 @@ class Parser:
 		This function must be called at the very beginning of a source file, and 
 		after every operation that permanently consumes bytes from the buffer.
 		'''
+		bpos = self.pos.char
+		line = self.pos.line
+		column = self.pos.column
 		if chars != 0:
-			self.pos = self.pos.advance_same_line(chars)
-		if not skip_white:
-			return
-		state = 'WHITE'
-		while state != 'END' and not self.eof():
-			if state is 'WHITE':
-				# plain whitespace
-				if self.cc.isspace():
-					self.advance1()
-				elif self.analyze_keyword(kw.MLC_START, False):
-					state = 'MULTI'
-				elif self.analyze_keyword(kw.SLC_START, False):
-					state = 'SINGLE'
+			bpos += chars
+			column += chars
+		in_multi = False
+		while bpos != -1 and bpos < self.buflen:
+			if self.buf[bpos] == '\n':
+				bpos += 1
+				line += 1
+				column = 1
+			elif not in_multi:
+				if self.buf[bpos].isspace():
+					bpos += 1
+					column += 1
+				elif self.buf.startswith('(*', bpos):
+					bpos += 2
+					in_multi = True
+				elif self.buf.startswith('//', bpos):
+					bpos = self.buf.find('\n', bpos+2)
 				else:
-					state = 'END'
-			elif state is 'MULTI':
-				# inside multi-line comment
-				if self.analyze_keyword(kw.MLC_END, False):
-					state = 'WHITE'
+					break
+			else:
+				if self.buf.startswith('*)', bpos):
+					bpos += 2
+					in_multi = False
 				else:
-					self.advance1()
-			elif state is 'SINGLE':
-				# inside single-line comment
-				if self.cc == '\n':
-					state = 'WHITE'
-				self.advance1()
+					bpos += 1
+					column += 1
+		self.pos = Position(self.pos.path, bpos, line, column)
 
 	def eof(self):
 		return self.pos.char >= self.buflen
@@ -127,6 +107,7 @@ class Parser:
 	def analyze_function(self):
 		start_kw = self.analyze_keyword(kw.FUNCTION)
 		if start_kw is None:
+			print("no match :(", kw.FUNCTION, self.buf[self.pos.char:self.pos.char+10])
 			return
 		# point of no-return
 		# identifier
@@ -205,7 +186,7 @@ class Parser:
 		return Lexicon(start_kw.pos, declarations, molds)	
 
 	def analyze_identifier(self):
-		match = re_identifier.match(self.sliced_buf)
+		match = re_identifier.match(self.buf, self.pos.char)
 		if match is None:
 			return
 		identifier = match.group(0)
@@ -215,11 +196,11 @@ class Parser:
 		self.advance(len(identifier))
 		return Identifier(pos0, identifier)
 
-	def analyze_keyword(self, keyword, skip_white=True):
+	def analyze_keyword(self, keyword):
 		pos0 = self.pos
-		found_string = keyword.find(self.sliced_buf)
+		found_string = keyword.find(self.buf, self.pos.char)
 		if found_string is not None:
-			self.advance(len(found_string), skip_white)
+			self.advance(len(found_string))
 			return KeywordToken(pos0, found_string)
 
 	def analyze_mandatory_keyword(self, keyword):
@@ -414,7 +395,7 @@ class Parser:
 
 	def analyze_literal(self, compiled_regexp, literal_class, converter):
 		pos0 = self.pos
-		match = compiled_regexp.match(self.sliced_buf)
+		match = compiled_regexp.match(self.buf, self.pos.char)
 		if match is not None:
 			string = match.group(0) 
 			self.advance(len(string))
