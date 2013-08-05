@@ -40,13 +40,6 @@ class Parser:
 		self.pos = Position(self.path)
 
 	@property
-	def cc(self):
-		'''
-		Return the current character in the buffer.
-		'''
-		return self.buf[self.pos.char]
-	
-	@property
 	def sliced_buf(self):
 		'''
 		Return a sliced view of the buffer that starts at the current position.
@@ -61,35 +54,36 @@ class Parser:
 		This function must be called at the very beginning of a source file, and 
 		after every operation that permanently consumes bytes from the buffer.
 		'''
-		if chars != 0:
-			self.pos = self.pos.advance_same_line(chars)
 		bpos = self.pos.char
+		line = self.pos.line
+		column = self.pos.column
+		if chars != 0:
+			bpos += chars
+			column += chars
+		in_multi = False
 		while bpos != -1 and bpos < self.buflen:
-			if self.buf[bpos].isspace():
+			if self.buf[bpos] == '\n':
 				bpos += 1
-			elif self.buf[bpos:bpos+2] == '(*':
-				bpos += 2
-				bpos = self.buf.find('*)', bpos)
-				if bpos == -1:
-					raise Exception("unclosed multiline comment")
-				bpos += 2
-			elif self.buf[bpos:bpos+2] == '//':
-				bpos += 2
-				bpos = self.buf.find('\n', bpos)
-				if bpos != -1:
+				line += 1
+				column = 1
+			elif not in_multi:
+				if self.buf[bpos].isspace():
 					bpos += 1
+					column += 1
+				elif self.buf.startswith('(*', bpos):
+					bpos += 2
+					in_multi = True
+				elif self.buf.startswith('//', bpos):
+					bpos = self.buf.find('\n', bpos+2)
+				else:
+					break
 			else:
-				break
-		if bpos == -1:
-			bpos = self.buflen
-		feeds = self.buf.count('\n', self.pos.char, bpos)
-		if feeds == 0:
-			column = self.pos.column + bpos - self.pos.char
-			line = self.pos.line
-		else:
-			last_feed = self.buf.rfind('\n', self.pos.char, bpos)
-			column = 1 + bpos - last_feed
-			line = self.pos.line + feeds
+				if self.buf.startswith('*)', bpos):
+					bpos += 2
+					in_multi = False
+				else:
+					bpos += 1
+					column += 1
 		self.pos = Position(self.pos.path, bpos, line, column)
 
 	def eof(self):
