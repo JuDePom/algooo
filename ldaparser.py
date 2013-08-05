@@ -53,16 +53,6 @@ class Parser:
 		'''
 		return self.buf[self.pos.char:]
 
-	def advance1(self):
-		'''
-		Advance current position in the buffer by one character and update self.pos
-		accordingly.
-		'''
-		if self.cc == '\n':
-			self.pos = self.pos.next_char_new_line()
-		else:
-			self.pos = self.pos.advance_same_line(1)
-
 	def advance(self, chars=0, skip_white=True):
 		'''
 		Advance current position in the buffer so that the cursor points on something 
@@ -76,28 +66,43 @@ class Parser:
 		if not skip_white:
 			return
 		state = 'WHITE'
-		while state != 'END' and not self.eof():
+		feeds = 0
+		feed_at = -1
+		bpos = self.pos.char
+		while state is not 'END' and bpos < self.buflen:
+			if self.buf[bpos] == '\n':
+				feeds += 1
+				feed_at = bpos
 			if state is 'WHITE':
 				# plain whitespace
-				if self.cc.isspace():
-					self.advance1()
-				elif self.analyze_keyword(kw.MLC_START, False):
+				if self.buf[bpos].isspace():
+					bpos += 1
+				elif self.buf[bpos:bpos+2] == '(*':
+					bpos += 2
 					state = 'MULTI'
-				elif self.analyze_keyword(kw.SLC_START, False):
+				elif self.buf[bpos:bpos+2] == '//':
+					bpos += 2
 					state = 'SINGLE'
 				else:
 					state = 'END'
 			elif state is 'MULTI':
 				# inside multi-line comment
-				if self.analyze_keyword(kw.MLC_END, False):
+				if self.buf[bpos:bpos+2] == '*)':
+					bpos += 2
 					state = 'WHITE'
 				else:
-					self.advance1()
+					bpos += 1
 			elif state is 'SINGLE':
 				# inside single-line comment
-				if self.cc == '\n':
+				if self.buf[bpos] == '\n':
 					state = 'WHITE'
-				self.advance1()
+				bpos += 1
+		if feed_at == -1:
+			column = self.pos.column + bpos - self.pos.char
+		else:
+			column = 1 + bpos - feed_at
+		line = self.pos.line + feeds
+		self.pos = Position(self.pos.path, bpos, line, column)
 
 	def eof(self):
 		return self.pos.char >= self.buflen
