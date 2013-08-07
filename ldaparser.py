@@ -4,6 +4,7 @@ import operators as ops
 from errors import *
 from position import Position
 from tree import *
+from symboltable import SymbolTable
 
 re_identifier = re.compile(r'[^\d\W]\w*')
 
@@ -11,7 +12,7 @@ re_identifier = re.compile(r'[^\d\W]\w*')
 # must NOT followed by a single dot, an alpha, or a _
 re_integer    = re.compile(r'\d+(?![\w\.][^\.])')
 
-# match at least one digit, one dot, and zero or more digits, 
+# match at least one digit, one dot, and zero or more digits,
 # **OR** match one dot, and at least one digit;
 # but either match must NOT be followed by a single dot, an alpha, or a _
 re_real       = re.compile(r'(\d+\.\d*|\.\d+)(?![\w\.][^\.])')
@@ -41,10 +42,10 @@ class Parser:
 
 	def advance(self, chars=0):
 		'''
-		Advance current position in the buffer so that the cursor points on something 
+		Advance current position in the buffer so that the cursor points on something
 		significant (i.e. no whitespace, no comments)
 
-		This function must be called at the very beginning of a source file, and 
+		This function must be called at the very beginning of a source file, and
 		after every operation that permanently consumes bytes from the buffer.
 		'''
 		bpos = self.pos.char
@@ -82,16 +83,27 @@ class Parser:
 	def eof(self):
 		return self.pos.char >= self.buflen
 
-	def analyze_top_level(self):
+	def analyze_module(self):
 		self.advance()
-		top_level_nodes = []
+		functions = []
+		algorithm = None
+		has_algorithm = False
 		while not self.eof():
-			top = self.analyze_multiple(self.analyze_function, self.analyze_algorithm)
-			if top is None:
-				raise ExpectedItemError(self.pos, "une fonction ou un algorithme")
-			top_level_nodes.append(top)
-		return top_level_nodes
-		
+			function = self.analyze_function()
+			if function is not None:
+				functions.append(function)
+				continue
+			algorithm = self.analyze_algorithm()
+			if algorithm is not None:
+				if has_algorithm:
+					raise LDASyntaxError(self.pos,
+							"Il ne peut y avoir qu'un seul algorithme par module")
+				has_algorithm = True
+				continue
+			raise ExpectedItemError(self.pos, "une fonction ou un algorithme")
+			# TODO : ... ou une def de composite ?
+		return Module(functions, algorithm)
+
 	def analyze_algorithm(self):
 		start_kw = self.analyze_keyword(kw.ALGORITHM)
 		if start_kw is None:
@@ -110,8 +122,8 @@ class Parser:
 			return
 		# point of no-return
 		# identifier
-		name = self.analyze_identifier()
-		if name is None:
+		ident = self.analyze_identifier()
+		if ident is None:
 			raise IllegalIdentifier(self.pos)
 		# mandatory left parenthesis
 		self.analyze_mandatory_keyword(kw.LPAREN)
@@ -125,19 +137,19 @@ class Parser:
 			params = []
 		# optional colon before return type (if omitted, no return type)
 		if self.analyze_keyword(kw.COLON) is not None:
-			raise UnimplementedError(self.pos, "type de retour de la fonction")
+			raise NotImplementedError("type de retour de la fonction")
 		# lexicon
 		lexi = self.analyze_lexicon()
 		# statement block
 		self.analyze_mandatory_keyword(kw.BEGIN)
 		body, _ = self.analyze_instruction_block(kw.END)
-		return Function(start_kw.pos, name, params, lexi, body)
+		return Function(start_kw.pos, ident, params, lexi, body)
 
 	def analyze_formal_parameter(self):
 		pos0 = self.pos
 		# identifier
-		name = self.analyze_identifier()
-		if name is None:
+		ident = self.analyze_identifier()
+		if ident is None:
 			return
 		# inout
 		is_inout = self.analyze_keyword(kw.INOUT) is not None
@@ -148,14 +160,14 @@ class Parser:
 		# array
 		is_array = self.analyze_keyword(kw.ARRAY) is not None
 		# enclosed type
-		type_ = None
+		type_word = None
 		for candidate in kw.meta.all_scalar_types:
 			if self.analyze_keyword(candidate) is not None:
-				type_ = candidate
+				type_word = candidate
 				break
-		if type_ is None:
-			type_ = self.analyze_identifier()
-		if type_ is None:
+		if type_word is None:
+			type_word = self.analyze_identifier()
+		if type_word is None:
 			raise ExpectedItemError(self.pos, "un type scalaire ou composite")
 		# array dimensions
 		if is_array:
@@ -164,7 +176,8 @@ class Parser:
 			self.analyze_mandatory_keyword(kw.RSBRACK)
 		else:
 			array_dimensions = None
-		return FormalParameter(name, type_, is_inout, array_dimensions)
+		type_spec = TypeSpec(type_word, array_dimensions)
+		return FormalParameter(ident, type_spec, is_inout)
 
 	def analyze_lexicon(self):
 		start_kw = self.analyze_keyword(kw.LEXICON)
@@ -210,8 +223,8 @@ class Parser:
 
 	def analyze_compound_mold_declaration(self):
 		pos0 = self.pos
-		name_id = self.analyze_identifier()
-		if name_id is None:
+		ident = self.analyze_identifier()
+		if ident is None:
 			return
 		if self.analyze_keyword(kw.EQ) is None:
 			self.pos = pos0
@@ -220,7 +233,7 @@ class Parser:
 		self.analyze_mandatory_keyword(kw.LT)
 		fp_list = self.analyze_comma_separated_args(self.analyze_formal_parameter)
 		self.analyze_mandatory_keyword(kw.GT)
-		return CompoundMold(name_id, fp_list)
+		return CompoundMold(ident, fp_list)
 
 	def analyze_instruction_block(self, *end_marker_keywords):
 		pos0 = self.pos
@@ -303,7 +316,7 @@ class Parser:
 		
 	def analyze_do_while(self):
 		pos0 = self.pos
-		if self.analyze_keyword(kw.DO) is None: return 
+		if self.analyze_keyword(kw.DO) is None: return
 		# point of no return
 		# statement block
 		block, _ = self.analyze_instruction_block(kw.TO)
@@ -396,7 +409,7 @@ class Parser:
 		pos0 = self.pos
 		match = compiled_regexp.match(self.buf, self.pos.char)
 		if match is not None:
-			string = match.group(0) 
+			string = match.group(0)
 			self.advance(len(string))
 			return literal_class(pos0, converter(string))
 

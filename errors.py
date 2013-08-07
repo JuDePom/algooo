@@ -3,13 +3,16 @@ Lexical, syntactic, and semantic errors that can be raised as exceptions during
 compilation.
 '''
 
-class LDASyntaxError(Exception):
+class LDAError(Exception):
+	pass
+
+class LDASyntaxError(LDAError):
 	'''
 	Raised when the parser encounters an LDA syntax errorLDA.
 	'''
 
 	def __init__(self, pos, message):
-		message = pos.pretty() + ": erreur de syntaxe: " + message
+		message = pos.pretty() + ": erreur de syntaxe : " + message
 		super().__init__(message)
 
 class ExpectedKeywordError(LDASyntaxError):
@@ -50,13 +53,18 @@ class IllegalIdentifier(LDASyntaxError):
 		message = "mauvais format d'identifieur"
 		super().__init__(pos, message)
 
-class UnimplementedError(LDASyntaxError):
-	'''
-	Raised when an unimplemented, but legal, feature has been used.
-	'''
+class LDASemanticError(LDAError):
+	def __init__(self, pos, message):
+		message = pos.pretty() + ": erreur de sémantique : " + message
+		super().__init__(message)
 
-	def __init__(self, pos, feature_name):
-		message = "la fonctionnalité \"" + feature_name + \
-				"\" n'a pas encore été implémentée dans le compilateur ! à faire !"
+class MissingDeclaration(LDASemanticError):
+	def __init__(self, ident):
+		message = "cet identificateur n'a pas été déclaré : " + str(ident)
+		super().__init__(ident.pos, message)
+
+class TypeMismatch(LDASemanticError):
+	def __init__(self, pos):
+		message = "types conflictuels"
 		super().__init__(pos, message)
 

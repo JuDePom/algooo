@@ -1,8 +1,23 @@
-import dot
-
 '''
 Items that make up the abstract syntax tree.
 '''
+
+import dot
+import operators as ops
+import ldakeywords as kw
+from symboltable import SymbolTable
+from errors import *
+
+class Module:
+	def __init__(self, functions, algorithm=None):
+		self.functions = functions
+		self.algorithm = algorithm
+		self.symbols = SymbolTable(functions=functions)
+	def check(self):
+		for function in self.functions:
+			function.check(self.symbols)
+		if self.algorithm is not None:
+			self.algorithm.check(self.symbols)
 
 class SourceThing:
 	'''
@@ -18,15 +33,28 @@ class KeywordToken(Token):
 	def __init__(self, pos, kw_def):
 		super().__init__(pos)
 		self.kw_def = kw_def
+	def __eq__(self, other):
+		return kw.meta.keyword_equality(self, other)
+	def __ne__(self, other):
+		return not self.__eq__(other)
 
 class Identifier(Token):
-	def __init__(self, pos, name_string):
+	def __init__(self, pos, name):
 		super().__init__(pos)
-		self.name_string = name_string
+		self.name = name
+	def __eq__(self, other):
+		return isinstance(other, Identifier) and self.name == other.name
 	def __repr__(self):
-		return self.name_string
+		return self.name
 	def put_node(self, cluster):
 		return dot.Node(str(self), cluster)
+	def check(self, context):
+		try:
+			self.type_spec = context.variables[self.name].type_spec
+		except KeyError:
+			# TODO - peut-être qu'il serait plus judicieux de logger les erreurs
+			# sémantiques que de les lever comme exceptions
+			raise MissingDeclaration(self)
 
 class StatementBlock(SourceThing):
 	def __init__(self, pos, body):
@@ -52,6 +80,9 @@ class StatementBlock(SourceThing):
 			rank_chain.append(outer_node)
 		cluster.rank_chains.append(rank_chain)
 		return first_outer_node
+	def check(self, context):
+		for statement in self:
+			statement.check(context)
 
 #######################################################################
 #
@@ -68,18 +99,27 @@ class Algorithm(StatementBlock):
 	def put_node(self, cluster):
 		algorithm_cluster = dot.Cluster("algorithme", cluster)
 		return super().put_node(algorithm_cluster)
+	def check(self, context):
+		subcontext = SymbolTable.merge(context, self.lexicon)
+		for statement in self:
+			statement.check(subcontext)
 
 class Function(StatementBlock):
-	def __init__(self, pos, name, fp_list, lexicon, body):
+	def __init__(self, pos, ident, fp_list, lexicon, body):
 		super().__init__(pos, body)
-		self.name = name
+		self.ident = ident
 		self.fp_list = fp_list
 		self.lexicon = lexicon
 	def __repr__(self):
-		return "fonction {} :\n{}\n{}".format(self.name, self.lexicon, self.body)
+		return "fonction {} :\n{}\n{}".format(self.ident, self.lexicon, self.body)
 	def put_node(self, cluster):
-		function_cluster = dot.Cluster("fonction " + str(self.name), cluster)
+		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
 		return super().put_node(function_cluster)
+	def check(self, context):
+		subcontext = SymbolTable.merge(context, self.lexicon)
+		for statement in self:
+			statement.check(subcontext)
+
 
 #######################################################################
 #
@@ -87,41 +127,61 @@ class Function(StatementBlock):
 #
 #######################################################################
 
-class Lexicon(SourceThing):
-	def __init__(self, pos, declarations, molds):
-		super().__init__(pos)
-		self.declarations = declarations
-		self.molds = molds
+class Lexicon(SourceThing, SymbolTable):
+	def __init__(self, pos, variables, molds):
+		SourceThing.__init__(self, pos)
+		SymbolTable.__init__(self, variables=variables, molds=molds)
+		# TODO - pas sûr avec héritage multiple qu'on ait le droit de faire ca ...
+		#self.declarations = declarations
+		#self.molds = molds
 	def __repr__(self):
 		return "lexdecl = {}\nlexmolds = {}".format(
-				self.declarations, self.molds)
-	
-class CompoundMold(SourceThing):
-	def __init__(self, name_id, fp_list):
-		super().__init__(name_id.pos)
-		self.name_id = name_id
-		self.components = fp_list
-	def __repr__(self):
-		return "{}={}".format(self.name_id, self.components)
+				self.variables, self.molds)
 
-class FormalParameter(SourceThing):
-	def __init__(self, name, type_, inout, array_dimensions=None):
-		super().__init__(name.pos)
-		self.name = name
-		self.type_ = type_
-		self.inout = inout
+class CompoundMold(SourceThing, SymbolTable):
+	def __init__(self, ident, fp_list):
+		SourceThing.__init__(self, ident.pos)
+		SymbolTable.__init__(self, variables=fp_list)
+		#super().__init__(ident.pos)
+		self.ident = ident
+		#self.components = fp_list
+	def __repr__(self):
+		return "{}={}".format(self.ident, self.variables)
+
+class TypeSpec(SourceThing):
+	def __init__(self, type_word, array_dimensions=None):
+		pos = None if isinstance(type_word, kw.KeywordDef) else type_word.pos
+		super().__init__(pos)
+		self.type_word = type_word
 		self.array_dimensions = array_dimensions
 		# useful automatic flags
-		self.custom_type = type(type_) is Identifier
+		self.custom_type = isinstance(type_word, Identifier)
 		self.scalar = not self.custom_type
 		self.array = self.array_dimensions is not None
+		if self.scalar:
+			assert(self.type_word in kw.meta.all_scalar_types)
+	def __eq__(self, other):
+		if not isinstance(other, TypeSpec):
+			return False
+		return self.type_word == other.type_word and \
+				self.array_dimensions == other.array_dimensions
+	def __ne__(self, other):
+		return not self.__eq__(other)
 	def __repr__(self):
-		inout_str = "inout " if self.inout else ""
+		s = str(self.type_word)
 		if self.array:
-			return "{}: {}tableau {}{}".format(\
-					self.name, inout_str, self.type_, self.array_dimensions)
-		else:
-			return "{}: {}{}".format(self.name, inout_str, self.type_)
+			s = "tableau {}{}".format(s, self.array_dimensions)
+		return "TSpec/{:x}/{}".format(id(self), s)
+
+class FormalParameter(SourceThing):
+	def __init__(self, ident, type_spec, inout):
+		super().__init__(ident.pos)
+		self.ident = ident
+		self.type_spec = type_spec
+		self.inout = inout
+	def __repr__(self):
+		inout_str = " inout" if self.inout else ""
+		return "{}{} : {}".format(self.ident, inout_str, self.type_spec)
 
 #######################################################################
 #
@@ -165,7 +225,7 @@ class InstructionFor(Instruction):
 		self.block = block
 	def __repr__(self):
 		return "pour {} de {} a {} faire \n{}fpour\n".format(
-				self.counter, self.initial, self.final, self.block) 
+				self.counter, self.initial, self.final, self.block)
 	def put_node(self, cluster):
 		counter_node = self.counter.put_node(cluster)
 		initial_node = self.initial.put_node(cluster)
@@ -231,7 +291,7 @@ class UnaryOpNode(Expression):
 		self.operand = operand
 	def __repr__(self):
 		return "({}{})".format(
-				self.operator.symbol.default_spelling, 
+				self.operator.symbol.default_spelling,
 				self.operand)
 	def put_node(self, cluster):
 		op_node = dot.Node(self.operator.symbol.default_spelling,
@@ -249,8 +309,8 @@ class BinaryOpNode(Expression):
 		self.rhs = rhs
 	def __repr__(self):
 		return "({1}{0}{2})".format(
-				self.operator.symbol.default_spelling, 
-				self.lhs, 
+				self.operator.symbol.default_spelling,
+				self.lhs,
 				self.rhs)
 	def put_node(self, cluster):
 		op_node = dot.Node(self.operator.symbol.default_spelling,
@@ -259,6 +319,27 @@ class BinaryOpNode(Expression):
 				self.rhs.put_node(cluster))
 		op_node.shape = "circle"
 		return op_node
+	def check(self, context):
+		if self.operator in (ops.ADDITION, ops.SUBTRACTION, ops.ASSIGNMENT):
+			# TODO types "équivalents" (entier+réel)...
+			self.lhs.check(context)
+			self.rhs.check(context)
+			if self.lhs.type_spec != self.rhs.type_spec:
+				raise TypeMismatch(self.lhs.pos)
+			if self.operator is ops.ASSIGNMENT:
+				self.type_spec = None
+			else:
+				self.type_spec = self.lhs.type_spec
+		elif self.operator is ops.MEMBER_SELECT:
+			# LHS's typespec should resolve to a compound mold
+			self.lhs.check(context)
+			# TODO very ugly
+			mold = context.molds[self.lhs.type_spec.type_word.name]
+			# use mold context exclusively for RHS
+			self.rhs.check(mold)
+			self.type_spec = self.rhs.type_spec
+		else:
+			raise Exception("xoxoxo TODO")
 
 class Varargs(Expression):
 	def __init__(self, pos, arg_list):
@@ -287,12 +368,14 @@ class _Literal(Expression):
 		super().__init__(pos)
 		self.value = value
 	def __repr__(self):
-		return str(self.value) 
+		return str(self.value)
 	def put_node(self, cluster):
 		return dot.Node(str(self), cluster)
+	def check(self, context):
+		pass
 
 class LiteralInteger(_Literal):
-	pass
+	type_spec = TypeSpec(kw.INT)
 
 class LiteralReal(_Literal):
 	pass

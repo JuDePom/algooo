@@ -1,0 +1,8 @@
+algorithme
+lexique
+	Moule = <a: entier>
+	a: Moule
+début
+	a.a <- 1 + 1
+fin
+

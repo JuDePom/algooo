@@ -19,8 +19,8 @@ class meta:
 	Additional information about keywords.
 	'''
 
-	''' 
-	List of all spellings of every keyword. 
+	'''
+	List of all spellings of every keyword.
 	Useful to check for keyword infringement on a string.
 	'''
 	all_keywords = []
@@ -35,6 +35,16 @@ class meta:
 	'''
 	all_symbols = []
 
+	def keyword_equality(a, b):
+		def get_def(x):
+			try:
+				return x.kw_def
+			except AttributeError:
+				return x
+		a = get_def(a)
+		b = get_def(b)
+		return a is not None and a is b
+
 class KeywordDef:
 	'''
 	Base class for keywords.
@@ -47,7 +57,12 @@ class KeywordDef:
 		self.default_spelling = synonyms[0]
 		self.synonyms = synonyms
 		meta.all_keywords.extend(synonyms)
-	
+
+	__eq__ = meta.keyword_equality
+
+	def __ne__(self, other):
+		return not self.__eq__(self, other)
+
 	def __repr__(self):
 		return "k_" + self.default_spelling
 
@@ -77,7 +92,7 @@ class SymbolKeywordDef(KeywordDef):
 	'''
 
 	def __init__(self, *synonyms):
-		self.give_way = [] # List of SymbolKeywordDefs that must be checked before 
+		self.give_way = [] # List of SymbolKeywordDefs that must be checked before
 		                   # self. Will be populated at the end of the module.
 		self.default_spelling = synonyms[0]
 		# sort synonyms by descending size so that longer synonyms get checked first
@@ -87,10 +102,10 @@ class SymbolKeywordDef(KeywordDef):
 
 	def must_give_way(self, other):
 		'''
-		Return True if the presence of other must be checked before the presence 
+		Return True if the presence of other must be checked before the presence
 		of self in the input stream.
 
-		For example, if << and < exist as distinct keywords, then the presence of 
+		For example, if << and < exist as distinct keywords, then the presence of
 		<< shall be checked before the presence of < to limit keyword conflicts.
 		'''
 		for mine in self.synonyms:
@@ -167,6 +182,9 @@ GE             = SymbolKeywordDef("\u2265", ">=")
 EQ             = SymbolKeywordDef("=")
 NE             = SymbolKeywordDef("\u2260", "!=")
 
+# Even though we're not using the comment keywords to actually skip the
+# comments, these keywords still need to exist in order to ensure correct
+# parsing priorities for other symbols.
 MLC_START      = SymbolKeywordDef("(*")
 MLC_END        = SymbolKeywordDef("*)")
 SLC_START      = SymbolKeywordDef("//")

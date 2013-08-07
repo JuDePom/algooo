@@ -1,0 +1,8 @@
+algorithme
+lexique
+	Moule = <a: entier>
+	a: tableau Moule[0..1]
+début
+	a.a <- 1 + 1
+fin
+

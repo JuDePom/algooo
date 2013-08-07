@@ -1,0 +1,7 @@
+algorithme
+lexique
+	a : entier
+début
+	a <- 1 + 1
+fin
+
