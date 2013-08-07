@@ -1,4 +1,5 @@
 import ldakeywords as kw
+import dot
 
 class UnaryOp:
 	right_ass = True
@@ -13,9 +14,17 @@ class BinaryOp:
 		self.lhs = lhs
 		self.rhs = rhs
 	
-	def __gt__(self, prev):
-		return self.precedence > prev.precedence or \
-				self.right_ass and self.precedence == prev.precedence
+	def part_of_rhs(self, whose):
+		return self.precedence > whose.precedence or \
+			(self.right_ass and self.precedence == whose.precedence)
+	
+	def put_node(self, cluster):
+		op_node = dot.Node(self.keyword_def.default_spelling,
+				cluster,
+				self.lhs.put_node(cluster),
+				self.rhs.put_node(cluster))
+		op_node.shape = "circle"
+		return op_node
 
 class RHSGlutton(BinaryOp):
 	encompass = True
@@ -25,18 +34,25 @@ class ArraySubscript(RHSGlutton):
 	encompass_till = kw.RSBRACK
 	encompass_several = True
 
+class Multiplication(BinaryOp):
+	keyword_def = kw.TIMES
+
 class Addition(BinaryOp):
 	keyword_def = kw.PLUS
 
 class Assignment(BinaryOp):
 	keyword_def = kw.ASSIGN
 	right_ass = True
+	
+	def check(self, context):
+		# TODO
+		print(":)")
 
 unary = []
 binary_precedence = [
 		[ArraySubscript],
 		[],
-		[],
+		[Multiplication],
 		[Addition],
 		[],
 		[],

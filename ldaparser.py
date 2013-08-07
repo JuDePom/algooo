@@ -329,7 +329,8 @@ class Parser:
 	def analyze_expression(self):
 		lhs = self.analyze_primary_expression()
 		bo1 = self.analyze_binary_operator()
-		expr, _ = self.analyze_partial_expression(lhs, bo1)
+		expr, bo2 = self.analyze_partial_expression(lhs, bo1)
+		assert bo2 is None, "bo2 can't be an expression node here!"
 		return expr
 	
 	def analyze_partial_expression(self, lhs, bo1, min_p=0):
@@ -337,10 +338,22 @@ class Parser:
 		while bo1 is not None and bo1.precedence >= min_p:
 			rhs = self.analyze_rhs(bo1)
 			bo2 = self.analyze_binary_operator()
-			while bo2 is not None and bo2 > bo1:
+			# Keep extending bo1's RHS as long as the operators to the right (bo2) are
+			# supposed to be part of its RHS (see BinaryOp.part_of_rhs
+			# to see what this means)
+			while bo2 is not None and bo2.part_of_rhs(bo1):
 				rhs, bo2 = self.analyze_partial_expression(rhs, bo2, bo2.precedence)
+			# At this point, either bo2 is an operator that's not supposed to be part
+			# of bo1's RHS, or we hit a non-expression token (in which case bo2 is
+			# None). Finish the bo1 node properly, and move onto bo2 if needed.
 			bo1.lhs, bo1.rhs = lhs, rhs
+			# Use bo1's node as the LHS for the next operator (bo2)
+			lhs = bo1
+			# Prepare next iteration
 			bo1 = bo2
+		# Return bo1's LHS (which is supposed to be an expression node in its own
+		# right by now), and bo1 itself, which is a 'naked' operator (no LHS, no
+		# RHS) with a low precedence or None if it's not an operator at all.
 		return lhs, bo1
 
 	def analyze_rhs(self, op):

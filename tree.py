@@ -276,6 +276,7 @@ class InstructionDoWhile(Instruction):
 class Expression(SourceThing):
 	pass
 
+"""
 class OperatorToken(Token):
 	def __init__(self, op_kw, op):
 		super().__init__(op_kw.pos)
@@ -350,6 +351,7 @@ class BinaryOpNode(Expression):
 			raise NotImplementedError("vérifier subscript")
 		else:
 			raise NotImplementedError("à faire ;)")
+"""
 
 class Varargs(Expression):
 	def __init__(self, pos, arg_list):

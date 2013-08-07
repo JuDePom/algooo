@@ -60,10 +60,12 @@ class Cluster:
 			cascade.extend(sc.node_cascade())
 		return cascade
 
-def format_tree(top_level):
-	supercluster = Cluster("programme")
-	for t in top_level:
-		t.put_node(supercluster)
+def format_tree(module):
+	supercluster = Cluster("module")
+	for f in module.functions:
+		f.put_node(supercluster)
+	if module.algorithm is not None:
+		module.algorithm.put_node(supercluster)
 	all_nodes = supercluster.node_cascade()
 
 	s = "digraph program {\nnode [shape=plaintext, height=0];\n\n"

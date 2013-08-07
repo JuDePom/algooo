@@ -34,9 +34,9 @@ if not args.no_output:
 
 	output = formatter.format_tree(module)
 
-	if args.output is None:
+	if args.output_file is None:
 		print (output)
 	else:
-		with open(args.output, 'wt', encoding='utf8') as outfile:
-			outfile.write(output)
+		with open(args.output_file, 'wt', encoding='utf8') as output_file:
+			output_file.write(output)
 
