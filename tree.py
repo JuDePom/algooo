@@ -345,11 +345,14 @@ class Varargs(Expression):
 	def __init__(self, pos, arg_list):
 		super().__init__(pos)
 		self.arg_list = arg_list
+	def __iter__(self):
+		for arg in self.arg_list:
+			yield arg
 	def put_node(self, cluster):
 		arg_nodes = []
 		old_arg_node = None
 		rhs_cluster = dot.Cluster("", cluster)
-		for i, item in enumerate(self.arg_list):
+		for i, item in enumerate(self):
 			arg_node = dot.Node("arg"+str(i), cluster)
 			rhs_node = item.put_node(rhs_cluster)
 			arg_node.children.append(rhs_node)

@@ -130,7 +130,7 @@ class Parser:
 		# formal parameters, or lack thereof
 		if self.analyze_keyword(kw.RPAREN) is None:
 			# non-empty parameter list
-			params = self.analyze_comma_separated_args(self.analyze_formal_parameter)
+			params = self.analyze_varargs(self.analyze_formal_parameter)
 			self.analyze_mandatory_keyword(kw.RPAREN)
 		else:
 			# got an RPAREN right away: empty parameter list
@@ -172,7 +172,7 @@ class Parser:
 		# array dimensions
 		if is_array:
 			self.analyze_mandatory_keyword(kw.LSBRACK)
-			array_dimensions = self.analyze_comma_separated_args(self.analyze_expression)
+			array_dimensions = self.analyze_varargs(self.analyze_expression)
 			self.analyze_mandatory_keyword(kw.RSBRACK)
 		else:
 			array_dimensions = None
@@ -231,7 +231,7 @@ class Parser:
 			return
 		# point of no return
 		self.analyze_mandatory_keyword(kw.LT)
-		fp_list = self.analyze_comma_separated_args(self.analyze_formal_parameter)
+		fp_list = self.analyze_varargs(self.analyze_formal_parameter)
 		self.analyze_mandatory_keyword(kw.GT)
 		return CompoundMold(ident, fp_list)
 
@@ -347,18 +347,17 @@ class Parser:
 		return lhs, t
 
 	def analyze_second_operand(self, op):
-		pos0 = self.pos
 		if op.encompass_till is None:
 			return self.analyze_primary_expression(op.precedence)
 		elif op.encompass_several:
-			arg_list = self.analyze_comma_separated_args(self.analyze_expression)
-			rhs = Varargs(pos0, arg_list)
+			rhs = self.analyze_varargs(self.analyze_expression)
 		else:
 			rhs = self.analyze_expression()
 		self.analyze_mandatory_keyword(op.encompass_till)
 		return rhs
 
-	def analyze_comma_separated_args(self, analyze_arg):
+	def analyze_varargs(self, analyze_arg):
+		pos0 = self.pos
 		arg_list = []
 		next_arg = True
 		while next_arg:
@@ -368,7 +367,7 @@ class Parser:
 			next_arg = self.analyze_keyword(kw.COMMA) is not None
 			if next_arg and arg is None:
 				raise LDASyntaxError(self.pos, "argument vide")
-		return arg_list
+		return Varargs(pos0, arg_list)
 
 	def analyze_primary_expression(self, min_unary_precedence=0):
 		# check for sub-expression enclosed in parenthesis
