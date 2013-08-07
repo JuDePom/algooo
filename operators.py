@@ -1,81 +1,58 @@
 import ldakeywords as kw
 
-_highest_pg = 100
-_current_pg = _highest_pg
-def _new_precedence_group():
-	global _current_pg
-	_current_pg -= 1
+class UnaryOp:
+	right_ass = True
 
-class meta:
-	all_unaries = []
-	all_binaries = []
+class BinaryOp:
+	left_ass = True
+	right_ass = False
+	encompass = False
 
-class OpDef:
-	def __init__(self, symbol, name="???", precedence=None, unary=False, right_ass=False,
-	             encompass_till=None, encompass_several=False):
-		if precedence is None:
-			# we can't put _current_pg as the default value for precedence
-			# because it's not resolved at runtime...
-			precedence = _current_pg
-		self.precedence     = precedence
-		self.symbol         = symbol
-		self.name           = name
-		self.unary          = unary 
-		self.right_ass      = right_ass
-		self.encompass_till = encompass_till
-		self.encompass_several = encompass_several
-		self.binary         = not unary
-		self.left_ass       = not right_ass
-		if self.binary:
-			meta.all_binaries.append(self)
-		else:
-			meta.all_unaries.append(self)
+	def __init__(self, operator_token, lhs=None, rhs=None):
+		self.operator_token = operator_token
+		self.lhs = lhs
+		self.rhs = rhs
+	
+	def __gt__(self, prev):
+		return self.precedence > prev.precedence or \
+				self.right_ass and self.precedence == prev.precedence
 
-	def __repr__(self):
-		return str(self.symbol)
+class RHSGlutton(BinaryOp):
+	encompass = True
 
+class ArraySubscript(RHSGlutton):
+	keyword_def = kw.LSBRACK
+	encompass_till = kw.RSBRACK
+	encompass_several = True
 
-_new_precedence_group()
-SUBSCRIPT      = OpDef(kw.LSBRACK, "souscription de tableau",
-                       encompass_till=kw.RSBRACK, encompass_several=True)
-FUNCTION_CALL  = OpDef(kw.LPAREN, "appel de fonction",
-                       encompass_till=kw.RPAREN, encompass_several=True)
-MEMBER_SELECT  = OpDef(kw.DOT, "sélection de membre")
-UNARY_MINUS    = OpDef(kw.MINUS, "- unaire", unary=True, right_ass=True)
-UNARY_PLUS     = OpDef(kw.PLUS, "+ unaire", unary=True, right_ass=True)
-NOT            = OpDef(kw.NOT, "NON logique", unary=True, right_ass=True)
+class Addition(BinaryOp):
+	keyword_def = kw.PLUS
 
-_new_precedence_group()
-POWER          = OpDef(kw.POWER, "puissance", right_ass=True)
+class Assignment(BinaryOp):
+	keyword_def = kw.ASSIGN
+	right_ass = True
 
-_new_precedence_group()
-MULTIPLICATION = OpDef(kw.TIMES, "multiplication")
-DIVISION       = OpDef(kw.SLASH, "division")
-MODULO         = OpDef(kw.MODULO, "modulo")
+unary = []
+binary_precedence = [
+		[ArraySubscript],
+		[],
+		[],
+		[Addition],
+		[],
+		[],
+		[],
+		[],
+		[],
+		[Assignment]
+]
+binary_flat = [opcls for sublist in binary_precedence for opcls in sublist]
 
-_new_precedence_group()
-SUBTRACTION    = OpDef(kw.MINUS, "soustraction")
-ADDITION       = OpDef(kw.PLUS, "addition")
+unary_keyword_defs = [opcls.keyword_def for opcls in unary]
+binary_keyword_defs = [opcls.keyword_def for opcls in binary_flat]
 
-_new_precedence_group()
-RANGE          = OpDef(kw.DOTDOT, "intervalle")
-
-_new_precedence_group()
-LT             = OpDef(kw.LT, "inférieur")
-GT             = OpDef(kw.GT, "supérieur")
-LE             = OpDef(kw.LE, "inférieur ou égal")
-GE             = OpDef(kw.GE, "supérieur ou égal")
-
-_new_precedence_group()
-EQ             = OpDef(kw.EQ, "égal")
-NE             = OpDef(kw.NE, "différent")
-
-_new_precedence_group()
-AND            = OpDef(kw.AND, "ET logique")
-
-_new_precedence_group()
-OR             = OpDef(kw.OR, "OU logique")
-
-_new_precedence_group()
-ASSIGNMENT     = OpDef(kw.ASSIGN, "affectation", right_ass=True)
+for i, group in enumerate(binary_precedence):
+	group_id = len(binary_precedence) - i - 1
+	for cls in group:
+		cls.precedence = group_id
+		print (group_id, cls.__name__)
 

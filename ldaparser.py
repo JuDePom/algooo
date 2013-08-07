@@ -328,34 +328,64 @@ class Parser:
 	
 	def analyze_expression(self):
 		lhs = self.analyze_primary_expression()
-		t   = self.analyze_binary_operator()
-		expr, _ = self.analyze_partial_expression(lhs, t)
+		bo1 = self.analyze_binary_operator()
+		expr, _ = self.analyze_partial_expression(lhs, bo1)
 		return expr
 	
-	def analyze_partial_expression(self, lhs, t, min_p=0):
-		assert(t is None or (type(t) is OperatorToken and t.op.binary))
-		while t is not None and t.op.precedence >= min_p:
-			op_tok = t
-			op = t.op
-			rhs = self.analyze_second_operand(op)
-			t = self.analyze_binary_operator()
-			while t is not None and \
-					(t.op.precedence > op.precedence or \
-					(t.op.right_ass and t.op.precedence == op.precedence)):
-				rhs, t = self.analyze_partial_expression(rhs, t, t.op.precedence)
-			lhs = BinaryOpNode(op_tok, lhs, rhs)
-		return lhs, t
+	def analyze_partial_expression(self, lhs, bo1, min_p=0):
+		assert bo1 is None or isinstance(bo1, ops.BinaryOp)
+		while bo1 is not None and bo1.precedence >= min_p:
+			rhs = self.analyze_rhs(bo1)
+			bo2 = self.analyze_binary_operator()
+			while bo2 is not None and bo2 > bo1:
+				rhs, bo2 = self.analyze_partial_expression(rhs, bo2, bo2.precedence)
+			bo1.lhs, bo1.rhs = lhs, rhs
+			bo1 = bo2
+		return lhs, bo1
 
-	def analyze_second_operand(self, op):
-		if op.encompass_till is None:
-			return self.analyze_primary_expression(op.precedence)
-		elif op.encompass_several:
+	def analyze_rhs(self, op):
+		if not op.encompass:
+			return self.analyze_primary_expression()
+		if op.encompass_several:
 			rhs = self.analyze_varargs(self.analyze_expression)
 		else:
 			rhs = self.analyze_expression()
 		self.analyze_mandatory_keyword(op.encompass_till)
 		return rhs
 
+	def analyze_primary_expression(self):
+		# check for sub-expression enclosed in parenthesis
+		lparen = self.analyze_keyword(kw.LPAREN)
+		if lparen is not None:
+			sub_expr = self.analyze_expression()
+			self.analyze_mandatory_keyword(kw.RPAREN)
+			return sub_expr
+		# check for a unary operator
+		uo = self.analyze_unary_operator()
+		if uo is not None:
+			# analyze primary after the unary operator
+			uo.primary = self.analyze_primary_expression(unary.op.precedence)
+			return uo
+		# terminal symbol
+		return self.analyze_multiple(
+			lambda: self.analyze_literal(re_integer, LiteralInteger, int),
+			lambda: self.analyze_literal(re_real, LiteralReal, float),
+			lambda: self.analyze_literal(re_string, LiteralString, lambda s: s[1:-1]),
+			self.analyze_literal_boolean,
+			self.analyze_identifier,)
+
+	def analyze_binary_operator(self):
+		return self.analyze_operator(ops.binary_flat)
+
+	def analyze_unary_operator(self):
+		return self.analyze_operator(ops.unary)
+
+	def analyze_operator(self, op_list):
+		for op_class in op_list:
+			op_token = self.analyze_keyword(op_class.keyword_def)
+			if op_token is not None:
+				return op_class(op_token)
+	
 	def analyze_varargs(self, analyze_arg):
 		pos0 = self.pos
 		arg_list = []
@@ -369,40 +399,7 @@ class Parser:
 				raise LDASyntaxError(self.pos, "argument vide")
 		return Varargs(pos0, arg_list)
 
-	def analyze_primary_expression(self, min_unary_precedence=0):
-		# check for sub-expression enclosed in parenthesis
-		lparen = self.analyze_keyword(kw.LPAREN)
-		if lparen is not None:
-			sub_expr = self.analyze_expression()
-			self.analyze_mandatory_keyword(kw.RPAREN)
-			return sub_expr
-		# check for a unary operator
-		unary = self.analyze_unary_operator()
-		if unary is not None:
-			if unary.op.precedence < min_unary_precedence:
-				raise LDASyntaxError("précédence trop faible") # TODO - mieux expliquer
-			# analyze primary after the unary operator
-			primary = self.analyze_primary_expression(unary.op.precedence)
-			return UnaryOpNode(unary, primary)
-		# terminal symbol
-		return self.analyze_multiple(
-			lambda: self.analyze_literal(re_integer, LiteralInteger, int),
-			lambda: self.analyze_literal(re_real, LiteralReal, float),
-			lambda: self.analyze_literal(re_string, LiteralString, lambda s: s[1:-1]),
-			self.analyze_literal_boolean,
-			self.analyze_identifier,)
 
-	def analyze_operator(self, operator_list):
-		for op in operator_list:
-			op_kw = self.analyze_keyword(op.symbol)
-			if op_kw is not None:
-				return OperatorToken(op_kw, op)
-	
-	def analyze_binary_operator(self):
-		return self.analyze_operator(ops.meta.all_binaries)
-
-	def analyze_unary_operator(self):
-		return self.analyze_operator(ops.meta.all_unaries)
 
 	def analyze_literal(self, compiled_regexp, literal_class, converter):
 		pos0 = self.pos
