@@ -155,9 +155,10 @@ class TypeSpec(SourceThing):
 		self.type_word = type_word
 		self.array_dimensions = array_dimensions
 		# useful automatic flags
-		self.custom_type = isinstance(type_word, Identifier)
-		self.scalar = not self.custom_type
+		self.mold = isinstance(type_word, Identifier)
+		self.scalar = not self.mold
 		self.array = self.array_dimensions is not None
+		self.pure_mold = self.mold and not self.array
 		if self.scalar:
 			assert(self.type_word in kw.meta.all_scalar_types)
 	def __eq__(self, other):
@@ -320,7 +321,8 @@ class BinaryOpNode(Expression):
 		op_node.shape = "circle"
 		return op_node
 	def check(self, context):
-		if self.operator in (ops.ADDITION, ops.SUBTRACTION, ops.ASSIGNMENT):
+		if self.operator in (ops.ADDITION, ops.SUBTRACTION, ops.ASSIGNMENT,
+				ops.MULTIPLICATION, ops.DIVISION):
 			# TODO types "équivalents" (entier+réel)...
 			self.lhs.check(context)
 			self.rhs.check(context)
@@ -333,13 +335,21 @@ class BinaryOpNode(Expression):
 		elif self.operator is ops.MEMBER_SELECT:
 			# LHS's typespec should resolve to a compound mold
 			self.lhs.check(context)
+			lhs_type = self.lhs.type_spec
+			if not lhs_type.pure_mold:
+				raise LDASemanticError(lhs_type.pos, "sélection d'un membre "
+					"dans un élément de type non-composite")
 			# TODO very ugly
 			mold = context.molds[self.lhs.type_spec.type_word.name]
 			# use mold context exclusively for RHS
 			self.rhs.check(mold)
 			self.type_spec = self.rhs.type_spec
+		elif self.operator is ops.SUBSCRIPT:
+			# TODO vérifier que le nombre de varargs du RHS correspond au nombre de
+			# varargs du Typespec du contexte
+			raise NotImplementedError("vérifier subscript")
 		else:
-			raise Exception("xoxoxo TODO")
+			raise NotImplementedError("à faire ;)")
 
 class Varargs(Expression):
 	def __init__(self, pos, arg_list):
@@ -381,7 +391,7 @@ class LiteralInteger(_Literal):
 	type_spec = TypeSpec(kw.INT)
 
 class LiteralReal(_Literal):
-	pass
+	type_spec = TypeSpec(kw.REAL)
 
 class LiteralString(_Literal):
 	def __repr__(self):
