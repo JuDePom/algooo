@@ -5,18 +5,18 @@ from errors import *
 from position import Position
 from tree import *
 
-re_identifier = re.compile(r'[^\d\W]\w*', re.UNICODE)
+re_identifier = re.compile(r'[^\d\W]\w*')
 
 # match at least one digit;
-# must NOT followed by a dot, an alpha, or a _
-re_integer    = re.compile(r'\d+(?![\w\.])', re.UNICODE)
+# must NOT followed by a single dot, an alpha, or a _
+re_integer    = re.compile(r'\d+(?![\w\.][^\.])')
 
 # match at least one digit, one dot, and zero or more digits, 
 # **OR** match one dot, and at least one digit;
-# but either match must NOT be followed by another dot, an alpha, or a _
-re_real       = re.compile(r'(\d+\.\d*|\.\d+)(?![\w\.])', re.UNICODE)
+# but either match must NOT be followed by a single dot, an alpha, or a _
+re_real       = re.compile(r'(\d+\.\d*|\.\d+)(?![\w\.][^\.])')
 
-re_string     = re.compile(r'".*?"', re.UNICODE) # TODO- escaping
+re_string     = re.compile(r'".*?"') # TODO- escaping
 
 class Parser:
 	'''
@@ -107,7 +107,6 @@ class Parser:
 	def analyze_function(self):
 		start_kw = self.analyze_keyword(kw.FUNCTION)
 		if start_kw is None:
-			print("no match :(", kw.FUNCTION, self.buf[self.pos.char:self.pos.char+10])
 			return
 		# point of no-return
 		# identifier
