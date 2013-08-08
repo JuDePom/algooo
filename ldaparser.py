@@ -20,8 +20,6 @@ re_integer = re.compile(r'''
 	|(?=\.\.)  # But the last digit may be followed by two dots (range operator).
 	)''', re.VERBOSE)
 
-re_integer = re.compile(r'\d+((?![\.\w])|(?=\.\.))')
-
 re_real = re.compile(r'''
 	(\d+\.\d*  # At least one digit, followed by a dot, and zero or more digits.
 	|\.\d+)    # Or a dot followed by at least one digit.
