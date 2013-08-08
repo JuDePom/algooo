@@ -1,10 +1,14 @@
 import re
-import ldakeywords as kw
-import operators as ops
+import keywords as kw
+import operators
+import module
+import tokens
+import typedef
+import position
+import expression
+import statements
+import symboltable
 from errors import *
-from position import Position
-from tree import *
-from symboltable import SymbolTable
 
 re_identifier = re.compile(r'[^\d\W]\w*')
 
@@ -42,7 +46,7 @@ class Parser:
 		self.reset_pos()
 
 	def reset_pos(self):
-		self.pos = Position(self.path)
+		self.pos = position.Position(self.path)
 
 	def advance(self, chars=0):
 		'''
@@ -82,7 +86,7 @@ class Parser:
 				else:
 					bpos += 1
 					column += 1
-		self.pos = Position(self.pos.path, bpos, line, column)
+		self.pos = position.Position(self.pos.path, bpos, line, column)
 
 	def eof(self):
 		return self.pos.char >= self.buflen
@@ -106,7 +110,7 @@ class Parser:
 				continue
 			raise ExpectedItemError(self.pos, "une fonction ou un algorithme")
 			# TODO : ... ou une def de composite ?
-		return Module(functions, algorithm)
+		return module.Module(functions, algorithm)
 
 	def analyze_algorithm(self):
 		start_kw = self.analyze_keyword(kw.ALGORITHM)
@@ -117,8 +121,8 @@ class Parser:
 		lexi = self.analyze_lexicon()
 		# statement block
 		self.analyze_mandatory_keyword(kw.BEGIN)
-		body, _ = self.analyze_instruction_block(kw.END)
-		return Algorithm(start_kw.pos, lexi, body)
+		body, _ = self.analyze_statement_block(kw.END)
+		return module.Algorithm(start_kw.pos, lexi, body)
 
 	def analyze_function(self):
 		start_kw = self.analyze_keyword(kw.FUNCTION)
@@ -134,7 +138,7 @@ class Parser:
 		# formal parameters, or lack thereof
 		if self.analyze_keyword(kw.RPAREN) is None:
 			# non-empty parameter list
-			params = self.analyze_varargs(self.analyze_formal_parameter)
+			params = self.analyze_varargs(self.analyze_variable_declaration)
 			self.analyze_mandatory_keyword(kw.RPAREN)
 		else:
 			# got an RPAREN right away: empty parameter list
@@ -146,10 +150,10 @@ class Parser:
 		lexi = self.analyze_lexicon()
 		# statement block
 		self.analyze_mandatory_keyword(kw.BEGIN)
-		body, _ = self.analyze_instruction_block(kw.END)
-		return Function(start_kw.pos, ident, params, lexi, body)
+		body, _ = self.analyze_statement_block(kw.END)
+		return module.Function(start_kw.pos, ident, params, lexi, body)
 
-	def analyze_formal_parameter(self):
+	def analyze_variable_declaration(self):
 		pos0 = self.pos
 		# identifier
 		ident = self.analyze_identifier()
@@ -165,8 +169,8 @@ class Parser:
 		is_array = self.analyze_keyword(kw.ARRAY) is not None
 		# enclosed type
 		type_word = None
-		for candidate in kw.meta.all_scalar_types:
-			if self.analyze_keyword(candidate) is not None:
+		for candidate in typedef.scalars:
+			if self.analyze_keyword(candidate.type_word) is not None:
 				type_word = candidate
 				break
 		else:
@@ -180,26 +184,25 @@ class Parser:
 			self.analyze_mandatory_keyword(kw.RSBRACK)
 		else:
 			array_dimensions = None
-		type_spec = TypeSpec(type_word, array_dimensions)
-		return FormalParameter(ident, type_spec, is_inout)
+		return symboltable.VariableDeclaration(ident, is_inout, type_word, array_dimensions)
 
 	def analyze_lexicon(self):
 		start_kw = self.analyze_keyword(kw.LEXICON)
 		if start_kw is None:
 			return
-		declarations = []
-		molds = []
+		variables = []
+		composites = []
 		while True:
-			d = self.analyze_formal_parameter()
-			if d is not None:
-				declarations.append(d)
+			v = self.analyze_variable_declaration()
+			if v is not None:
+				variables.append(v)
 				continue
-			m = self.analyze_compound_mold_declaration()
-			if m is not None:
-				molds.append(m)
+			c = self.analyze_composite()
+			if c is not None:
+				composites.append(c)
 				continue
 			break
-		return Lexicon(start_kw.pos, declarations, molds)	
+		return symboltable.Lexicon(start_kw.pos, variables, composites)
 
 	def analyze_identifier(self):
 		match = re_identifier.match(self.buf, self.pos.char)
@@ -210,14 +213,14 @@ class Parser:
 			return # invalid identifier if the string is a keyword
 		pos0 = self.pos
 		self.advance(len(identifier))
-		return Identifier(pos0, identifier)
+		return tokens.Identifier(pos0, identifier)
 
 	def analyze_keyword(self, keyword):
 		pos0 = self.pos
 		found_string = keyword.find(self.buf, self.pos.char)
 		if found_string is not None:
 			self.advance(len(found_string))
-			return KeywordToken(pos0, found_string)
+			return tokens.KeywordToken(pos0, found_string)
 
 	def analyze_mandatory_keyword(self, keyword):
 		found_kw = self.analyze_keyword(keyword)
@@ -225,7 +228,7 @@ class Parser:
 			return found_kw
 		raise ExpectedKeywordError(self.pos, keyword)
 
-	def analyze_compound_mold_declaration(self):
+	def analyze_composite(self):
 		pos0 = self.pos
 		ident = self.analyze_identifier()
 		if ident is None:
@@ -235,28 +238,28 @@ class Parser:
 			return
 		# point of no return
 		self.analyze_mandatory_keyword(kw.LT)
-		fp_list = self.analyze_varargs(self.analyze_formal_parameter)
+		fp_list = self.analyze_varargs(self.analyze_variable_declaration)
 		self.analyze_mandatory_keyword(kw.GT)
-		return CompoundMold(ident, fp_list)
+		return symboltable.Composite(ident, fp_list)
 
-	def analyze_instruction_block(self, *end_marker_keywords):
+	def analyze_statement_block(self, *end_marker_keywords):
 		pos0 = self.pos
-		statements = []
-		instruction = self.analyze_instruction()
-		while instruction is not None:
-			statements.append(instruction)
-			instruction = self.analyze_instruction()
+		block = []
+		unit = self.analyze_statement()
+		while unit is not None:
+			block.append(unit)
+			unit = self.analyze_statement()
 		for marker in end_marker_keywords:
 			if self.analyze_keyword(marker) is not None:
-				return StatementBlock(pos0, statements), marker
+				return statements.StatementBlock(pos0, block), marker
 		raise ExpectedKeywordError(self.pos, *end_marker_keywords)
-	
+
 	def analyze_multiple(self, *analysis_order):
 		for thing in (analyze() for analyze in analysis_order):
 			if thing is not None:
 				return thing
 
-	def analyze_instruction(self):
+	def analyze_statement(self):
 		return self.analyze_multiple(
 			self.analyze_expression,
 			self.analyze_if,
@@ -274,14 +277,14 @@ class Parser:
 			raise ExpectedItemError(self.pos, "condition")
 		# then block
 		self.analyze_mandatory_keyword(kw.THEN)
-		then_block, emk = self.analyze_instruction_block(kw.ELSE, kw.END_IF)
+		then_block, emk = self.analyze_statement_block(kw.ELSE, kw.END_IF)
 		# else block
 		if emk is kw.ELSE:
-			else_block, _ = self.analyze_instruction_block(kw.END_IF)
+			else_block, _ = self.analyze_statement_block(kw.END_IF)
 		else:
 			else_block = None
-		return InstructionIf(pos0, condition, then_block, else_block)
-		
+		return IfThenElse(pos0, condition, then_block, else_block)
+
 	def analyze_for(self):
 		pos0 = self.pos
 		if self.analyze_keyword(kw.FOR) is None: return
@@ -302,9 +305,9 @@ class Parser:
 			raise ExpectedItemError(self.pos, "valeur finale du compteur")
 		# statement block
 		self.analyze_mandatory_keyword(kw.DO)
-		block, _ = self.analyze_instruction_block(kw.END_FOR)
-		return InstructionFor(pos0, counter, initial, final, block)
-	
+		block, _ = self.analyze_statement_block(kw.END_FOR)
+		return statements.For(pos0, counter, initial, final, block)
+
 	def analyze_while(self):
 		pos0 = self.pos
 		if self.analyze_keyword(kw.WHILE) is None: return
@@ -315,30 +318,30 @@ class Parser:
 			raise ExpectedItemError(self.pos, "condition de la boucle")
 		# statement block
 		self.analyze_mandatory_keyword(kw.DO)
-		block, _ = self.analyze_instruction_block(kw.END_WHILE)
-		return InstructionWhile(pos0, condition, block)
-		
+		block, _ = self.analyze_statement_block(kw.END_WHILE)
+		return statements.While(pos0, condition, block)
+
 	def analyze_do_while(self):
 		pos0 = self.pos
 		if self.analyze_keyword(kw.DO) is None: return
 		# point of no return
 		# statement block
-		block, _ = self.analyze_instruction_block(kw.TO)
+		block, _ = self.analyze_statement_block(kw.TO)
 		# condition
 		condition = self.analyze_expression()
 		if condition is None:
 			raise ExpectedItemError(self.pos, "condition de la boucle")
-		return InstructionDoWhile(pos0, block, condition)
-	
+		return statements.DoWhile(pos0, block, condition)
+
 	def analyze_expression(self):
 		lhs = self.analyze_primary_expression()
 		bo1 = self.analyze_binary_operator()
 		expr, bo2 = self.analyze_partial_expression(lhs, bo1)
 		assert bo2 is None, "bo2 can't be an expression node here!"
 		return expr
-	
+
 	def analyze_partial_expression(self, lhs, bo1, min_p=0):
-		assert bo1 is None or isinstance(bo1, ops.BinaryOp)
+		assert bo1 is None or isinstance(bo1, operators.BinaryOp)
 		while bo1 is not None and bo1.precedence >= min_p:
 			rhs = self.analyze_rhs(bo1)
 			bo2 = self.analyze_binary_operator()
@@ -386,24 +389,24 @@ class Parser:
 			return uo
 		# terminal symbol
 		return self.analyze_multiple(
-			lambda: self.analyze_literal(re_integer, LiteralInteger, int),
-			lambda: self.analyze_literal(re_real, LiteralReal, float),
-			lambda: self.analyze_literal(re_string, LiteralString, lambda s: s[1:-1]),
+			lambda: self.analyze_literal(re_integer, expression.LiteralInteger, int),
+			lambda: self.analyze_literal(re_real, expression.LiteralReal, float),
+			lambda: self.analyze_literal(re_string, expression.LiteralString, lambda s: s[1:-1]),
 			self.analyze_literal_boolean,
 			self.analyze_identifier,)
 
 	def analyze_binary_operator(self):
-		return self.analyze_operator(ops.binary_flat)
+		return self.analyze_operator(operators.binary_flat)
 
 	def analyze_unary_operator(self):
-		return self.analyze_operator(ops.unary)
+		return self.analyze_operator(operators.unary)
 
 	def analyze_operator(self, op_list):
 		for op_class in op_list:
 			op_token = self.analyze_keyword(op_class.keyword_def)
 			if op_token is not None:
 				return op_class(op_token)
-	
+
 	def analyze_varargs(self, analyze_arg):
 		pos0 = self.pos
 		arg_list = []
@@ -415,7 +418,7 @@ class Parser:
 			next_arg = self.analyze_keyword(kw.COMMA) is not None
 			if next_arg and arg is None:
 				raise LDASyntaxError(self.pos, "argument vide")
-		return Varargs(pos0, arg_list)
+		return expression.Varargs(pos0, arg_list)
 
 	def analyze_literal(self, compiled_regexp, literal_class, converter):
 		pos0 = self.pos
@@ -431,5 +434,5 @@ class Parser:
 		if true_kw is None and self.analyze_keyword(kw.FALSE) is None:
 			return
 		value = true_kw is not None
-		return LiteralBoolean(pos0, value)
+		return expression.LiteralBoolean(pos0, value)
 

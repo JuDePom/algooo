@@ -26,25 +26,9 @@ class meta:
 	all_keywords = []
 
 	'''
-	List of all keywords denoting an LDA scalar type.
-	'''
-	all_scalar_types = []
-
-	'''
 	List of all SymbolKeywordDef objects declared in this module.
 	'''
 	all_symbols = []
-
-	def keyword_equality(a, b):
-		# TODO cette fonction devrait être éradiquée
-		def get_def(x):
-			try:
-				return x.kw_def
-			except AttributeError:
-				return x
-		a = get_def(a)
-		b = get_def(b)
-		return a is not None and a is b
 
 class KeywordDef:
 	'''
@@ -58,11 +42,6 @@ class KeywordDef:
 		self.default_spelling = synonyms[0]
 		self.synonyms = synonyms
 		meta.all_keywords.extend(synonyms)
-
-	__eq__ = meta.keyword_equality
-
-	def __ne__(self, other):
-		return not self.__eq__(self, other)
 
 	def __repr__(self):
 		return "k_" + self.default_spelling
@@ -189,8 +168,6 @@ NE             = SymbolKeywordDef("\u2260", "!=")
 MLC_START      = SymbolKeywordDef("(*")
 MLC_END        = SymbolKeywordDef("*)")
 SLC_START      = SymbolKeywordDef("//")
-
-meta.all_scalar_types = [ INT, REAL, BOOL, CHAR, STRING ]
 
 # build give_way lists
 # TODO: écrémer ... si * gw ** gw ***, alors * gw *** est redondant et *** sera vérifié une fois de trop

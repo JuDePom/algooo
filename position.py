@@ -23,3 +23,10 @@ class Position(tuple):
 		'''
 		return "{}, ligne {}, colonne {}".format(self.path, self.line, self.column)
 
+class SourceThing:
+	'''
+	Anything that can represented in a source file.
+	'''
+	def __init__(self, pos):
+		self.pos = pos
+
