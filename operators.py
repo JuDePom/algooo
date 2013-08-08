@@ -13,9 +13,8 @@ import dot
 class UnaryOp(Expression):
 	right_ass = True
 
-	def __init__(self, operator_token, rhs=None):
-		super().__init__(operator_token.pos)
-		self.operator_token = operator_token
+	def __init__(self, pos, rhs=None):
+		super().__init__(pos)
 		self.rhs = rhs
 
 	def put_node(self, cluster):
@@ -31,9 +30,8 @@ class BinaryOp(Expression):
 	right_ass = False
 	encompass_varargs_till = None
 
-	def __init__(self, operator_token, lhs=None, rhs=None):
-		super().__init__(operator_token.pos)
-		self.operator_token = operator_token
+	def __init__(self, pos, lhs=None, rhs=None):
+		super().__init__(pos)
 		self.lhs = lhs
 		self.rhs = rhs
 

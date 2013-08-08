@@ -5,15 +5,6 @@ from errors import MissingDeclaration
 class Token(position.SourceThing):
 	pass
 
-class KeywordToken(Token):
-	def __init__(self, pos, kw_def):
-		super().__init__(pos)
-		self.kw_def = kw_def
-	def __eq__(self, other):
-		return kw.meta.keyword_equality(self, other)
-	def __ne__(self, other):
-		return not self.__eq__(other)
-
 class Identifier(Token):
 	def __init__(self, pos, name):
 		super().__init__(pos)
