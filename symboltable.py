@@ -1,6 +1,7 @@
 import keywords as kw
 from position import SourceThing
 from errors import MissingDeclaration
+import dot
 
 scalars = {}
 equivalent_scalars = []
