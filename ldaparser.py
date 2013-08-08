@@ -170,7 +170,7 @@ class Parser:
 		type_word = None
 		for candidate in symboltable.scalars.values():
 			if self.find_keyword(candidate.type_word):
-				type_word = candidate
+				type_word = candidate.type_word
 				break
 		else:
 			type_word = self.analyze_identifier()

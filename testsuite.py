@@ -59,7 +59,10 @@ lex, _ = parse('lexicon', """
 			Moule=<a:entier, b:chaîne>
 			m:Moule
 			t1:tableau Moule[0..2]
-			t2:tableau Moule[0..2,0..2]""")
+			t2:tableau Moule[0..2,0..2]
+			le_réel: réel
+			l_entier: entier
+			""")
 
 
 #######################################################################
@@ -81,6 +84,9 @@ expressions = [
 		't1[m.a]',
 		't1[t1[0].a]',
 		'm.a + t1[0].a',
+		'l_entier <- 3',
+		'le_réel <- 123.456',
+		'le_réel <- 12',
 ]
 
 for e in expressions:
