@@ -8,18 +8,28 @@ import statements
 import symboltable
 from errors import *
 
-re_identifier = re.compile(r'[^\d\W]\w*')
+re_identifier = re.compile(r'''
+	[^\d\W]    # The first character must be a non-digital word character.
+	\w*        # After that, all word characters are allowed.
+	''', re.VERBOSE)
 
-# match at least one digit;
-# must NOT followed by a single dot, an alpha, or a _
-re_integer    = re.compile(r'\d+(?![\w\.]($|[^\.]))')
+re_integer = re.compile(r'''
+	\d+(       # At least one digit.
+	(?![\.\w]) # The last digit may not be followed by a single dot (that would
+	           # make it a real number) or a word character.
+	|(?=\.\.)  # But the last digit may be followed by two dots (range operator).
+	)''', re.VERBOSE)
 
-# match at least one digit, one dot, and zero or more digits,
-# **OR** match one dot, and at least one digit;
-# but either match must NOT be followed by a single dot, an alpha, or a _
-re_real       = re.compile(r'(\d+\.\d*|\.\d+)(?![\w\.]($|[^\.]))')
+re_integer = re.compile(r'\d+((?![\.\w])|(?=\.\.))')
 
-re_string     = re.compile(r'".*?"') # TODO- escaping
+re_real = re.compile(r'''
+	(\d+\.\d*  # At least one digit, followed by a dot, and zero or more digits.
+	|\.\d+)    # Or a dot followed by at least one digit.
+	(?![\.\w]) # The last digit may not be followed by another dot
+	           # or a "word" character.
+	''', re.VERBOSE)
+
+re_string = re.compile(r'".*?"') # TODO- escaping
 
 class Parser:
 	'''
@@ -170,7 +180,7 @@ class Parser:
 		type_word = None
 		for candidate in symboltable.scalars.values():
 			if self.find_keyword(candidate.type_word):
-				type_word = candidate.type_word
+				type_word = candidate
 				break
 		else:
 			type_word = self.analyze_identifier()
