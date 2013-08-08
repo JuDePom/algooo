@@ -64,7 +64,7 @@ class MissingDeclaration(LDASemanticError):
 		super().__init__(ident.pos, message)
 
 class TypeMismatch(LDASemanticError):
-	def __init__(self, pos):
-		message = "types conflictuels"
+	def __init__(self, pos, a, b):
+		message = "types conflictuels : {} vs. {}".format(a, b)
 		super().__init__(pos, message)
 

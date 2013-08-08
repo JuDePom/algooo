@@ -36,6 +36,7 @@ class meta:
 	all_symbols = []
 
 	def keyword_equality(a, b):
+		# TODO cette fonction devrait être éradiquée
 		def get_def(x):
 			try:
 				return x.kw_def

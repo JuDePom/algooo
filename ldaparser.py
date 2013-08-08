@@ -10,12 +10,12 @@ re_identifier = re.compile(r'[^\d\W]\w*')
 
 # match at least one digit;
 # must NOT followed by a single dot, an alpha, or a _
-re_integer    = re.compile(r'\d+(?![\w\.][^\.])')
+re_integer    = re.compile(r'\d+(?![\w\.]($|[^\.]))')
 
 # match at least one digit, one dot, and zero or more digits,
 # **OR** match one dot, and at least one digit;
 # but either match must NOT be followed by a single dot, an alpha, or a _
-re_real       = re.compile(r'(\d+\.\d*|\.\d+)(?![\w\.][^\.])')
+re_real       = re.compile(r'(\d+\.\d*|\.\d+)(?![\w\.]($|[^\.]))')
 
 re_string     = re.compile(r'".*?"') # TODO- escaping
 
@@ -30,11 +30,15 @@ class Parser:
 	These functions may raise an exception if a syntax error was found.
 	'''
 
-	def __init__(self, path):
-		self.path = path
-		with open(path, 'rt', encoding='utf8') as input_file:
-			self.buf = input_file.read()
-			self.buflen = len(self.buf)
+	def __init__(self, path, buf=None):
+		if path is not None:
+			self.path = path
+			with open(path, 'rt', encoding='utf8') as input_file:
+				self.buf = input_file.read()
+		else:
+			self.path = "<direct>"
+			self.buf = buf
+		self.buflen = len(self.buf)
 		self.reset_pos()
 
 	def reset_pos(self):
@@ -165,7 +169,7 @@ class Parser:
 			if self.analyze_keyword(candidate) is not None:
 				type_word = candidate
 				break
-		if type_word is None:
+		else:
 			type_word = self.analyze_identifier()
 		if type_word is None:
 			raise ExpectedItemError(self.pos, "un type scalaire ou composite")
@@ -346,6 +350,9 @@ class Parser:
 			# At this point, either bo2 is an operator that's not supposed to be part
 			# of bo1's RHS, or we hit a non-expression token (in which case bo2 is
 			# None). Finish the bo1 node properly, and move onto bo2 if needed.
+			if rhs is None:
+				raise LDASyntaxError(self.pos, "cet opérateur binaire requiert "
+						"une opérande à sa droite")
 			bo1.lhs, bo1.rhs = lhs, rhs
 			# Use bo1's node as the LHS for the next operator (bo2)
 			lhs = bo1
@@ -357,13 +364,11 @@ class Parser:
 		return lhs, bo1
 
 	def analyze_rhs(self, op):
-		if not op.encompass:
-			return self.analyze_primary_expression()
-		if op.encompass_several:
-			rhs = self.analyze_varargs(self.analyze_expression)
+		if op.encompass_varargs_till is None:
+			rhs = self.analyze_primary_expression()
 		else:
-			rhs = self.analyze_expression()
-		self.analyze_mandatory_keyword(op.encompass_till)
+			rhs = self.analyze_varargs(self.analyze_expression)
+			self.analyze_mandatory_keyword(op.encompass_varargs_till)
 		return rhs
 
 	def analyze_primary_expression(self):
@@ -377,7 +382,7 @@ class Parser:
 		uo = self.analyze_unary_operator()
 		if uo is not None:
 			# analyze primary after the unary operator
-			uo.primary = self.analyze_primary_expression(unary.op.precedence)
+			uo.rhs = self.analyze_primary_expression()
 			return uo
 		# terminal symbol
 		return self.analyze_multiple(
@@ -411,8 +416,6 @@ class Parser:
 			if next_arg and arg is None:
 				raise LDASyntaxError(self.pos, "argument vide")
 		return Varargs(pos0, arg_list)
-
-
 
 	def analyze_literal(self, compiled_regexp, literal_class, converter):
 		pos0 = self.pos

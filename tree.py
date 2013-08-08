@@ -152,17 +152,23 @@ class TypeSpec(SourceThing):
 	def __init__(self, type_word, array_dimensions=None):
 		pos = None if isinstance(type_word, kw.KeywordDef) else type_word.pos
 		super().__init__(pos)
-		self.type_word = type_word
+		self.type_word        = type_word
 		self.array_dimensions = array_dimensions
 		# useful automatic flags
-		self.mold = isinstance(type_word, Identifier)
-		self.scalar = not self.mold
-		self.array = self.array_dimensions is not None
-		self.pure_mold = self.mold and not self.array
+		self.synthetic        = pos is None
+		self.mold             = isinstance(type_word, Identifier)
+		self.scalar           = not self.mold
+		self.array            = self.array_dimensions is not None
+		self.pure_mold        = self.mold and not self.array
+		self.pure_scalar      = self.scalar and not self.array
 		if self.scalar:
 			assert(self.type_word in kw.meta.all_scalar_types)
+	def make_pure(self):
+		return TypeSpec(self.type_word)
 	def __eq__(self, other):
-		if not isinstance(other, TypeSpec):
+		if isinstance(other, kw.KeywordDef):
+			return self.pure_scalar and self.type_word == other
+		elif not isinstance(other, TypeSpec):
 			return False
 		return self.type_word == other.type_word and \
 				self.array_dimensions == other.array_dimensions
@@ -276,83 +282,6 @@ class InstructionDoWhile(Instruction):
 class Expression(SourceThing):
 	pass
 
-"""
-class OperatorToken(Token):
-	def __init__(self, op_kw, op):
-		super().__init__(op_kw.pos)
-		self.kw = op_kw
-		self.op = op
-	def __repr__(self):
-		return "o_{}".format(self.op)
-
-class UnaryOpNode(Expression):
-	def __init__(self, op_tok, operand):
-		super().__init__(op_tok.pos)
-		self.operator_token = op_tok
-		self.operator = op_tok.op
-		self.operand = operand
-	def __repr__(self):
-		return "({}{})".format(
-				self.operator.symbol.default_spelling,
-				self.operand)
-	def put_node(self, cluster):
-		op_node = dot.Node(self.operator.symbol.default_spelling,
-				cluster,
-				self.operand.put_node(cluster))
-		op_node.shape = "circle"
-		return op_node
-
-class BinaryOpNode(Expression):
-	def __init__(self, op_tok, lhs, rhs):
-		super().__init__(op_tok.pos)
-		self.operator_token = op_tok
-		self.operator = op_tok.op
-		self.lhs = lhs
-		self.rhs = rhs
-	def __repr__(self):
-		return "({1}{0}{2})".format(
-				self.operator.symbol.default_spelling,
-				self.lhs,
-				self.rhs)
-	def put_node(self, cluster):
-		op_node = dot.Node(self.operator.symbol.default_spelling,
-				cluster,
-				self.lhs.put_node(cluster),
-				self.rhs.put_node(cluster))
-		op_node.shape = "circle"
-		return op_node
-	def check(self, context):
-		if self.operator in (ops.ADDITION, ops.SUBTRACTION, ops.ASSIGNMENT,
-				ops.MULTIPLICATION, ops.DIVISION):
-			# TODO types "équivalents" (entier+réel)...
-			self.lhs.check(context)
-			self.rhs.check(context)
-			if self.lhs.type_spec != self.rhs.type_spec:
-				raise TypeMismatch(self.lhs.pos)
-			if self.operator is ops.ASSIGNMENT:
-				self.type_spec = None
-			else:
-				self.type_spec = self.lhs.type_spec
-		elif self.operator is ops.MEMBER_SELECT:
-			# LHS's typespec should resolve to a compound mold
-			self.lhs.check(context)
-			lhs_type = self.lhs.type_spec
-			if not lhs_type.pure_mold:
-				raise LDASemanticError(lhs_type.pos, "sélection d'un membre "
-					"dans un élément de type non-composite")
-			# TODO very ugly
-			mold = context.molds[self.lhs.type_spec.type_word.name]
-			# use mold context exclusively for RHS
-			self.rhs.check(mold)
-			self.type_spec = self.rhs.type_spec
-		elif self.operator is ops.SUBSCRIPT:
-			# TODO vérifier que le nombre de varargs du RHS correspond au nombre de
-			# varargs du Typespec du contexte
-			raise NotImplementedError("vérifier subscript")
-		else:
-			raise NotImplementedError("à faire ;)")
-"""
-
 class Varargs(Expression):
 	def __init__(self, pos, arg_list):
 		super().__init__(pos)
@@ -360,6 +289,8 @@ class Varargs(Expression):
 	def __iter__(self):
 		for arg in self.arg_list:
 			yield arg
+	def __len__(self):
+		return len(self.arg_list)
 	def put_node(self, cluster):
 		arg_nodes = []
 		old_arg_node = None
@@ -377,6 +308,9 @@ class Varargs(Expression):
 			return arg_nodes[0]
 		else:
 			return dot.Node("\u2205", cluster)
+	def check(self, context):
+		for arg in self:
+			arg.check(context)
 
 class _Literal(Expression):
 	def __init__(self, pos, value):
@@ -396,6 +330,7 @@ class LiteralReal(_Literal):
 	type_spec = TypeSpec(kw.REAL)
 
 class LiteralString(_Literal):
+	type_spec = TypeSpec(kw.STRING)
 	def __repr__(self):
 		return "\"" + self.value + "\""
 

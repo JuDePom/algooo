@@ -14,8 +14,12 @@ class Position(tuple):
 		self.line = line
 		self.column = column
 
+	def __repr__(self):
+		return "{}:{}:{}".format(self.path, self.line, self.column)
+
 	def pretty(self):
 		'''
 		Return a pretty, human-readable string for this Position.
 		'''
-		return self.path + ", ligne " + str(self.line) + ", colonne " + str(self.column)
+		return "{}, ligne {}, colonne {}".format(self.path, self.line, self.column)
+
