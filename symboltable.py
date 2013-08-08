@@ -2,6 +2,9 @@ import keywords as kw
 from position import SourceThing
 from errors import MissingDeclaration
 
+scalars = {}
+equivalent_scalars = []
+
 class Typedef(SourceThing):
 	def __init__(self, type_word, array_dimensions=None):
 		synthetic = isinstance(type_word, kw.KeywordDef)
@@ -22,6 +25,11 @@ class Typedef(SourceThing):
 
 	def make_pure(self):
 		return Typedef(self.type_word)
+
+	def equivalent(self, other):
+		if self == other:
+			return True
+		return self in equivalent_scalars and other in equivalent_scalars
 
 	def __eq__(self, other):
 		if isinstance(other, kw.KeywordDef):
@@ -114,4 +122,9 @@ scalars = {
 		'STRING': Typedef(kw.STRING),
 		'CHAR': Typedef(kw.CHAR),
 }
+
+equivalent_scalars = [
+		scalars['INT'],
+		scalars['REAL']
+]
 

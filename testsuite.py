@@ -29,7 +29,7 @@ def passtest(analysis_name, buf, context=symboltable.SymbolTable(),
 	try:
 		node, parser = parse(analysis_name, buf, context)
 		if not parser.eof():
-			raise errors.LDAError("On aurait dû atteindre l'EOF !")
+			raise errors.LDAError("bloqué à " + str(parser.pos))
 		node.check(context)
 		print ("[OK] passed:", buf)
 		return
@@ -66,9 +66,10 @@ lex, _ = parse('lexicon', """
 
 
 #######################################################################
+# THESE TESTS MUST PASS
 
 expressions = [
-		'1', '1.', '.1',
+		'1', '1.', '.1', '123.45',
 		'+1', '+ 1',
 		'-1', '- 1',
 		'+1.0',
@@ -89,10 +90,12 @@ expressions = [
 		'le_réel <- 12',
 ]
 
+print ("\n***** DÉBUT DES TESTS QUI DOIVENT RÉUSSIR *****\n")
 for e in expressions:
 	passtest('expression', e, lex)
 
 #######################################################################
+# THESE TESTS MUST FAIL
 
 expressions = [
 		'.', '0.0.', '0..', '0.0..', '0...',
@@ -104,9 +107,9 @@ expressions = [
 		'1 mod',
 		'1mod 1', '1mod1', '1 mod1',
 		'1+m. .a',
-		#'1+m..a',
+		'1+m..a',
 		'"bla"+m.a',
-		#'m..m',
+		'm..m',
 		't1[1,2,3,4,5,6,7,8,9]',
 		't1[1.]',
 		't1["a"]',
@@ -114,10 +117,11 @@ expressions = [
 		't1[m.dskfjkgsfdhkgurthi]',
 ]
 
+print ("\n***** DÉBUT DES TESTS QUI DOIVENT ÉCHOUER *****\n")
 for e in expressions:
 	failtest('expression', e, lex)
 
 ######################################################################
 
-print ("finished all tests -", unexpected, "errors")
+print ("\n\n**** FIN DES TESTS ****\nERREUR(S) :", unexpected)
 

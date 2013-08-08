@@ -55,7 +55,7 @@ class BinaryOpEquivalentSides(BinaryOp):
 		# TODO types "équivalents" (réels ~ entiers)
 		lhs_typedef = self.lhs.check(context)
 		rhs_typedef = self.rhs.check(context)
-		if lhs_typedef != rhs_typedef:
+		if not lhs_typedef.equivalent(rhs_typedef):
 			raise TypeMismatch(self.pos, lhs_typedef, rhs_typedef)
 		# TODO avec les types équivalents, il ne faut pas forcément se contenter
 		# du type du LHS, mais plutôt du type le plus "fort" (genre réel >
