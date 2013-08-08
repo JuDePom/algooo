@@ -60,8 +60,19 @@ class BinaryOpEquivalentSides(BinaryOp):
 		# TODO avec les types équivalents, il ne faut pas forcément se contenter
 		# du type du LHS, mais plutôt du type le plus "fort" (genre réel >
 		# entier) - TODO voir avec max()
-		if self.take_on_typedef:
+		if self._take_on_typedef:
 			self.typedef = self.lhs.typedef
+
+class ArithmeticOp(BinaryOpEquivalentSides):
+	_take_on_typedef = True
+
+class BinaryBooleanOp(BinaryOpEquivalentSides):
+	typedef = scalars['BOOL']
+	_take_on_typedef = False
+
+ComparisonOp = BinaryBooleanOp
+
+BinaryLogicalOp = BinaryBooleanOp
 
 #######################################################################
 #
@@ -160,7 +171,7 @@ class MemberSelect(BinaryOp):
 		self.rhs.check(composite)
 		self.typedef = self.rhs.typedef
 
-class Power(BinaryOp):
+class Power(ArithmeticOp):
 	"""
 	Exponent.
 
@@ -171,68 +182,47 @@ class Power(BinaryOp):
 	keyword_def = kw.POWER
 	right_ass = True
 
-class Multiplication(BinaryOpEquivalentSides):
+class Multiplication(ArithmeticOp):
 	keyword_def = kw.TIMES
-	take_on_typedef = True
 
-class Division(BinaryOpEquivalentSides):
+class Division(ArithmeticOp):
 	keyword_def = kw.SLASH
-	take_on_typedef = True
 
-class Modulo(BinaryOpEquivalentSides):
+class Modulo(ArithmeticOp):
 	keyword_def = kw.MODULO
-	take_on_typedef = True
 
-class Addition(BinaryOpEquivalentSides):
+class Addition(ArithmeticOp):
 	keyword_def = kw.PLUS
-	take_on_typedef = True
 
-class Subtraction(BinaryOpEquivalentSides):
+class Subtraction(ArithmeticOp):
 	keyword_def = kw.MINUS
-	take_on_typedef = True
 
 class IntegerRange(BinaryOp):
 	keyword_def = kw.DOTDOT
 
-class LessThan(BinaryOpEquivalentSides):
+class LessThan(ComparisonOp):
 	keyword_def = kw.LT
-	typedef = scalars['BOOL']
-	take_on_typedef = False
 
-class GreaterThan(BinaryOpEquivalentSides):
+class GreaterThan(ComparisonOp):
 	keyword_def = kw.GT
-	typedef = scalars['BOOL']
-	take_on_typedef = False
 
-class LessOrEqual(BinaryOpEquivalentSides):
+class LessOrEqual(ComparisonOp):
 	keyword_def = kw.LE
-	typedef = scalars['BOOL']
-	take_on_typedef = False
 
-class GreaterOrEqual(BinaryOpEquivalentSides):
+class GreaterOrEqual(ComparisonOp):
 	keyword_def = kw.GE
-	typedef = scalars['BOOL']
-	take_on_typedef = False
 
-class Equal(BinaryOpEquivalentSides):
+class Equal(ComparisonOp):
 	keyword_def = kw.EQ
-	typedef = scalars['BOOL']
-	take_on_typedef = False
 
-class NotEqual(BinaryOpEquivalentSides):
+class NotEqual(ComparisonOp):
 	keyword_def = kw.NE
-	typedef = scalars['BOOL']
-	take_on_typedef = False
 
-class LogicalAnd(BinaryOpEquivalentSides):
+class LogicalAnd(BinaryLogicalOp):
 	keyword_def = kw.AND
-	typedef = scalars['BOOL']
-	take_on_typedef = False
 
-class LogicalOr(BinaryOpEquivalentSides):
+class LogicalOr(BinaryLogicalOp):
 	keyword_def = kw.OR
-	typedef = scalars['BOOL']
-	take_on_typedef = False
 
 class Assignment(BinaryOpEquivalentSides):
 	keyword_def = kw.ASSIGN
@@ -240,7 +230,7 @@ class Assignment(BinaryOpEquivalentSides):
 	# an assignment cannot be part of another expression,
 	# therefore its type always resolves to None
 	typedef = None
-	take_on_typedef = False
+	_take_on_typedef = False
 
 #######################################################################
 #
