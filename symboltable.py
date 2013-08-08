@@ -84,7 +84,7 @@ class Identifier(SourceThing):
 		return dot.Node(str(self), cluster)
 	def check(self, context):
 		try:
-			self.typedef = context.variables[self.name].typedef
+			return context.variables[self.name].typedef
 		except KeyError:
 			# TODO - peut-être qu'il serait plus judicieux de logger les erreurs
 			# sémantiques que de les lever comme exceptions
@@ -96,9 +96,15 @@ class VariableDeclaration(SourceThing):
 		self.ident = ident
 		self.inout = inout
 		self.typedef = Typedef(type_word, array_dimensions)
+
 	def __repr__(self):
 		inout_str = " inout" if self.inout else ""
 		return "{}{} : {}".format(self.ident, inout_str, self.typedef)
+
+	def check(self, context):
+		# TODO - vérifier si le type est bon
+		# (peut-on le résolver si c'est un composite ?)
+		return self.typedef
 
 
 scalars = {

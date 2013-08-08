@@ -53,21 +53,23 @@ class BinaryOp(Expression):
 class BinaryOpEquivalentSides(BinaryOp):
 	def check(self, context):
 		# TODO types "équivalents" (réels ~ entiers)
-		self.lhs.check(context)
-		self.rhs.check(context)
-		if self.lhs.typedef != self.rhs.typedef:
-			raise TypeMismatch(self.pos, self.lhs.typedef, self.rhs.typedef)
+		lhs_typedef = self.lhs.check(context)
+		rhs_typedef = self.rhs.check(context)
+		if lhs_typedef != rhs_typedef:
+			raise TypeMismatch(self.pos, lhs_typedef, rhs_typedef)
 		# TODO avec les types équivalents, il ne faut pas forcément se contenter
 		# du type du LHS, mais plutôt du type le plus "fort" (genre réel >
 		# entier) - TODO voir avec max()
 		if self._take_on_typedef:
-			self.typedef = self.lhs.typedef
+			return lhs_typedef
+		else:
+			return self._typedef
 
 class ArithmeticOp(BinaryOpEquivalentSides):
 	_take_on_typedef = True
 
 class BinaryBooleanOp(BinaryOpEquivalentSides):
-	typedef = scalars['BOOL']
+	_typedef = scalars['BOOL']
 	_take_on_typedef = False
 
 ComparisonOp = BinaryBooleanOp
@@ -82,12 +84,11 @@ BinaryLogicalOp = BinaryBooleanOp
 
 class _UnaryNumberSign(UnaryOp):
 	def check(self, context):
-		self.rhs.check(context)
-		if self.rhs.typedef not in (scalars['INT'], scalars['REAL']):
-			print(self.rhs.typedef)
+		rhs_typedef = self.rhs.check(context)
+		if rhs_typedef not in (scalars['INT'], scalars['REAL']):
 			raise LDASemanticError(self.pos, "cet opérateur unaire "
 					"ne peut être appliqué qu'à un nombre entier ou réel")
-		self.typedef = self.rhs.typedef
+		return rhs_typedef
 
 class UnaryPlus(_UnaryNumberSign):
 	keyword_def = kw.PLUS
@@ -118,23 +119,23 @@ class ArraySubscript(BinaryOp):
 	encompass_varargs_till = kw.RSBRACK
 
 	def check(self, context):
-		self.lhs.check(context)
-		if not self.lhs.typedef.array:
+		lhs_typedef = self.lhs.check(context)
+		if not lhs_typedef.array:
 			raise LDASemanticError(self.pos,
 					"l'élément indexé n'est pas un tableau")
 		# check if the dimension count in RHS matches LHS's typedef
-		ldims = len(self.lhs.typedef.array_dimensions)
+		ldims = len(lhs_typedef.array_dimensions)
 		rdims = len(self.rhs)
 		if ldims != rdims:
 			raise LDASemanticError(self.pos, "le nombre d'indices ne "
 					"correspond pas au nombre de dimensions du tableau")
 		# check index varargs
-		self.rhs.check(context)
-		for arg in self.rhs:
-			if arg.typedef != kw.INT:
+		arg_typedefs = self.rhs.check(context)
+		for typedef in arg_typedefs:
+			if typedef != scalars['INT']:
 				raise LDASemanticError(self.pos,
 						"tous les indices doivent être des entiers")
-		self.typedef = self.lhs.typedef.make_pure()
+		return lhs_typedef.make_pure()
 
 class FunctionCall(BinaryOp):
 	"""
@@ -161,15 +162,13 @@ class MemberSelect(BinaryOp):
 
 	def check(self, context):
 		# LHS's typedef should resolve to composite
-		self.lhs.check(context)
-		if not self.lhs.typedef.pure_composite:
+		lhs_typedef = self.lhs.check(context)
+		if not lhs_typedef.pure_composite:
 			raise LDASemanticError(self.pos, "sélection d'un membre "
 				"dans un élément de type non-composite")
-		# TODO very ugly
-		composite = context.composites[self.lhs.typedef.composite_name]
+		composite = context.composites[lhs_typedef.composite_name]
 		# use composite context exclusively for RHS
-		self.rhs.check(composite)
-		self.typedef = self.rhs.typedef
+		return self.rhs.check(composite)
 
 class Power(ArithmeticOp):
 	"""
@@ -229,7 +228,7 @@ class Assignment(BinaryOpEquivalentSides):
 	right_ass = True
 	# an assignment cannot be part of another expression,
 	# therefore its type always resolves to None
-	typedef = None
+	_typedef = None
 	_take_on_typedef = False
 
 #######################################################################

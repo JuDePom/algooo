@@ -9,11 +9,14 @@ class Varargs(Expression):
 	def __init__(self, pos, arg_list):
 		super().__init__(pos)
 		self.arg_list = arg_list
+
 	def __iter__(self):
 		for arg in self.arg_list:
 			yield arg
+
 	def __len__(self):
 		return len(self.arg_list)
+
 	def put_node(self, cluster):
 		arg_nodes = []
 		old_arg_node = None
@@ -31,32 +34,36 @@ class Varargs(Expression):
 			return arg_nodes[0]
 		else:
 			return dot.Node("\u2205", cluster)
+
 	def check(self, context):
-		for arg in self:
-			arg.check(context)
+		return [arg.check(context) for arg in self]
 
 class _Literal(Expression):
 	def __init__(self, pos, value):
 		super().__init__(pos)
 		self.value = value
+
 	def __repr__(self):
 		return str(self.value)
+
 	def put_node(self, cluster):
 		return dot.Node(str(self), cluster)
+
 	def check(self, context):
-		pass
+		return self._typedef
 
 class LiteralInteger(_Literal):
-	typedef = scalars['INT']
+	_typedef = scalars['INT']
 
 class LiteralReal(_Literal):
-	typedef = scalars['REAL']
+	_typedef = scalars['REAL']
 
 class LiteralString(_Literal):
-	typedef = scalars['STRING']
+	_typedef = scalars['STRING']
+
 	def __repr__(self):
 		return "\"" + self.value + "\""
 
 class LiteralBoolean(_Literal):
-	typedef = scalars['BOOL']
+	_typedef = scalars['BOOL']
 
