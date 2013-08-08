@@ -2,8 +2,6 @@ import re
 import keywords as kw
 import operators
 import module
-import tokens
-import typedef
 import position
 import expression
 import statements
@@ -151,7 +149,7 @@ class Parser:
 		# statement block
 		self.find_keyword(kw.BEGIN, mandatory=True)
 		body, _ = self.analyze_statement_block(kw.END)
-		return module.Function(start_kw.pos, ident, params, lexi, body)
+		return module.Function(pos0, ident, params, lexi, body)
 
 	def analyze_variable_declaration(self):
 		pos0 = self.pos
@@ -170,7 +168,7 @@ class Parser:
 		is_array = self.find_keyword(kw.ARRAY)
 		# enclosed type
 		type_word = None
-		for candidate in typedef.scalars:
+		for candidate in symboltable.scalars.values():
 			if self.find_keyword(candidate.type_word):
 				type_word = candidate
 				break
@@ -214,7 +212,7 @@ class Parser:
 			return # invalid identifier if the string is a keyword
 		pos0 = self.pos
 		self.advance(len(identifier))
-		return tokens.Identifier(pos0, identifier)
+		return symboltable.Identifier(pos0, identifier)
 
 	def find_keyword(self, keyword, mandatory=False):
 		pos0 = self.pos

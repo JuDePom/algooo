@@ -1,7 +1,7 @@
 import keywords as kw
-import typedef
 from expression import Expression
 from errors import *
+from symboltable import scalars
 import dot
 
 #######################################################################
@@ -72,7 +72,7 @@ class BinaryOpEquivalentSides(BinaryOp):
 class _UnaryNumberSign(UnaryOp):
 	def check(self, context):
 		self.rhs.check(context)
-		if self.rhs.typedef not in (kw.INT, kw.REAL):
+		if self.rhs.typedef not in (scalars['INT'], scalars['REAL']):
 			print(self.rhs.typedef)
 			raise LDASemanticError(self.pos, "cet opérateur unaire "
 					"ne peut être appliqué qu'à un nombre entier ou réel")
@@ -196,42 +196,42 @@ class IntegerRange(BinaryOp):
 
 class LessThan(BinaryOpEquivalentSides):
 	keyword_def = kw.LT
-	typedef = typedef.BOOL
+	typedef = scalars['BOOL']
 	take_on_typedef = False
 
 class GreaterThan(BinaryOpEquivalentSides):
 	keyword_def = kw.GT
-	typedef = typedef.BOOL
+	typedef = scalars['BOOL']
 	take_on_typedef = False
 
 class LessOrEqual(BinaryOpEquivalentSides):
 	keyword_def = kw.LE
-	typedef = typedef.BOOL
+	typedef = scalars['BOOL']
 	take_on_typedef = False
 
 class GreaterOrEqual(BinaryOpEquivalentSides):
 	keyword_def = kw.GE
-	typedef = typedef.BOOL
+	typedef = scalars['BOOL']
 	take_on_typedef = False
 
 class Equal(BinaryOpEquivalentSides):
 	keyword_def = kw.EQ
-	typedef = typedef.BOOL
+	typedef = scalars['BOOL']
 	take_on_typedef = False
 
 class NotEqual(BinaryOpEquivalentSides):
 	keyword_def = kw.NE
-	typedef = typedef.BOOL
+	typedef = scalars['BOOL']
 	take_on_typedef = False
 
 class LogicalAnd(BinaryOpEquivalentSides):
 	keyword_def = kw.AND
-	typedef = typedef.BOOL
+	typedef = scalars['BOOL']
 	take_on_typedef = False
 
 class LogicalOr(BinaryOpEquivalentSides):
 	keyword_def = kw.OR
-	typedef = typedef.BOOL
+	typedef = scalars['BOOL']
 	take_on_typedef = False
 
 class Assignment(BinaryOpEquivalentSides):

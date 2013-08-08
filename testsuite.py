@@ -94,6 +94,7 @@ expressions = [
 		'1 -', '1-',
 		'1 *', '1*',
 		'1 /', '1/',
+		'+ "coucou"', '-"coucou"',
 		'1 mod',
 		'1mod 1', '1mod1', '1 mod1',
 		'1+m. .a',
