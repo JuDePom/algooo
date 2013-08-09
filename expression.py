@@ -18,22 +18,19 @@ class Varargs(Expression):
 		return len(self.arg_list)
 
 	def put_node(self, cluster):
-		arg_nodes = []
-		old_arg_node = None
-		rhs_cluster = dot.Cluster("", cluster)
-		for i, item in enumerate(self):
+		def make_arg_node(i, item):
 			arg_node = dot.Node("arg"+str(i), cluster)
 			rhs_node = item.put_node(rhs_cluster)
 			arg_node.children.append(rhs_node)
-			arg_nodes.append(arg_node)
-			if old_arg_node is not None:
-				old_arg_node.children.append(arg_node)
-			old_arg_node = arg_node
-		cluster.rank_chains.append(arg_nodes)
-		if len(arg_nodes) > 0:
-			return arg_nodes[0]
-		else:
+			return arg_node
+		if len(self) == 0:
 			return dot.Node("\u2205", cluster)
+		rhs_cluster = dot.Cluster("", cluster)
+		arg_nodes = [ make_arg_node(i, item) for i, item in enumerate(self) ]
+		for previous, current in zip(arg_nodes, arg_nodes[1:]):
+			previous.children.append(current)
+		cluster.rank_chains.append(arg_nodes)
+		return arg_nodes[0]
 
 	def check(self, context):
 		return [arg.check(context) for arg in self]
