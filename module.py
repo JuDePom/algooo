@@ -32,11 +32,12 @@ class Algorithm(StatementBlock):
 			statement.check(subcontext)
 
 class Function(StatementBlock):
-	def __init__(self, pos, ident, fp_list, lexicon, body):
+	def __init__(self, pos, ident, fp_list, return_type, lexicon, body):
 		super().__init__(pos, body)
 		self.ident = ident
 		self.fp_list = fp_list
 		self.lexicon = lexicon
+		self.return_type = return_type
 
 	def __repr__(self):
 		return "fonction {} :\n{}\n{}".format(self.ident, self.lexicon, self.body)
@@ -46,7 +47,10 @@ class Function(StatementBlock):
 		return super().put_node(function_cluster)
 
 	def check(self, context):
-		subcontext = SymbolTable.merge(context, self.lexicon)
+		if self.lexicon is None:
+			subcontext = context
+		else:
+			subcontext = SymbolTable.merge(context, self.lexicon)
 		for statement in self:
 			statement.check(subcontext)
 

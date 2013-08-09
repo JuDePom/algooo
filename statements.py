@@ -1,4 +1,5 @@
 import position
+import dot
 
 class Statement(position.SourceThing):
 	pass

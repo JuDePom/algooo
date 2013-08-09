@@ -151,28 +151,21 @@ class Parser:
 			self.find_keyword(kw.RPAREN, mandatory=True)
 		# optional colon before return type (if omitted, no return type)
 		if self.find_keyword(kw.COLON):
-			raise NotImplementedError("type de retour de la fonction")
+			return_type = self.analyze_typedef()
+			if return_type is None:
+				raise ExpectedItemError(self.pos, "type de retour de la fonction")
+		else:
+			return_type = None
 		# lexicon
-		lexi = self.analyze_lexicon()
+		lexicon = self.analyze_lexicon()
 		# statement block
 		self.find_keyword(kw.BEGIN, mandatory=True)
 		body, _ = self.analyze_statement_block(kw.END)
-		return module.Function(pos0, ident, params, lexi, body)
+		return module.Function(pos0, ident, params, return_type, lexicon, body)
 
-	def analyze_variable_declaration(self):
+	def analyze_typedef(self):
 		pos0 = self.pos
-		# identifier
-		ident = self.analyze_identifier()
-		if ident is None:
-			return
-		# inout
 		is_inout = self.find_keyword(kw.INOUT)
-		# mandatory colon (but if we don't find one, it might be a composite,
-		# so don't raise an exception)
-		if not self.find_keyword(kw.COLON):
-			self.pos = pos0
-			return
-		# array
 		is_array = self.find_keyword(kw.ARRAY)
 		# enclosed type
 		type_word = None
@@ -182,8 +175,9 @@ class Parser:
 				break
 		else:
 			type_word = self.analyze_identifier()
-		if type_word is None:
-			raise ExpectedItemError(self.pos, "un type scalaire ou composite")
+			if type_word is None:
+				self.pos = pos0
+				return
 		# array dimensions
 		if is_array:
 			self.find_keyword(kw.LSBRACK, mandatory=True)
@@ -191,7 +185,24 @@ class Parser:
 			self.find_keyword(kw.RSBRACK, mandatory=True)
 		else:
 			array_dimensions = None
-		return symboltable.VariableDeclaration(ident, is_inout, type_word, array_dimensions)
+		return symboltable.Typedef(type_word, array_dimensions, is_inout)
+
+	def analyze_variable_declaration(self):
+		pos0 = self.pos
+		# identifier
+		ident = self.analyze_identifier()
+		if ident is None:
+			return
+		# mandatory colon (but if we don't find one, it might be a composite,
+		# so don't raise an exception)
+		if not self.find_keyword(kw.COLON):
+			self.pos = pos0
+			return
+		# type
+		typedef = self.analyze_typedef()
+		if typedef is None:
+			raise ExpectedItemError(self.pos, "un type scalaire ou composite")
+		return symboltable.VariableDeclaration(ident, typedef)
 
 	def analyze_lexicon(self):
 		pos0 = self.pos

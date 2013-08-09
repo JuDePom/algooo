@@ -2,6 +2,7 @@ import keywords as kw
 from expression import Expression
 from errors import *
 from symboltable import scalars
+from symboltable import Identifier
 import dot
 
 #######################################################################
@@ -55,7 +56,7 @@ class BinaryOpEquivalentSides(BinaryOp):
 		# TODO types "équivalents" (réels ~ entiers)
 		lhs_typedef = self.lhs.check(context)
 		rhs_typedef = self.rhs.check(context)
-		if not lhs_typedef.equivalent(rhs_typedef):
+		if not lhs_typedef.equivalent(rhs_typedef): # TODO!!!!!
 			raise TypeMismatch(self.pos, lhs_typedef, rhs_typedef)
 		# TODO avec les types équivalents, il ne faut pas forcément se contenter
 		# du type du LHS, mais plutôt du type le plus "fort" (genre réel >
@@ -148,6 +149,16 @@ class FunctionCall(BinaryOp):
 	"""
 
 	keyword_def = kw.LPAREN
+	encompass_varargs_till = kw.RPAREN
+
+	def check(self, context):
+		bound_function = self.lhs.check(context)
+		if not isinstance(bound_function, Function):
+			raise LDASemanticError("cet élément ne peut pas être appelé car "
+					"ce n'est pas une fonction")
+		# TODO check varargs
+		return bound_function.return_type
+		
 
 class MemberSelect(BinaryOp):
 	"""
