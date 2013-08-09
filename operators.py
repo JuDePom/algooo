@@ -1,13 +1,12 @@
 import keywords as kw
 from expression import Expression
 from errors import *
-from symboltable import scalars
-from symboltable import Identifier
+import typedesc
 import dot
 
 #######################################################################
 #
-# BASE OPERATOR CLASSES & SEMANTIC CHECKS
+# BASE OPERATOR CLASSES
 #
 #######################################################################
 
@@ -70,7 +69,7 @@ class ArithmeticOp(BinaryOpEquivalentSides):
 	_take_on_typedef = True
 
 class BinaryBooleanOp(BinaryOpEquivalentSides):
-	_typedef = scalars['BOOL']
+	_typedef = typedesc.Boolean
 	_take_on_typedef = False
 
 ComparisonOp = BinaryBooleanOp
@@ -86,7 +85,7 @@ BinaryLogicalOp = BinaryBooleanOp
 class _UnaryNumberSign(UnaryOp):
 	def check(self, context):
 		rhs_typedef = self.rhs.check(context)
-		if rhs_typedef not in (scalars['INT'], scalars['REAL']):
+		if rhs_typedef not in (typedesc.Integer, typedesc.Real):
 			raise LDASemanticError(self.pos, "cet opérateur unaire "
 					"ne peut être appliqué qu'à un nombre entier ou réel")
 		return rhs_typedef
@@ -133,7 +132,7 @@ class ArraySubscript(BinaryOp):
 		# check index varargs
 		arg_typedefs = self.rhs.check(context)
 		for typedef in arg_typedefs:
-			if typedef != scalars['INT']:
+			if typedef != typedesc.Integer:
 				raise LDASemanticError(self.pos,
 						"tous les indices doivent être des entiers")
 		return lhs_typedef.make_pure()

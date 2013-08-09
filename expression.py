@@ -1,6 +1,6 @@
 import position
-from symboltable import scalars
 import dot
+import typedesc
 
 class Expression(position.SourceThing):
 	pass
@@ -50,17 +50,17 @@ class _Literal(Expression):
 		return self._typedef
 
 class LiteralInteger(_Literal):
-	_typedef = scalars['INT']
+	_typedef = typedesc.Integer
 
 class LiteralReal(_Literal):
-	_typedef = scalars['REAL']
+	_typedef = typedesc.Real
 
 class LiteralString(_Literal):
-	_typedef = scalars['STRING']
+	_typedef = typedesc.String
 
 	def __repr__(self):
 		return "\"" + self.value + "\""
 
 class LiteralBoolean(_Literal):
-	_typedef = scalars['BOOL']
+	_typedef = typedesc.Boolean
 

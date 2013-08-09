@@ -1,12 +1,11 @@
 import dot
 from statements import StatementBlock
-from symboltable import SymbolTable
 
 class Module:
 	def __init__(self, functions, algorithm=None):
 		self.functions = functions
 		self.algorithm = algorithm
-		self.symbols = SymbolTable(functions=functions)
+		self.symbols = {}
 
 	def check(self):
 		for function in self.functions:
@@ -27,7 +26,10 @@ class Algorithm(StatementBlock):
 		return super().put_node(algorithm_cluster)
 
 	def check(self, context):
-		subcontext = SymbolTable.merge(context, self.lexicon)
+		if self.lexicon is None:
+			subcontext = context
+		else:
+			subcontext = context.copy().update(self.lexicon)
 		for statement in self:
 			statement.check(subcontext)
 
@@ -46,11 +48,5 @@ class Function(StatementBlock):
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
 		return super().put_node(function_cluster)
 
-	def check(self, context):
-		if self.lexicon is None:
-			subcontext = context
-		else:
-			subcontext = SymbolTable.merge(context, self.lexicon)
-		for statement in self:
-			statement.check(subcontext)
+	check = Algorithm.check
 

@@ -1,11 +1,11 @@
 import re
 import keywords as kw
-import operators
 import module
 import position
 import expression
+import operators
 import statements
-import symboltable
+import typedesc
 from errors import *
 
 re_identifier = re.compile(r'''
@@ -151,11 +151,11 @@ class Parser:
 			self.find_keyword(kw.RPAREN, mandatory=True)
 		# optional colon before return type (if omitted, no return type)
 		if self.find_keyword(kw.COLON):
-			return_type = self.analyze_typedef()
+			return_type = self.analyze_type_descriptor()
 			if return_type is None:
 				raise ExpectedItemError(self.pos, "type de retour de la fonction")
 		else:
-			return_type = None
+			return_type = typedesc.Void
 		# lexicon
 		lexicon = self.analyze_lexicon()
 		# statement block
@@ -163,75 +163,121 @@ class Parser:
 		body, _ = self.analyze_statement_block(kw.END)
 		return module.Function(pos0, ident, params, return_type, lexicon, body)
 
-	def analyze_typedef(self):
-		pos0 = self.pos
-		is_inout = self.find_keyword(kw.INOUT)
-		is_array = self.find_keyword(kw.ARRAY)
-		# enclosed type
-		type_word = None
-		for candidate in symboltable.scalars.values():
-			if self.find_keyword(candidate.type_word):
-				type_word = candidate.type_word
-				break
-		else:
-			type_word = self.analyze_identifier()
-			if type_word is None:
-				self.pos = pos0
-				return
-		# array dimensions
-		if is_array:
-			self.find_keyword(kw.LSBRACK, mandatory=True)
-			array_dimensions = self.analyze_varargs(self.analyze_expression)
-			self.find_keyword(kw.RSBRACK, mandatory=True)
-		else:
-			array_dimensions = None
-		return symboltable.Typedef(type_word, array_dimensions, is_inout)
+	#############################################################################
+	#
+	# NOUVELLE GESTION DES TYPES
+	#
+	#
 
-	def analyze_variable_declaration(self):
+	def analyze_scalar_type(self):
+		# TODO pythoniser tout ça
+		if self.find_keyword(kw.INT):
+			return typedesc.Integer
+		elif self.find_keyword(kw.REAL):
+			return typedesc.Real
+		elif self.find_keyword(kw.BOOL):
+			return typedesc.Boolean
+		elif self.find_keyword(kw.CHAR):
+			return typedesc.Character
+		elif self.find_keyword(kw.STRING):
+			return typedesc.String
+
+	def analyze_array_type(self):
+		if not self.find_keyword(kw.ARRAY):
+			return
+		element_type = self.analyze_type_descriptor()
+		self.find_keyword(kw.LSBRACK, mandatory=True)
+		dimensions = self.analyze_varargs()
+		self.find_keyword(kw.RSBRACK, mandatory=True)
+		return ArrayType(element_type, dimensions)
+
+	def analyze_type_alias(self):
+		return self.analyze_identifier()
+		#alias_id = self.analyze_identifier()
+		#if alias_id is not None:
+			#return typedesc.TypeAlias(alias_id)
+
+	def analyze_type_descriptor(self):
+		# TODO pythoniser tout ça
+		a_t = self.analyze_array_type()
+		if a_t is not None:
+			return a_t
+		s_t = self.analyze_scalar_type()
+		if s_t is not None:
+			return s_t
+		alias = self.analyze_type_alias()
+		if alias is not None:
+			return alias
+	
+	def analyze_field(self):
 		pos0 = self.pos
-		# identifier
 		ident = self.analyze_identifier()
 		if ident is None:
 			return
-		# mandatory colon (but if we don't find one, it might be a composite,
-		# so don't raise an exception)
 		if not self.find_keyword(kw.COLON):
 			self.pos = pos0
 			return
-		# type
-		typedef = self.analyze_typedef()
-		if typedef is None:
-			raise ExpectedItemError(self.pos, "un type scalaire ou composite")
-		return symboltable.VariableDeclaration(ident, typedef)
+		type_descriptor = self.analyze_type_descriptor()
+		if type_descriptor is None:
+			raise LDASyntaxError("description de type erronée") # TODO
+		return typedesc.Field(ident, type_descriptor)
+
+	def analyze_composite_declaration(self):
+		pos0 = self.pos
+		ident = self.analyze_identifier()
+		if ident is None:
+			return
+		if not self.find_keyword(kw.EQ):
+			self.pos = pos0
+			return
+		# TODO j'aime pas vraiment dire "Field" pour une décl de composite mais bon
+		return typedesc.Field(ident, self.analyze_composite_descriptor())
+
+	def analyze_composite_descriptor(self):
+		self.find_keyword(kw.LT, mandatory=True)
+		fields = self.analyze_varargs(self.analyze_field)
+		self.find_keyword(kw.GT, mandatory=True)
+		# TODO convert Varargs to CompositeType
+		return fields
+
+	#
+	#
+	#
+	#
+	#############################################################################
 
 	def analyze_lexicon(self):
 		pos0 = self.pos
 		if not self.find_keyword(kw.LEXICON):
 			return
-		variables = []
-		composites = []
+		lexicon = {}
 		while True:
-			v = self.analyze_variable_declaration()
+			v = self.analyze_field()
 			if v is not None:
-				variables.append(v)
+				lexicon[v.name] = v.type_descriptor
+				#variables.append(v)
+				print("Variable:", v)
 				continue
-			c = self.analyze_composite()
+			c = self.analyze_composite_declaration()
 			if c is not None:
-				composites.append(c)
+				#composites.append(c)
+				lexicon[c.name] = c.type_descriptor
+				print("Composite:", c)
 				continue
 			break
-		return symboltable.Lexicon(pos0, variables, composites)
+		print ("REKUSHIKON:", lexicon)
+		return lexicon
 
 	def analyze_identifier(self):
 		match = re_identifier.match(self.buf, self.pos.char)
 		if match is None:
 			return
-		identifier = match.group(0)
-		if identifier in kw.meta.all_keywords:
+		name = match.group(0)
+		if name in kw.meta.all_keywords:
 			return # invalid identifier if the string is a keyword
 		pos0 = self.pos
-		self.advance(len(identifier))
-		return symboltable.Identifier(pos0, identifier)
+		self.advance(len(name))
+		return typedesc.Identifier(pos0, name)
 
 	def find_keyword(self, keyword, mandatory=False):
 		pos0 = self.pos
