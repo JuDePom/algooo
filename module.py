@@ -1,5 +1,6 @@
 import dot
 from statements import StatementBlock
+import typedesc
 
 class Module:
 	def __init__(self, functions, algorithm=None):
@@ -29,7 +30,10 @@ class Algorithm(StatementBlock):
 		if self.lexicon is None:
 			subcontext = context
 		else:
-			subcontext = context.copy().update(self.lexicon)
+			# TODO : vérif qu'il n'y ait pas 2x le même nom de champ
+			# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
+			unresolved = self.lexicon.copy()
+			subcontext = typedesc.resolve_types(context.copy(), unresolved)
 		for statement in self:
 			statement.check(subcontext)
 

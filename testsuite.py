@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import ldaparser
-import symboltable
 import errors
 import traceback
 
@@ -19,13 +18,16 @@ def print_error(buf, reason, print_traceback=True):
 		for line in traceback.format_exc().split('\n'):
 			printred(".......", line)
 
-def parse(analysis_name, buf, context=symboltable.SymbolTable()):
+def parse(analysis_name, buf, context=None):
+	if context is None:
+		context = {}
 	p = ldaparser.Parser(path=None, buf=buf)
 	p.advance()
 	return getattr(p, 'analyze_' + analysis_name)(), p
 
-def passtest(analysis_name, buf, context=symboltable.SymbolTable(),
-		forward=False):
+def passtest(analysis_name, buf, context=None, forward=False):
+	if context is None:
+		context = {}
 	try:
 		node, parser = parse(analysis_name, buf, context)
 		if not parser.eof():
@@ -43,7 +45,7 @@ def passtest(analysis_name, buf, context=symboltable.SymbolTable(),
 	global unexpected
 	unexpected += 1
 
-def failtest(analysis_name, buf, context=symboltable.SymbolTable()):
+def failtest(analysis_name, buf, context=None):
 	try:
 		passtest(analysis_name, buf, context, True)
 		print_error(buf, "passed but should have FAILED", False)
@@ -58,8 +60,8 @@ lex, _ = parse('lexicon', """
 		lexique
 			Moule=<a:entier, b:chaîne>
 			m:Moule
-			t1:tableau Moule[0..2]
-			t2:tableau Moule[0..2,0..2]
+			//t1:tableau Moule[0..2]
+			//t2:tableau Moule[0..2,0..2]
 			le_réel: réel
 			l_entier: entier
 			""")

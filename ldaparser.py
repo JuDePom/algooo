@@ -187,15 +187,14 @@ class Parser:
 			return
 		element_type = self.analyze_type_descriptor()
 		self.find_keyword(kw.LSBRACK, mandatory=True)
-		dimensions = self.analyze_varargs()
+		dimensions = self.analyze_varargs(self.analyze_expression)
 		self.find_keyword(kw.RSBRACK, mandatory=True)
-		return ArrayType(element_type, dimensions)
+		return typedesc.ArrayType(element_type, dimensions)
 
 	def analyze_type_alias(self):
-		return self.analyze_identifier()
-		#alias_id = self.analyze_identifier()
-		#if alias_id is not None:
-			#return typedesc.TypeAlias(alias_id)
+		alias_id = self.analyze_identifier()
+		if alias_id is not None:
+			return typedesc.TypeAlias(alias_id)
 
 	def analyze_type_descriptor(self):
 		# TODO pythoniser tout ça
@@ -235,10 +234,9 @@ class Parser:
 
 	def analyze_composite_descriptor(self):
 		self.find_keyword(kw.LT, mandatory=True)
-		fields = self.analyze_varargs(self.analyze_field)
+		field_list = self.analyze_varargs(self.analyze_field)
 		self.find_keyword(kw.GT, mandatory=True)
-		# TODO convert Varargs to CompositeType
-		return fields
+		return typedesc.CompositeType(field_list)
 
 	#
 	#
@@ -252,20 +250,16 @@ class Parser:
 			return
 		lexicon = {}
 		while True:
+			# TODO - mettre les variables et les composites dans des dictionnaires séparés pour que la moindre variable ne devienne pas un typedef, ou alors mettre class comme en PL-4
 			v = self.analyze_field()
 			if v is not None:
 				lexicon[v.name] = v.type_descriptor
-				#variables.append(v)
-				print("Variable:", v)
 				continue
 			c = self.analyze_composite_declaration()
 			if c is not None:
-				#composites.append(c)
 				lexicon[c.name] = c.type_descriptor
-				print("Composite:", c)
 				continue
 			break
-		print ("REKUSHIKON:", lexicon)
 		return lexicon
 
 	def analyze_identifier(self):
@@ -287,20 +281,6 @@ class Parser:
 			return True
 		if mandatory:
 			raise ExpectedKeywordError(self.pos, keyword)
-
-	def analyze_composite(self):
-		pos0 = self.pos
-		ident = self.analyze_identifier()
-		if ident is None:
-			return
-		if not self.find_keyword(kw.EQ):
-			self.pos = pos0
-			return
-		# point of no return
-		self.find_keyword(kw.LT, mandatory=True)
-		fp_list = self.analyze_varargs(self.analyze_variable_declaration)
-		self.find_keyword(kw.GT, mandatory=True)
-		return symboltable.Composite(ident, fp_list)
 
 	def analyze_statement_block(self, *end_marker_keywords):
 		pos0 = self.pos
