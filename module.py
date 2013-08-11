@@ -30,10 +30,7 @@ class Algorithm(StatementBlock):
 		if self.lexicon is None:
 			subcontext = context
 		else:
-			# TODO : vérif qu'il n'y ait pas 2x le même nom de champ
-			# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
-			unresolved = self.lexicon.copy()
-			subcontext = typedesc.resolve_types(context.copy(), unresolved)
+			subcontext = self.lexicon.check(context)
 		for statement in self:
 			statement.check(subcontext)
 

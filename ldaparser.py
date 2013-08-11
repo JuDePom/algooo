@@ -248,19 +248,20 @@ class Parser:
 		pos0 = self.pos
 		if not self.find_keyword(kw.LEXICON):
 			return
-		lexicon = {}
+		variables = {}
+		composites = {}
 		while True:
 			# TODO - mettre les variables et les composites dans des dictionnaires séparés pour que la moindre variable ne devienne pas un typedef, ou alors mettre class comme en PL-4
 			v = self.analyze_field()
 			if v is not None:
-				lexicon[v.name] = v.type_descriptor
+				variables[v.name] = v.type_descriptor
 				continue
 			c = self.analyze_composite_declaration()
 			if c is not None:
-				lexicon[c.name] = c.type_descriptor
+				composites[c.name] = c.type_descriptor
 				continue
 			break
-		return lexicon
+		return typedesc.Lexicon(variables, composites)
 
 	def analyze_identifier(self):
 		match = re_identifier.match(self.buf, self.pos.char)

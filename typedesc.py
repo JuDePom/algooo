@@ -1,13 +1,18 @@
 import errors
+import position
 
-class CanNotBeResolved(Exception):
-	pass
-
-class UnresolvableTypeLoop(Exception):
-	pass
+class CanNotBeResolved(errors.LDASemanticError):
+	def __init__(self, alias):
+		super().__init__(alias.pos, "nom de type inconnu : \"{}\"".format(alias))
+	def add_errors_to(self, what):
+		what.append(self)
 
 class TypeDescriptor:
 	pass
+
+class ErroneousType(TypeDescriptor):
+	def __init__(self, name):
+		self.name = name
 
 class Scalar(TypeDescriptor):
 	pass
@@ -45,50 +50,61 @@ class ArrayType(TypeDescriptor):
 class CompositeType(TypeDescriptor):
 	def __init__(self, field_list):
 		self.field_list = field_list
-		self.resolved_context = None
+		self.context = Context({f.name: ErroneousType(f.name) for f in self.field_list})
 
-	def check(self, context):
+	def check(self, supercontext):
 		names = [f.name for f in self.field_list]
 		dupe_names = [n for n in set(names) if names.count(n) > 1]
 		dupe_fields = (f for f in self.field_list if f.name in dupe_names)
 		for df in dupe_fields:
 			raise errors.LDASemanticError(df.ident.pos, "ce nom de champ "
 					"apparaît plusieurs fois dans le type composite")
-		unresolved = {f.name: f.type_descriptor for f in self.field_list}
-		self.resolved_context = resolve_types(context, unresolved, {})
-		return self.resolved_context
+		descriptors = {f.name: f.type_descriptor for f in self.field_list}
+		self.context.refine(supercontext, descriptors)
+		return self.context
+	
+	def __repr__(self):
+		return "CompositeType<{}>".format(self.context)
 
-def resolve_types(context, unresolved, subcontext=None):
-	"""
-	TODO write better documentation
+class Context:
+	def __init__(self, context_dict=None):
+		if context_dict is None:
+			self.context = {}
+		else:
+			self.context = context_dict.copy()
+		self.full = False
+	
+	def __getitem__(self, index):
+		return self.context[index]
 
-	context: symbol table that will be used to try to resolve type aliases.
-	Table entries: string --> TypeDescriptor
+	def __setitem__(self, index, item):
+		self.context[index] = item
 
-	unresolved: dictionary (string --> yet unresolved type)
-	Will be destroyed.
+	def __delitem__(self, index):
+		del self.context[index]
 
-	subcontext: new symbol table that will be augmented with the resolved types.
-	If ommitted, context will receive the resolved types instead.
-	"""
-	if subcontext is None:
-		subcontext = context
-	length = len(unresolved)
-	while length != 0:
-		for k in list(unresolved.keys()):
+	def __repr__(self):
+		return str(self.full) + self.context.__repr__()
+	
+	def unresolved(self):
+		# must be a list and not a generator
+		return [k for k, v in self.context.items() if isinstance(v, ErroneousType)]
+
+	def refine(self, supercontext, checkables):
+		errors = 0
+		for k in self.unresolved():
 			try:
-				type_descriptor = unresolved[k].check(context)
-				if type_descriptor is None:
-					raise CanNotBeResolved
-				subcontext[k] = type_descriptor
-				del unresolved[k]
-			except (CanNotBeResolved, UnresolvableTypeLoop):
-				pass
-		new_length = len(unresolved)
-		if new_length == length:
-			raise UnresolvableTypeLoop
-		length = new_length
-	return subcontext
+				type_descriptor = checkables[k].check(supercontext)
+				assert type_descriptor is not None
+				self[k] = type_descriptor
+			except CanNotBeResolved as e:
+				errors += 1
+		self.full = errors == 0
+	
+	def update(self, other):
+		self.context.update(other.context)
+		if self.full:
+			self.full = other.full
 
 class TypeAlias:
 	def __init__(self, ident):
@@ -98,7 +114,9 @@ class TypeAlias:
 		try:
 			return context[self.name]
 		except KeyError:
-			raise CanNotBeResolved
+			raise CanNotBeResolved(self)
+	def __repr__(self):
+		return "TypeAlias<" + self.name + ">"
 
 class Field:
 	# TODO hériter de sourcething ou d'identifier
@@ -115,4 +133,39 @@ class Identifier:
 		self.name = name
 	def __repr__(self):
 		return "i_"+self.name
+
+class Lexicon:
+	def __init__(self, variables, composites):
+		self.variables = variables
+		self.composites = composites
+
+		self.context = Context()
+		for k in self.variables.keys():
+			self.context[k] = ErroneousType(k)
+		for k in self.composites.keys():
+			self.context[k] = ErroneousType(k)
+	
+	def check(self, supercontext):
+		# TODO : vérif qu'il n'y ait pas 2x le même nom de champ
+		# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
+		subcontext = Context(supercontext)
+		# fill top_context with the composites' yet-incomplete contexts
+		# so that composites can cross-reference themselves during the next pass
+		for name, composite in self.composites.items():
+			subcontext[name] = composite.context
+		# refine composite subcontexts
+		for name, composite in self.composites.items():
+			composite.check(subcontext)
+		# do the semantic analysis on the variables last so that they can take
+		# advantage of the composites that were defined in this lexicon.
+		# Put their resolved types in a separate context so that they can't "borrow"
+		# another variable's type by using its name as a TypeAlias.
+		# TODO - if there are any global variables this will need to be refined.
+		# TODO - they might still be able to borrow function return types from the name of the function...
+		variable_context = Context()
+		for name, variable in self.variables.items():
+			variable_context[name] = variable.check(subcontext)
+		# merge
+		subcontext.update(variable_context)
+		return subcontext
 
