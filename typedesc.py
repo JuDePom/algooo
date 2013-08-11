@@ -93,6 +93,8 @@ class Context:
 				self[k] = type_descriptor
 			except CanNotBeResolved as e:
 				errors += 1
+				# TODO il faudrait le logger au lieu de le printer à l'arrache
+				print (e)
 		self.full = errors == 0
 	
 	def update(self, other):
@@ -115,7 +117,7 @@ class CompositeType(Context, TypeDescriptor):
 		descriptors = {f.name: f.type_descriptor for f in self.field_list}
 		self.refine(supercontext, descriptors)
 		return self
-	
+
 	def __repr__(self):
 		return "CompositeType<{}>".format(self)
 
