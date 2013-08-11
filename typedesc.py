@@ -47,9 +47,18 @@ class Range(TypeDescriptor):
 	pass
 
 class ArrayType(TypeDescriptor):
-	# TypeDescriptor element_type
-	# Range dimensions[]
-	pass
+	def __init__(self, element_type, dimensions):
+		self.element_type = element_type
+		self.dimensions = dimensions
+
+	def check(self, context):
+		if len(self.dimensions) == 0:
+			raise LDASemanticError("un tableau doit avoir au moins une dimension")
+		for dim in self.dimensions:
+			dim_type = dim.check(context)
+		# TODO kludgey
+		self.resolved_element_type = self.element_type.check(context)
+		return self
 
 class Context:
 	def __init__(self, context_dict=None):
@@ -80,7 +89,7 @@ class Context:
 		for k in self.unresolved():
 			try:
 				type_descriptor = checkables[k].check(supercontext)
-				assert type_descriptor is not None
+				assert type_descriptor is not None, "un check() a retourné None"
 				self[k] = type_descriptor
 			except CanNotBeResolved as e:
 				errors += 1

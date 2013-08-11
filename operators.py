@@ -120,11 +120,11 @@ class ArraySubscript(BinaryOp):
 
 	def check(self, context):
 		lhs_typedef = self.lhs.check(context)
-		if not lhs_typedef.array:
+		if not isinstance(lhs_typedef, typedesc.ArrayType):
 			raise LDASemanticError(self.pos,
 					"l'élément indexé n'est pas un tableau")
 		# check if the dimension count in RHS matches LHS's typedef
-		ldims = len(lhs_typedef.array_dimensions)
+		ldims = len(lhs_typedef.dimensions)
 		rdims = len(self.rhs)
 		if ldims != rdims:
 			raise LDASemanticError(self.pos, "le nombre d'indices ne "
@@ -135,7 +135,7 @@ class ArraySubscript(BinaryOp):
 			if typedef != typedesc.Integer:
 				raise LDASemanticError(self.pos,
 						"tous les indices doivent être des entiers")
-		return lhs_typedef.make_pure()
+		return lhs_typedef.resolved_element_type
 
 class FunctionCall(BinaryOp):
 	"""
@@ -207,6 +207,13 @@ class Subtraction(ArithmeticOp):
 
 class IntegerRange(BinaryOp):
 	keyword_def = kw.DOTDOT
+	def check(self, context):
+		lhs_typedef = self.lhs.check(context)
+		rhs_typedef = self.rhs.check(context)
+		if not (lhs_typedef is typedesc.Integer and rhs_typedef is typedesc.Integer):
+			return LDASemanticError("les bornes d'un intervalles ne peuvent être que "
+					"des entiers")
+		return typedesc.Range
 
 class LessThan(ComparisonOp):
 	keyword_def = kw.LT
