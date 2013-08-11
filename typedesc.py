@@ -22,6 +22,10 @@ class Integer(Scalar):
 	def check(context):
 		return Integer
 
+	@staticmethod
+	def equivalent(other):
+		return other == Integer or other == Real
+
 class Real(Scalar):
 	pass
 
@@ -46,25 +50,6 @@ class ArrayType(TypeDescriptor):
 	# TypeDescriptor element_type
 	# Range dimensions[]
 	pass
-
-class CompositeType(TypeDescriptor):
-	def __init__(self, field_list):
-		self.field_list = field_list
-		self.context = Context({f.name: ErroneousType(f.name) for f in self.field_list})
-
-	def check(self, supercontext):
-		names = [f.name for f in self.field_list]
-		dupe_names = [n for n in set(names) if names.count(n) > 1]
-		dupe_fields = (f for f in self.field_list if f.name in dupe_names)
-		for df in dupe_fields:
-			raise errors.LDASemanticError(df.ident.pos, "ce nom de champ "
-					"apparaît plusieurs fois dans le type composite")
-		descriptors = {f.name: f.type_descriptor for f in self.field_list}
-		self.context.refine(supercontext, descriptors)
-		return self.context
-	
-	def __repr__(self):
-		return "CompositeType<{}>".format(self.context)
 
 class Context:
 	def __init__(self, context_dict=None):
@@ -106,6 +91,25 @@ class Context:
 		if self.full:
 			self.full = other.full
 
+class CompositeType(Context, TypeDescriptor):
+	def __init__(self, field_list):
+		Context.__init__(self, {f.name: ErroneousType(f.name) for f in field_list})
+		self.field_list = field_list
+
+	def check(self, supercontext):
+		names = [f.name for f in self.field_list]
+		dupe_names = [n for n in set(names) if names.count(n) > 1]
+		dupe_fields = (f for f in self.field_list if f.name in dupe_names)
+		for df in dupe_fields:
+			raise errors.LDASemanticError(df.ident.pos, "ce nom de champ "
+					"apparaît plusieurs fois dans le type composite")
+		descriptors = {f.name: f.type_descriptor for f in self.field_list}
+		self.refine(supercontext, descriptors)
+		return self
+	
+	def __repr__(self):
+		return "CompositeType<{}>".format(self)
+
 class TypeAlias:
 	def __init__(self, ident):
 		self.pos = ident.pos
@@ -133,6 +137,8 @@ class Identifier:
 		self.name = name
 	def __repr__(self):
 		return "i_"+self.name
+	def check(self, context):
+		return context[self.name]
 
 class Lexicon:
 	def __init__(self, variables, composites):
@@ -152,7 +158,7 @@ class Lexicon:
 		# fill top_context with the composites' yet-incomplete contexts
 		# so that composites can cross-reference themselves during the next pass
 		for name, composite in self.composites.items():
-			subcontext[name] = composite.context
+			subcontext[name] = composite
 		# refine composite subcontexts
 		for name, composite in self.composites.items():
 			composite.check(subcontext)

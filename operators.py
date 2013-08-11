@@ -171,14 +171,13 @@ class MemberSelect(BinaryOp):
 	keyword_def = kw.DOT
 
 	def check(self, context):
-		# LHS's typedef should resolve to composite
+		# since LHS refers to a composite, its TypeDescriptor should be a Context
 		lhs_typedef = self.lhs.check(context)
-		if not lhs_typedef.pure_composite:
+		if not isinstance(lhs_typedef, typedesc.CompositeType):
 			raise LDASemanticError(self.pos, "sélection d'un membre "
-				"dans un élément de type non-composite")
-		composite = context.composites[lhs_typedef.composite_name]
+				"dans un élément non-composite")
 		# use composite context exclusively for RHS
-		return self.rhs.check(composite)
+		return self.rhs.check(lhs_typedef)
 
 class Power(ArithmeticOp):
 	"""
