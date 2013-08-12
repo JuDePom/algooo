@@ -40,3 +40,11 @@ if not args.no_output:
 		with open(args.output_file, 'wt', encoding='utf8') as output_file:
 			output_file.write(output)
 
+
+try:
+	ldaparser.analyze_module()
+	module.check()
+except LDASyntaxError as erreurAnalyze:
+	print (erreurAnalyze.message)
+except LDASemanticError as errorCheck :
+	print (errorCheck.message)
