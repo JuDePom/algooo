@@ -8,14 +8,11 @@ class Module:
 		self.algorithm = algorithm
 
 	def check(self):
-		#lexicon = typedesc.Lexicon(functions={f.ident.name: f for f in self.functions})
-		superc = typedesc.Context()
-		for f in self.functions:
-			superc[f.ident.name] = f
+		supercontext = {f.ident.name: f for f in self.functions}
 		for function in self.functions:
-			function.check(superc)
+			function.check(supercontext)
 		if self.algorithm is not None:
-			self.algorithm.check(superc)
+			self.algorithm.check(supercontext)
 
 class Algorithm(StatementBlock):
 	def __init__(self, pos, lexicon, body):

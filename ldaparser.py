@@ -229,14 +229,10 @@ class Parser:
 		if not self.find_keyword(kw.EQ):
 			self.pos = pos0
 			return
-		# TODO j'aime pas vraiment dire "Field" pour une décl de composite mais bon
-		return typedesc.Field(ident, self.analyze_composite_descriptor())
-
-	def analyze_composite_descriptor(self):
 		self.find_keyword(kw.LT, mandatory=True)
 		field_list = self.analyze_varargs(self.analyze_field)
 		self.find_keyword(kw.GT, mandatory=True)
-		return typedesc.CompositeType(field_list)
+		return typedesc.CompositeType(ident, field_list)
 
 	#
 	#
@@ -257,7 +253,7 @@ class Parser:
 				continue
 			c = self.analyze_composite_declaration()
 			if c is not None:
-				composites[c.name] = c.type_descriptor
+				composites[c.name] = c
 				continue
 			break
 		return typedesc.Lexicon(variables, composites)

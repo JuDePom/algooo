@@ -60,57 +60,10 @@ class ArrayType(TypeDescriptor):
 		self.resolved_element_type = self.element_type.check(context)
 		return self
 
-class FunctionType(TypeDescriptor):
-	def __init__(self, domain, codomain):
-		raise NotImplementedError #TODO ASAP
-
-class Context:
-	def __init__(self, master=None):
-		if master is None:
-			self.context = {}
-		elif isinstance(master, Context):
-			self.context = master.context.copy()
-		else:
-			self.context = master.copy()
-		self.full = False
-	
-	def __getitem__(self, index):
-		return self.context[index]
-
-	def __setitem__(self, index, item):
-		self.context[index] = item
-
-	def __delitem__(self, index):
-		del self.context[index]
-
-	def __repr__(self):
-		return str(self.full) + self.context.__repr__()
-	
-	def unresolved(self):
-		# must be a list and not a generator
-		return [k for k, v in self.context.items() if isinstance(v, ErroneousType)]
-
-	def refine(self, supercontext, checkables):
-		errors = 0
-		for k in self.unresolved():
-			try:
-				type_descriptor = checkables[k].check(supercontext)
-				assert type_descriptor is not None, "un check() a retourné None"
-				self[k] = type_descriptor
-			except CanNotBeResolved as e:
-				errors += 1
-				# TODO il faudrait le logger au lieu de le printer à l'arrache
-				print (e)
-		self.full = errors == 0
-	
-	def update(self, other):
-		self.context.update(other.context)
-		if self.full:
-			self.full = other.full
-
-class CompositeType(Context, TypeDescriptor):
-	def __init__(self, field_list):
-		Context.__init__(self, {f.name: ErroneousType(f.name) for f in field_list})
+class CompositeType(TypeDescriptor):
+	def __init__(self, ident, field_list):
+		self.ident = ident
+		self.name = ident.name
 		self.field_list = field_list
 
 	def duplicate_fields(self):
@@ -119,15 +72,28 @@ class CompositeType(Context, TypeDescriptor):
 		return (f for f in self.field_list if f.name in dupe_names)
 
 	def check(self, supercontext):
+		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
 		for df in self.duplicate_fields():
 			raise errors.LDASemanticError(df.ident.pos, "ce nom de champ "
 					"apparaît plusieurs fois dans le type composite")
-		descriptors = {f.name: f.type_descriptor for f in self.field_list}
-		self.refine(supercontext, descriptors)
-		return self
+		# add to context
+		self.context = {}
+		errors = 0
+		for field in self.field_list:
+			try:
+				type_descriptor = field.type_descriptor.check(supercontext)
+				assert type_descriptor is not None, "un check() a retourné None"
+				self.context[field.name] = type_descriptor
+			except CanNotBeResolved as e:
+				errors += 1
+				# TODO il faudrait le logger au lieu de le printer à l'arrache
+				self.context[field.name] = ErroneousType(field.name)
+				print (e)
+		if errors > 0:
+			print ("il y a eu des erreurs de résolution de types, la compilation ne pourra pas être terminée")
 
 	def __repr__(self):
-		return "CompositeType<{}>".format(self)
+		return "CompositeType<{}>".format(self.field_list)
 
 class TypeAlias:
 	def __init__(self, ident):
@@ -141,15 +107,6 @@ class TypeAlias:
 	def __repr__(self):
 		return "TypeAlias<" + self.name + ">"
 
-class Field:
-	# TODO hériter de sourcething ou d'identifier
-	def __init__(self, ident, type_descriptor):
-		self.name = ident.name
-		self.ident = ident
-		self.type_descriptor = type_descriptor
-	def check(self, context):
-		raise Exception("on ne peut pas faire d'analyse sémantique sur un field")
-
 class Identifier:
 	def __init__(self, pos, name):
 		self.pos = pos
@@ -159,30 +116,29 @@ class Identifier:
 	def check(self, context):
 		return context[self.name]
 
+class Field(Identifier):
+	def __init__(self, ident, type_descriptor):
+		super().__init__(ident.pos, ident.name)
+		self.type_descriptor = type_descriptor
+	def check(self, context):
+		raise Exception("on ne peut pas faire d'analyse sémantique sur un field")
+
 class Lexicon:
 	def __init__(self, variables=None, composites=None, functions=None):
 		self.variables  = variables  if variables  is not None else {}
 		self.composites = composites if composites is not None else {}
 		self.functions  = functions  if functions  is not None else {}
-
-		self.context = Context()
-		for k in self.variables.keys():
-			self.context[k] = ErroneousType(k)
-		for k in self.composites.keys():
-			self.context[k] = ErroneousType(k)
-		for k in self.functions.keys():
-			self.context[k] = ErroneousType(k)
 	
 	def check(self, supercontext=None):
 		if supercontext is None:
-			supercontext = Context()
+			supercontext = {}
 		# TODO : vérif qu'il n'y ait pas 2x le même nom de champ
 		# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
-		subcontext = Context(supercontext)
-		# fill top_context with the composites' yet-incomplete contexts
+		# fill subcontext with the composites' yet-incomplete contexts
 		# so that composites can cross-reference themselves during the next pass
-		for name, composite in self.composites.items():
-			subcontext[name] = composite
+		subcontext = supercontext.copy()
+		subcontext.update({name: composite
+				for name, composite in self.composites.items()})
 		# refine composite subcontexts
 		for name, composite in self.composites.items():
 			composite.check(subcontext)
@@ -192,9 +148,8 @@ class Lexicon:
 		# another variable's type by using its name as a TypeAlias.
 		# TODO - if there are any global variables this will need to be refined.
 		# TODO - they might still be able to borrow function return types from the name of the function...
-		variable_context = Context()
-		for name, variable in self.variables.items():
-			variable_context[name] = variable.check(subcontext)
+		variable_context = {name: variable.check(subcontext)
+				for name, variable in self.variables.items()}
 		# merge
 		subcontext.update(variable_context)
 		return subcontext

@@ -158,7 +158,6 @@ class FunctionCall(BinaryOp):
 			raise LDASemanticError("cet élément ne peut pas être appelé car "
 					"ce n'est pas une fonction")
 		# TODO check varargs
-		print (bound_function.return_type)
 		return bound_function.return_type
 		
 
@@ -174,13 +173,13 @@ class MemberSelect(BinaryOp):
 	keyword_def = kw.DOT
 
 	def check(self, context):
-		# since LHS refers to a composite, its TypeDescriptor should be a Context
-		lhs_typedef = self.lhs.check(context)
-		if not isinstance(lhs_typedef, typedesc.CompositeType):
+		# LHS is supposed to refer to a composite
+		composite = self.lhs.check(context)
+		if not isinstance(composite, typedesc.CompositeType):
 			raise LDASemanticError(self.pos, "sélection d'un membre "
 				"dans un élément non-composite")
 		# use composite context exclusively for RHS
-		return self.rhs.check(lhs_typedef)
+		return self.rhs.check(composite.context)
 
 class Power(ArithmeticOp):
 	"""
