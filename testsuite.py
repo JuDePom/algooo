@@ -60,11 +60,12 @@ lex, _ = parse('lexicon', """
 		lexique
 			Moule=<a:entier, b:chaîne>
 			m:Moule
-			//t1:tableau Moule[0..2]
-			//t2:tableau Moule[0..2,0..2]
+			t1:tableau Moule[0..2]
+			t2:tableau Moule[0..2,0..2]
 			le_réel: réel
 			l_entier: entier
 			""")
+context = lex.check()
 
 
 #######################################################################
@@ -94,7 +95,7 @@ expressions = [
 
 print ("\n***** DÉBUT DES TESTS QUI DOIVENT RÉUSSIR *****\n")
 for e in expressions:
-	passtest('expression', e, lex)
+	passtest('expression', e, context)
 
 #######################################################################
 # THESE TESTS MUST FAIL
@@ -121,7 +122,7 @@ expressions = [
 
 print ("\n***** DÉBUT DES TESTS QUI DOIVENT ÉCHOUER *****\n")
 for e in expressions:
-	failtest('expression', e, lex)
+	failtest('expression', e, context)
 
 ######################################################################
 

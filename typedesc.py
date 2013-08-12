@@ -24,22 +24,38 @@ class Integer(Scalar):
 
 	@staticmethod
 	def equivalent(other):
-		return other == Integer or other == Real
+		if other in (Integer, Real):
+			return other
 
 class Real(Scalar):
-	pass
+	@staticmethod
+	def check(context):
+		return Real
+
+	@staticmethod
+	def equivalent(other):
+		if other in (Integer, Real):
+			return Real
 
 class Boolean(Scalar):
-	pass
+	@staticmethod
+	def check(context):
+		return Boolean
 
 class Character(Scalar):
-	pass
+	@staticmethod
+	def check(context):
+		return Character
 
 class String(Scalar):
-	pass
+	@staticmethod
+	def check(context):
+		return String
 
 class Void(TypeDescriptor):
-	pass
+	@staticmethod
+	def check(context):
+		return Void
 
 class Range(TypeDescriptor):
 	# min (expr)
