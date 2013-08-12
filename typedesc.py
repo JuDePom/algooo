@@ -60,12 +60,18 @@ class ArrayType(TypeDescriptor):
 		self.resolved_element_type = self.element_type.check(context)
 		return self
 
+class FunctionType(TypeDescriptor):
+	def __init__(self, domain, codomain):
+		raise NotImplementedError #TODO ASAP
+
 class Context:
-	def __init__(self, context_dict=None):
-		if context_dict is None:
+	def __init__(self, master=None):
+		if master is None:
 			self.context = {}
+		elif isinstance(master, Context):
+			self.context = master.context.copy()
 		else:
-			self.context = context_dict.copy()
+			self.context = master.copy()
 		self.full = False
 	
 	def __getitem__(self, index):
@@ -107,11 +113,13 @@ class CompositeType(Context, TypeDescriptor):
 		Context.__init__(self, {f.name: ErroneousType(f.name) for f in field_list})
 		self.field_list = field_list
 
-	def check(self, supercontext):
+	def duplicate_fields(self):
 		names = [f.name for f in self.field_list]
 		dupe_names = [n for n in set(names) if names.count(n) > 1]
-		dupe_fields = (f for f in self.field_list if f.name in dupe_names)
-		for df in dupe_fields:
+		return (f for f in self.field_list if f.name in dupe_names)
+
+	def check(self, supercontext):
+		for df in self.duplicate_fields():
 			raise errors.LDASemanticError(df.ident.pos, "ce nom de champ "
 					"apparaît plusieurs fois dans le type composite")
 		descriptors = {f.name: f.type_descriptor for f in self.field_list}
@@ -152,17 +160,22 @@ class Identifier:
 		return context[self.name]
 
 class Lexicon:
-	def __init__(self, variables, composites):
-		self.variables = variables
-		self.composites = composites
+	def __init__(self, variables=None, composites=None, functions=None):
+		self.variables  = variables  if variables  is not None else {}
+		self.composites = composites if composites is not None else {}
+		self.functions  = functions  if functions  is not None else {}
 
 		self.context = Context()
 		for k in self.variables.keys():
 			self.context[k] = ErroneousType(k)
 		for k in self.composites.keys():
 			self.context[k] = ErroneousType(k)
+		for k in self.functions.keys():
+			self.context[k] = ErroneousType(k)
 	
-	def check(self, supercontext):
+	def check(self, supercontext=None):
+		if supercontext is None:
+			supercontext = Context()
 		# TODO : vérif qu'il n'y ait pas 2x le même nom de champ
 		# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
 		subcontext = Context(supercontext)

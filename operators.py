@@ -3,6 +3,7 @@ from expression import Expression
 from errors import *
 import typedesc
 import dot
+import module
 
 #######################################################################
 #
@@ -152,10 +153,12 @@ class FunctionCall(BinaryOp):
 
 	def check(self, context):
 		bound_function = self.lhs.check(context)
-		if not isinstance(bound_function, Function):
+		# TODO est-ce que le LHS doit vraiment retourner une fonction ? ou est-ce qu'on retourne un FunctionType ?
+		if not isinstance(bound_function, module.Function):
 			raise LDASemanticError("cet élément ne peut pas être appelé car "
 					"ce n'est pas une fonction")
 		# TODO check varargs
+		print (bound_function.return_type)
 		return bound_function.return_type
 		
 

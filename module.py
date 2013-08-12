@@ -6,13 +6,16 @@ class Module:
 	def __init__(self, functions, algorithm=None):
 		self.functions = functions
 		self.algorithm = algorithm
-		self.symbols = {}
 
 	def check(self):
+		#lexicon = typedesc.Lexicon(functions={f.ident.name: f for f in self.functions})
+		superc = typedesc.Context()
+		for f in self.functions:
+			superc[f.ident.name] = f
 		for function in self.functions:
-			function.check(self.symbols)
+			function.check(superc)
 		if self.algorithm is not None:
-			self.algorithm.check(self.symbols)
+			self.algorithm.check(superc)
 
 class Algorithm(StatementBlock):
 	def __init__(self, pos, lexicon, body):

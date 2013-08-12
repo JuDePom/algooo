@@ -207,7 +207,7 @@ class Parser:
 		alias = self.analyze_type_alias()
 		if alias is not None:
 			return alias
-	
+
 	def analyze_field(self):
 		pos0 = self.pos
 		ident = self.analyze_identifier()
@@ -251,7 +251,6 @@ class Parser:
 		variables = {}
 		composites = {}
 		while True:
-			# TODO - mettre les variables et les composites dans des dictionnaires séparés pour que la moindre variable ne devienne pas un typedef, ou alors mettre class comme en PL-4
 			v = self.analyze_field()
 			if v is not None:
 				variables[v.name] = v.type_descriptor
