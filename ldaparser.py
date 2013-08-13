@@ -40,19 +40,23 @@ class Parser:
 	These functions may raise an exception if a syntax error was found.
 	'''
 
-	def __init__(self, path, buf=None):
+	def __init__(self, path=None, buf=""):
 		if path is not None:
 			self.path = path
 			with open(path, 'rt', encoding='utf8') as input_file:
-				self.buf = input_file.read()
+				self.set_buf(input_file.read())
 		else:
 			self.path = "<direct>"
-			self.buf = buf
-		self.buflen = len(self.buf)
-		self.reset_pos()
+			self.set_buf(buf)
 
 	def reset_pos(self):
 		self.pos = position.Position(self.path)
+
+	def set_buf(self, value):
+		self.buf = value
+		self.buflen = len(self.buf)
+		self.reset_pos()
+		self.advance()
 
 	def advance(self, chars=0):
 		'''
@@ -98,7 +102,6 @@ class Parser:
 		return self.pos.char >= self.buflen
 
 	def analyze_module(self):
-		self.advance()
 		functions = []
 		algorithm = None
 		has_algorithm = False
