@@ -31,7 +31,12 @@ class Varargs(Expression):
 			previous.children.append(current)
 		cluster.rank_chains.append(arg_nodes)
 		return arg_nodes[0]
-
+	def lda_format(self, indent=0):
+		result = ""
+		for arg in self.arg_list:
+			result += arg.lda_format()
+		return result
+		
 	def check(self, context):
 		return [arg.check(context) for arg in self]
 
@@ -42,9 +47,10 @@ class _Literal(Expression):
 
 	def __repr__(self):
 		return str(self.value)
-
 	def put_node(self, cluster):
 		return dot.Node(str(self), cluster)
+	def lda_format(self, indent=0):
+		return str(self)
 
 	def check(self, context):
 		return self._typedef

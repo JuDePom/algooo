@@ -1,0 +1,7 @@
+fonction test ( a : entier )
+lexique
+	double : entier
+	int : entier
+debut
+	double <- int
+fin

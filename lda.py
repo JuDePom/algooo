@@ -6,6 +6,7 @@ LDA compiler entry point.
 
 import ldaparser
 import argparse
+from errors import *
 
 ap = argparse.ArgumentParser(
 	description="Compilateur de LDA (langage de description d'algorithme)")
@@ -28,6 +29,7 @@ print (" * Sémantique : OK.")
 if not args.no_output:
 	if   args.format == 'quick': import quick as formatter
 	elif args.format == 'dot'  : import dot   as formatter
+	elif args.format == 'lda'  : import ldaF  as formatter
 	elif args.format == 'js'   : import js    as formatter
 	else:
 		raise Exception("Format de sortie inconnu : " + args.format)

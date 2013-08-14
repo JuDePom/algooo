@@ -1,3 +1,4 @@
+import keywords as kw
 import errors
 import position
 
@@ -9,14 +10,14 @@ class CanNotBeResolved(errors.LDASemanticError):
 
 class TypeDescriptor:
 	pass
-
+		
 class ErroneousType(TypeDescriptor):
 	def __init__(self, name):
 		self.name = name
 
 class Scalar(TypeDescriptor):
 	pass
-
+	
 class Integer(Scalar):
 	@staticmethod
 	def check(context):
@@ -26,7 +27,10 @@ class Integer(Scalar):
 	def equivalent(other):
 		if other in (Integer, Real):
 			return other
-
+		
+	def lda_format(self=None, indent=0):
+		return kw.INT.lda_format()
+	
 class Real(Scalar):
 	@staticmethod
 	def check(context):
@@ -36,26 +40,41 @@ class Real(Scalar):
 	def equivalent(other):
 		if other in (Integer, Real):
 			return Real
+			
+	def lda_format(self=None, indent=0):
+		return kw.REAL.lda_format()
 
 class Boolean(Scalar):
 	@staticmethod
 	def check(context):
 		return Boolean
+		
+	def lda_format(self=None, indent=0):
+		return kw.BOOL.lda_format()
 
 class Character(Scalar):
 	@staticmethod
 	def check(context):
 		return Character
+	
+	def lda_format(self=None, indent=0):
+		return kw.CHAR.lda_format()
 
 class String(Scalar):
 	@staticmethod
 	def check(context):
 		return String
+	
+	def lda_format(self=None, indent=0):
+		return kw.STRING.lda_format()
 
 class Void(TypeDescriptor):
 	@staticmethod
 	def check(context):
 		return Void
+	
+	def lda_format(self=None, indent=0):
+		return "VOID"
 
 class Range(TypeDescriptor):
 	# min (expr)
@@ -75,6 +94,9 @@ class ArrayType(TypeDescriptor):
 		# TODO kludgey
 		self.resolved_element_type = self.element_type.check(context)
 		return self
+	
+	def lda_format(self=None, indent=0):
+		return "{} : {}".format( self.element_type, self.dimensions )
 
 class CompositeType(TypeDescriptor):
 	def __init__(self, ident, field_list):
@@ -110,6 +132,15 @@ class CompositeType(TypeDescriptor):
 
 	def __repr__(self):
 		return "CompositeType<{}>".format(self.field_list)
+	def lda_format(self, indent=0):
+		result = ""
+		long = 0
+		for cle in self.variables :
+			long += 1
+			result += self.variables.get(cle).lda_format(indent + 1)
+			if long < len(self.variables):
+				result += ", "	
+		return indent*'\t' + "{} = <{}>".format(self.ident.lda_format(indent + 1), result)
 
 class TypeAlias:
 	def __init__(self, ident):
@@ -129,6 +160,8 @@ class Identifier:
 		self.name = name
 	def __repr__(self):
 		return "i_"+self.name
+	def lda_format(self, indent=0):
+		return self.name
 	def check(self, context):
 		return context[self.name]
 
@@ -170,3 +203,12 @@ class Lexicon:
 		subcontext.update(variable_context)
 		return subcontext
 
+	def lda_format(self, indent=0):
+		result = ""
+		for cle in self.variables :
+			result += indent*'\t' + "{} : {}\n".format( cle , self.variables.get(cle).lda_format() )
+		for cle in self.composites :
+			result += indent*'\t' + self.composites.get(cle).lda_format() + "\n"
+		return "{}\n{}".format(
+			kw.LEXICON.lda_format(),
+			result)

@@ -1,3 +1,4 @@
+import keywords as kw
 import position
 import dot
 
@@ -28,6 +29,11 @@ class StatementBlock(position.SourceThing):
 			rank_chain.append(outer_node)
 		cluster.rank_chains.append(rank_chain)
 		return first_outer_node
+	def lda_format(self, indent=0):
+		result = ""
+		for statement in self.body:
+			result += indent*'\t' + statement.lda_format(indent + 1) + "\n"
+		return result
 	def check(self, context):
 		for statement in self:
 			statement.check(context)
@@ -55,6 +61,19 @@ class IfThenElse(Statement):
 			else_node = self.else_block.put_node(else_cluster)
 			children.append(else_node)
 		return dot.Node("si", cluster, *children)
+	def lda_format(self, indent=0):
+		if self.else_block is None:
+			return indent*'\t' + "{} {} {}\n{}{}\n".format(
+				kw.IF, self.condition.lda_format(), kw.THEN,
+				self.then_block.lda_format(indent + 1),
+				kw.END_IF)
+		else :
+			return indent*'\t' + "{} {} {}\n{}{}\n{}{}\n".format(
+				kw.IF, self.condition.lda_format(), kw.THEN,
+				self.then_block.lda_format(indent + 1),
+				kw.ELSE,
+				self.else_block.lda_format(indent + 1),
+				kw.END_IF)
 
 class For(Statement):
 	def __init__(self, pos, counter, initial, final, block):
@@ -74,7 +93,12 @@ class For(Statement):
 		block_node = self.block.put_node(block_cluster)
 		return dot.Node("pour", cluster, counter_node, initial_node,
 				final_node, block_node)
-
+	def lda_format(self, indent=0):
+		return indent*'\t' + "{} {} {} {} {} {} {}\n{}{}\n".format(
+			kw.FOR, self.counter, kw.FROM, self.initial, kw.TO, self.final, kw.DO,
+			self.block.lda_format(indent + 1),
+			kw.END_FOR)
+				
 class ForEach(Statement):
 	def __init__(self, pos, element, list_element, block):
 		super().__init__(pos)
@@ -97,6 +121,11 @@ class While(Statement):
 		block_cluster = dot.Cluster("faire", cluster)
 		block_node = self.block.put_node(block_cluster)
 		return dot.Node("tantque", cluster, cond_node, block_node)
+	def lda_format(self, indent=0):
+		return indent*'\t' + "{} {} {} \n{}{}\n".format(
+			kw.WHILE, self.condition.lda_format(), kw.DO,
+			self.block.lda_format(indent + 1),
+			kw.END_WHILE)
 
 class DoWhile(Statement):
 	def __init__(self, pos, block, condition):

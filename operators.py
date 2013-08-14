@@ -23,6 +23,9 @@ class UnaryOp(Expression):
 				cluster, self.rhs.put_node(cluster))
 		op_node.shape = "circle"
 		return op_node
+		
+	def lda_format(self, indent=0):
+		return self.rhs
 
 	def check(self, context):
 		raise NotImplementedError
@@ -47,6 +50,9 @@ class BinaryOp(Expression):
 				self.rhs.put_node(cluster))
 		op_node.shape = "circle"
 		return op_node
+	
+	def lda_format(self, indent=0):
+		return "{} {} {}".format(self.lhs.lda_format(), self.keyword_def.default_spelling, self.rhs.lda_format())
 
 	def check(self, context):
 		raise NotImplementedError

@@ -150,7 +150,7 @@ class Parser:
 			params = []
 		else:
 			# non-empty parameter list
-			params = self.analyze_varargs(self.analyze_variable_declaration)
+			params = self.analyze_varargs(self.analyze_field)
 			self.find_keyword(kw.RPAREN, mandatory=True)
 		# optional colon before return type (if omitted, no return type)
 		if self.find_keyword(kw.COLON):
