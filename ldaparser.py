@@ -323,7 +323,7 @@ class Parser:
 			else_block, _ = self.analyze_statement_block(kw.END_IF)
 		else:
 			else_block = None
-		return IfThenElse(pos0, condition, then_block, else_block)
+		return statements.IfThenElse(pos0, condition, then_block, else_block)
 
 	def analyze_for(self):
 		pos0 = self.pos

@@ -1,5 +1,5 @@
 import unittest
-import lda.ldaparser
+import ldaparser
 
 class ParserTestCase(unittest.TestCase):
 	def setUp(self):
