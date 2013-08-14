@@ -58,7 +58,7 @@ class Function(StatementBlock):
 		s = ""
 		s += ", ".join( (param.lda_format() for param in self.fp_list) )
 	
-		if self.return_type.lda_format() != "VOID":
+		if self.return_type is not typedesc.Void :
 			return "{} {}({}):{}\n{}\n{}\n{}{}\n\n".format(
 				kw.FUNCTION.lda_format(), self.ident.lda_format(), s ,self.return_type.lda_format(),
 				self.lexicon.lda_format(indent + 1),

@@ -171,7 +171,9 @@ class Field(Identifier):
 		self.type_descriptor = type_descriptor
 	def check(self, context):
 		raise Exception("on ne peut pas faire d'analyse sémantique sur un field")
-
+	def lda_format(self, indent=0):
+		return "{} : {}".format(self.name, self.type_descriptor.lda_format())
+		
 class Lexicon:
 	def __init__(self, variables=None, composites=None, functions=None):
 		self.variables  = variables  if variables  is not None else {}
