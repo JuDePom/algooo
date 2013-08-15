@@ -38,6 +38,7 @@ class ParserContextManager:
 	
 	def __exit__(self, exc_type, exc_value, traceback):
 		if isinstance(exc_value, LDASyntaxError):
+			self.parser.append_syntax_error(exc_value)
 			self.syntax_error(exc_value)
 			# Don't let the exception propagate if we got here.
 			return True
@@ -47,7 +48,6 @@ class ParserContextManager:
 
 class BacktrackFailure(ParserContextManager):
 	def syntax_error(self, exc_value):
-		self.parser.append_syntax_error(exc_value)
 		self.parser.pos = self.pos
 
 class CriticalItem(ParserContextManager):
@@ -56,10 +56,7 @@ class CriticalItem(ParserContextManager):
 		self.expected_item_name = expected_item_name
 
 	def syntax_error(self, exc_value):
-		#self.parser.append_syntax_error(exc_value)
-		explicit_error = ExpectedItemError(self.pos, self.expected_item_name)
-		self.parser.append_syntax_error(explicit_error)
-		raise explicit_error
+		raise ExpectedItemError(self.pos, self.expected_item_name)
 
 class Parser:
 	'''
