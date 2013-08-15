@@ -22,16 +22,18 @@ ap.add_argument('--no-output', '-n', action='store_true',
 args = ap.parse_args()
 
 parser = ldaparser.Parser(args.path)
+
 try:
 	module = parser.analyze_module()
 except errors.LDASyntaxError:
-	print("erreur de syntaxe.")
-	print("erreurs les plus avancées dans le log:")
-	for error in parser.syntax_errors:
-		print ("***", error)
+	error = parser.syntax_errors[-1]
+	print(error, file=sys.stderr)
 	sys.exit(1)
+
 print (" * Syntaxe : OK.")
+
 module.check()
+
 print (" * Sémantique : OK.")
 
 if not args.no_output:
