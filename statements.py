@@ -64,16 +64,16 @@ class IfThenElse(Statement):
 	def lda_format(self, indent=0):
 		if self.else_block is None:
 			return indent*'\t' + "{} {} {}\n{}{}\n".format(
-				kw.IF, self.condition.lda_format(), kw.THEN,
+				kw.IF.lda_format(), self.condition.lda_format(), kw.THEN.lda_format(),
 				self.then_block.lda_format(indent + 1),
-				kw.END_IF)
+				kw.END_IF.lda_format())
 		else :
 			return indent*'\t' + "{} {} {}\n{}{}\n{}{}\n".format(
-				kw.IF, self.condition.lda_format(), kw.THEN,
+				kw.IF.lda_format(), self.condition.lda_format(), kw.THEN.lda_format(),
 				self.then_block.lda_format(indent + 1),
-				kw.ELSE,
+				kw.ELSE.lda_format(),
 				self.else_block.lda_format(indent + 1),
-				kw.END_IF)
+				kw.END_IF.lda_format())
 
 class For(Statement):
 	def __init__(self, pos, counter, initial, final, block):
@@ -83,7 +83,7 @@ class For(Statement):
 		self.final = final
 		self.block = block
 	def __repr__(self):
-		return "pour {} de {} a {} faire \n{}fpour\n".format(
+		return "pour {} de {} a {} faire\n{}fpour\n".format(
 				self.counter, self.initial, self.final, self.block)
 	def put_node(self, cluster):
 		counter_node = self.counter.put_node(cluster)
@@ -95,9 +95,9 @@ class For(Statement):
 				final_node, block_node)
 	def lda_format(self, indent=0):
 		return indent*'\t' + "{} {} {} {} {} {} {}\n{}{}\n".format(
-			kw.FOR, self.counter, kw.FROM, self.initial, kw.TO, self.final, kw.DO,
+			kw.FOR.lda_format(), self.counter.lda_format(), kw.FROM.lda_format(), self.initial.lda_format(), kw.TO.lda_format(), self.final.lda_format(), kw.DO.lda_format(),
 			self.block.lda_format(indent + 1),
-			kw.END_FOR)
+			kw.END_FOR.lda_format())
 				
 class ForEach(Statement):
 	def __init__(self, pos, element, list_element, block):
@@ -106,7 +106,7 @@ class ForEach(Statement):
 		self.list_element = list_element
 		self.block = block	
 	def __repr__(self):
-		return "pourchaque {} dans {} faire \n{}fpour\n".format(
+		return "pourchaque {} dans {} faire\n{}fpour\n".format(
 				self.element, self.list_element, self.block)
 
 class While(Statement):
@@ -115,17 +115,17 @@ class While(Statement):
 		self.condition = condition
 		self.block = block	
 	def __repr__(self):
-		return "tantque {} faire \n{}ftant\n".format(self.condition, self.block)
+		return "tantque {} faire\n{}ftant\n".format(self.condition, self.block)
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)
 		block_cluster = dot.Cluster("faire", cluster)
 		block_node = self.block.put_node(block_cluster)
 		return dot.Node("tantque", cluster, cond_node, block_node)
 	def lda_format(self, indent=0):
-		return indent*'\t' + "{} {} {} \n{}{}\n".format(
-			kw.WHILE, self.condition.lda_format(), kw.DO,
+		return indent*'\t' + "{} {} {}\n{}{}\n".format(
+			kw.WHILE.lda_format(), self.condition.lda_format(), kw.DO.lda_format(),
 			self.block.lda_format(indent + 1),
-			kw.END_WHILE)
+			kw.END_WHILE.lda_format())
 
 class DoWhile(Statement):
 	def __init__(self, pos, block, condition):

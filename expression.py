@@ -33,8 +33,7 @@ class Varargs(Expression):
 		return arg_nodes[0]
 	def lda_format(self, indent=0):
 		result = ""
-		for arg in self.arg_list:
-			result += arg.lda_format()
+		result += ", ".join( (param.lda_format() for param in self.arg_list) )
 		return result
 		
 	def check(self, context):
@@ -50,23 +49,35 @@ class _Literal(Expression):
 	def put_node(self, cluster):
 		return dot.Node(str(self), cluster)
 	def lda_format(self, indent=0):
-		return str(self)
+		return str(self.value)
 
 	def check(self, context):
 		return self._typedef
 
 class LiteralInteger(_Literal):
 	_typedef = typedesc.Integer
+	
+	def lda_format(self, indent=0):
+		return self.value
 
 class LiteralReal(_Literal):
 	_typedef = typedesc.Real
+	
+	def lda_format(self, indent=0):
+		return self.value
 
 class LiteralString(_Literal):
 	_typedef = typedesc.String
 
 	def __repr__(self):
 		return "\"" + self.value + "\""
-
+		
+	def lda_format(self, indent=0):
+		return self.value
+		
 class LiteralBoolean(_Literal):
 	_typedef = typedesc.Boolean
+	
+	def lda_format(self, indent=0):
+		return self.value.lda_format()
 

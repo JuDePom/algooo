@@ -96,7 +96,7 @@ class ArrayType(TypeDescriptor):
 		return self
 	
 	def lda_format(self=None, indent=0):
-		return "{} : {}".format( self.element_type, self.dimensions )
+		return "{} : {}".format( self.element_type.lda_format(), self.dimensions )
 
 class CompositeType(TypeDescriptor):
 	def __init__(self, ident, field_list):
@@ -134,12 +134,7 @@ class CompositeType(TypeDescriptor):
 		return "CompositeType<{}>".format(self.field_list)
 	def lda_format(self, indent=0):
 		result = ""
-		long = 0
-		for cle in self.variables :
-			long += 1
-			result += self.variables.get(cle).lda_format(indent + 1)
-			if long < len(self.variables):
-				result += ", "	
+		result += ", ".join( (param.lda_format() for param in self.field_list) )
 		return indent*'\t' + "{} = <{}>".format(self.ident.lda_format(indent + 1), result)
 
 class TypeAlias:
@@ -207,10 +202,10 @@ class Lexicon:
 
 	def lda_format(self, indent=0):
 		result = ""
-		for cle in self.variables :
-			result += indent*'\t' + "{} : {}\n".format( cle , self.variables.get(cle).lda_format() )
-		for cle in self.composites :
-			result += indent*'\t' + self.composites.get(cle).lda_format() + "\n"
-		return "{}\n{}".format(
+		if self.variables is not None:
+			result += "\t" + "\n\t".join( (var.lda_format() for var in self.variables) )
+		if self.composites is not None:
+			result += "\n\t" +  "\n\t".join( (comp.lda_format() for comp in self.composites) )
+		return "{}\n{}\n".format(
 			kw.LEXICON.lda_format(),
 			result)

@@ -25,7 +25,7 @@ class UnaryOp(Expression):
 		return op_node
 		
 	def lda_format(self, indent=0):
-		return self.rhs
+		return indent*'\t' + self.rhs
 
 	def check(self, context):
 		raise NotImplementedError
