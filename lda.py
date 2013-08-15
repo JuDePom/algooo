@@ -6,6 +6,8 @@ LDA compiler entry point.
 
 import ldaparser
 import argparse
+import errors
+import sys
 
 ap = argparse.ArgumentParser(
 	description="Compilateur de LDA (langage de description d'algorithme)")
@@ -20,7 +22,14 @@ ap.add_argument('--no-output', '-n', action='store_true',
 args = ap.parse_args()
 
 parser = ldaparser.Parser(args.path)
-module = parser.analyze_module()
+try:
+	module = parser.analyze_module()
+except errors.LDASyntaxError:
+	print("erreur de syntaxe.")
+	print("erreurs les plus avancées dans le log:")
+	for error in parser.syntax_errors:
+		print ("***", error)
+	sys.exit(1)
 print (" * Syntaxe : OK.")
 module.check()
 print (" * Sémantique : OK.")
@@ -40,11 +49,3 @@ if not args.no_output:
 		with open(args.output_file, 'wt', encoding='utf8') as output_file:
 			output_file.write(output)
 
-
-try:
-	ldaparser.analyze_module()
-	module.check()
-except LDASyntaxError as erreurAnalyze:
-	print (erreurAnalyze.message)
-except LDASemanticError as errorCheck :
-	print (errorCheck.message)
