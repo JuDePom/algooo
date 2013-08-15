@@ -29,34 +29,37 @@ re_real = re.compile(r'''
 
 re_string = re.compile(r'".*?"') # TODO- escaping
 
-class PCM:
+class ParserContextManager:
 	def __init__(self, parser):
 		self.parser = parser
+	
 	def __enter__(self):
 		self.pos = self.parser.pos
+	
 	def __exit__(self, exc_type, exc_value, traceback):
 		if isinstance(exc_value, LDASyntaxError):
-			self.parser.append_syntax_error(exc_value)
-			#print("backtracking to", self.pos, "from", exc_value.pos, "with", exc_value)
-			self.parser.pos = self.pos
-			return self.syntax_error(exc_value)
-		return False
+			self.syntax_error(exc_value)
+			# Don't let the exception propagate if we got here.
+			return True
+		else:
+			# Unknown error. Let Python handle it.
+			return False
 
-class PCMRequiredItem(PCM):
-	def __init__(self, parser, item_name):
-		super().__init__(parser)
-		self.item_name = item_name
-	def syntax_error(self, error):
-		raise ExpectedItemError(self.pos, self.item_name)
+class BacktrackFailure(ParserContextManager):
+	def syntax_error(self, exc_value):
+		self.parser.append_syntax_error(exc_value)
+		self.parser.pos = self.pos
 
-class PCMNoneIfMissing(PCM):
-	def __init__(self, parser, *set_to_none):
+class CriticalItem(ParserContextManager):
+	def __init__(self, parser, expected_item_name=None):
 		super().__init__(parser)
-		self.set_to_none = set_to_none
-	def syntax_error(self, error):
-		for stn in self.set_to_none:
-			stn = None
-		return True
+		self.expected_item_name = expected_item_name
+
+	def syntax_error(self, exc_value):
+		#self.parser.append_syntax_error(exc_value)
+		explicit_error = ExpectedItemError(self.pos, self.expected_item_name)
+		self.parser.append_syntax_error(explicit_error)
+		raise explicit_error
 
 class Parser:
 	'''
@@ -155,7 +158,7 @@ class Parser:
 
 	def analyze_multiple(self, group_name, *analysis_order):
 		for analyze in analysis_order:
-			with PCMNoneIfMissing(self):
+			with BacktrackFailure(self):
 				return analyze()
 		raise ExpectedItemError(self.pos, group_name)
 
@@ -206,13 +209,13 @@ class Parser:
 			self.consume_keyword(kw.RPAREN)
 		# optional colon before return type (if omitted, no return type)
 		if self.consume_keyword(kw.COLON, soft=True):
-			with PCMRequiredItem(self, "type de retour de la fonction"):
+			with CriticalItem(self, "type de retour de la fonction"):
 				return_type = self.analyze_type_descriptor()
 		else:
 			return_type = typedesc.Void
 		# lexicon
 		lexicon = None
-		with PCMNoneIfMissing(self):
+		with BacktrackFailure(self):
 			lexicon = self.analyze_lexicon()
 		# statement block
 		self.consume_keyword(kw.BEGIN)
@@ -227,7 +230,7 @@ class Parser:
 				kw.CHAR   : typedesc.Character,
 				kw.STRING : typedesc.String,
 		}
-		with PCMRequiredItem(self, "un type scalaire"):
+		with CriticalItem(self, "un type scalaire"):
 			scalar_kw = self.consume_keyword_choice(*scalars.keys())
 			return scalars[scalar_kw]
 
@@ -244,11 +247,11 @@ class Parser:
 		return typedesc.TypeAlias(alias_id)
 
 	def analyze_type_descriptor(self):
-		with PCMNoneIfMissing(self):
+		with BacktrackFailure(self):
 			return self.analyze_array_type()
-		with PCMNoneIfMissing(self):
+		with BacktrackFailure(self):
 			return self.analyze_scalar_type()
-		with PCMNoneIfMissing(self):
+		with BacktrackFailure(self):
 			return self.analyze_type_alias()
 		raise ExpectedItemError(self.pos, "un descripteur de type")
 
@@ -271,11 +274,11 @@ class Parser:
 		variables = {}
 		composites = {}
 		while True:
-			with PCMNoneIfMissing(self):
+			with BacktrackFailure(self):
 				v = self.analyze_field()
 				variables[v.name] = v.type_descriptor
 				continue
-			with PCMNoneIfMissing(self):
+			with BacktrackFailure(self):
 				c = self.analyze_composite_declaration()
 				composites[c.name] = c
 				continue
@@ -297,7 +300,7 @@ class Parser:
 		pos = self.pos
 		block = []
 		while True:
-			with PCMNoneIfMissing(self):
+			with BacktrackFailure(self):
 				unit = self.analyze_statement()
 				block.append(unit)
 				continue
@@ -316,7 +319,7 @@ class Parser:
 		pos = self.pos
 		self.consume_keyword(kw.IF)
 		# condition
-		with PCMRequiredItem(self, "condition"):
+		with CriticalItem(self, "condition"):
 			condition = self.analyze_expression()
 		# then block
 		self.consume_keyword(kw.THEN)
@@ -332,15 +335,15 @@ class Parser:
 		pos = self.pos
 		self.consume_keyword(kw.FOR)
 		# counter
-		with PCMRequiredItem(self, "compteur de la boucle"):
+		with CriticalItem(self, "compteur de la boucle"):
 			counter = self.analyze_identifier()
 		# initial value
 		self.consume_keyword(kw.FROM)
-		with PCMRequiredItem(self, "valeur initiale du compteur"):
+		with CriticalItem(self, "valeur initiale du compteur"):
 			initial = self.analyze_expression()
 		# final value
 		self.consume_keyword(kw.TO)
-		with PCMRequiredItem(self, "valeur finale du compteur"):
+		with CriticalItem(self, "valeur finale du compteur"):
 			final = self.analyze_expression()
 		# statement block
 		self.consume_keyword(kw.DO)
@@ -351,7 +354,7 @@ class Parser:
 		pos = self.pos
 		self.consume_keyword(kw.WHILE)
 		# condition
-		with PCMRequiredItem(self, "condition de la boucle"):
+		with CriticalItem(self, "condition de la boucle"):
 			condition = self.analyze_expression()
 		# statement block
 		self.consume_keyword(kw.DO)
@@ -359,10 +362,10 @@ class Parser:
 		return statements.While(pos, condition, block)
 
 	def analyze_expression(self):
-		with PCMRequiredItem(self, "une expression"):
+		with CriticalItem(self, "une expression"):
 			lhs = self.analyze_primary_expression()
 			bo1 = None
-			with PCMNoneIfMissing(self):
+			with BacktrackFailure(self):
 				bo1 = self.analyze_binary_operator()
 			if bo1 is None:
 				return lhs
@@ -375,7 +378,7 @@ class Parser:
 		while bo1 is not None and bo1.precedence >= min_p:
 			rhs = self.analyze_rhs(bo1)
 			bo2 = None
-			with PCMNoneIfMissing(self):
+			with BacktrackFailure(self):
 				bo2 = self.analyze_binary_operator()
 			# Keep extending bo1's RHS as long as the operators to the right (bo2) are
 			# supposed to be part of its RHS (see BinaryOp.part_of_rhs
@@ -465,7 +468,7 @@ class Parser:
 		raise ExpectedItemError(self.pos, "un littéral de la classe " + str(literal_class))
 
 	def analyze_literal_boolean(self):
-		with PCMRequiredItem(self, "un booléen littéral"):
+		with CriticalItem(self, "un booléen littéral"):
 			pos = self.pos
 			true_kw = self.consume_keyword_choice(kw.TRUE, kw.FALSE)
 			return expression.LiteralBoolean(pos, true_kw == kw.TRUE)
