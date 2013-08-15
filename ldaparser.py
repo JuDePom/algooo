@@ -448,10 +448,11 @@ class Parser:
 	def analyze_varargs(self, analyze_arg):
 		pos = self.pos
 		arg_list = []
+		arg = None
 		has_next = True
 		while has_next:
-			arg = analyze_arg()
-			if arg is not None:
+			with BacktrackFailure(self):
+				arg = analyze_arg()
 				arg_list.append(arg)
 			has_next = self.consume_keyword(kw.COMMA, soft=True)
 			if has_next and arg is None:
