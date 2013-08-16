@@ -14,6 +14,21 @@ class Position(tuple):
 		self.line = line
 		self.column = column
 
+	def __lt__(self, other):
+		return self.path == other.path and self.char < other.char
+
+	def __gt__(self, other):
+		return self.path == other.path and self.char > other.char
+
+	def __eq__(self, other):
+		return self.path == other.path and self.char == other.char
+
+	def __le__(self, other):
+		return self.path == other.path and self.char <= other.char
+
+	def __ge__(self, other):
+		return self.path == other.path and self.char >= other.char
+
 	def __repr__(self):
 		return "{}:{}:{}".format(self.path, self.line, self.column)
 
@@ -22,6 +37,9 @@ class Position(tuple):
 		Return a pretty, human-readable string for this Position.
 		'''
 		return "{}, ligne {}, colonne {}".format(self.path, self.line, self.column)
+
+	def terse(self):
+		return "{}:{}".format(self.line, self.column)
 
 class SourceThing:
 	'''

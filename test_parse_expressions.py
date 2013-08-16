@@ -1,27 +1,19 @@
-import unittest
-import ldaparser
+import parsertestcase
 import expression
 import operators
 import errors
 
-class test_expressions(unittest.TestCase):
-	def setUp(self):
-		self.parser = ldaparser.Parser()
-	
-	def aexpr(self, buf):
-		self.parser.set_buf(buf)
-		expr = self.parser.analyze_expression()
-		if not self.parser.eof():
-			raise Exception("expression complète mais il reste des choses derrière")
-		return expr
+class test_expression_parsing(parsertestcase.ParserTestCase):
+	def _expr(self, buf):
+		return self.analyze('expression', buf)
 
-	def _quick_test_literal(self, expression_string, cls, convert):
-		literal = self.aexpr(expression_string)
+	def _literal(self, expression_string, cls, convert):
+		literal = self._expr(expression_string)
 		self.assertIsInstance(literal, cls)
 		self.assertEqual(literal.value, convert(expression_string))
 			
 	def test_literal_integers(self):
-		test = lambda s: self._quick_test_literal(s, expression.LiteralInteger, int)
+		test = lambda s: self._literal(s, expression.LiteralInteger, int)
 		test('1')
 		test(' 1')
 		test('1 ')
@@ -32,7 +24,7 @@ class test_expressions(unittest.TestCase):
 		test('0123456789000000000')
 
 	def test_literal_reals(self):
-		test = lambda s: self._quick_test_literal(s, expression.LiteralReal, float)
+		test = lambda s: self._literal(s, expression.LiteralReal, float)
 		test('1.')
 		test('1. ')
 		test('1.0')
@@ -45,7 +37,7 @@ class test_expressions(unittest.TestCase):
 		test('.0456')
 
 	def test_incomplete_binary_operations(self):
-		test = lambda s: self.assertRaises(errors.LDASyntaxError, self.aexpr, s)
+		test = lambda s: self.assertRaises(errors.LDASyntaxError, self._expr, s)
 		test('1-')
 		test('1 -')
 		test('1+')
@@ -68,7 +60,7 @@ class test_expressions(unittest.TestCase):
 		test('oh_no [ the_closing_square_bracket_is_missing')
 	
 	def test_root_in_binary_operation_tree(self):
-		test = lambda s, cls: self.assertIsInstance(self.aexpr(s), cls)
+		test = lambda s, cls: self.assertIsInstance(self._expr(s), cls)
 		test('1+1', operators.Addition)
 		test('1-1', operators.Subtraction)
 		test('1/1', operators.Division)
@@ -92,13 +84,13 @@ class test_expressions(unittest.TestCase):
 
 	def test_array_subscript(self):
 		def test(s, indices):
-			subscript = self.aexpr(s)
+			subscript = self._expr(s)
 			self.assertIsInstance(subscript, operators.ArraySubscript)
 			self.assertIsInstance(subscript.rhs, expression.Varargs)
 			self.assertEqual(len(subscript.rhs), len(indices))
-			for index in zip(subscript.rhs, indices):
-				self.assertIsInstance(index[0], expression.LiteralInteger)
-				self.assertEqual(index[0].value, index[1])
+			for rhs_int, reference in zip(subscript.rhs, indices):
+				self.assertIsInstance(rhs_int, expression.LiteralInteger)
+				self.assertEqual(rhs_int.value, reference)
 		test('t[0]', [0])
 		test('t[0,1]', [0,1])
 		test('t[0,1,2]', [0,1,2])

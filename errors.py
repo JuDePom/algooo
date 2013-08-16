@@ -12,26 +12,9 @@ class LDASyntaxError(LDAError):
 	'''
 
 	def __init__(self, pos, message):
-		message = pos.pretty() + ": erreur de syntaxe : " + message
+		self.pos = pos
+		message = "{} : erreur de syntaxe : {}".format(pos, message)
 		super().__init__(message)
-
-class ExpectedKeywordError(LDASyntaxError):
-	'''
-	Raised when the parser expects a keyword at a certain position, but encounters
-	something else.
-	'''
-
-	def __init__(self, pos, *expected_keywords):
-		if len(expected_keywords) == 1:
-			message = "le mot-clé \"{}\" est attendu ici".format(
-					expected_keywords[0].default_spelling)
-		else:
-			message = "l'un des mot-clés suivants est attendu ici : "
-			sep = ""
-			for keyword in expected_keywords:
-				message += "{}\"{}\"".format(sep, keyword.default_spelling)
-				sep = ", "
-		super().__init__(pos, message)
 
 class ExpectedItemError(LDASyntaxError):
 	'''
@@ -43,6 +26,24 @@ class ExpectedItemError(LDASyntaxError):
 		message = item_name + " est attendu(e) ici"
 		super().__init__(pos, message)
 
+class ExpectedKeywordError(ExpectedItemError):
+	'''
+	Raised when the parser expects a keyword at a certain position, but encounters
+	something else.
+	'''
+
+	def __init__(self, pos, *expected_keywords):
+		if len(expected_keywords) == 1:
+			message = "mot-clé \"{}\"".format(
+					expected_keywords[0].default_spelling)
+		else:
+			message = "l'un des mot-clés suivants : "
+			sep = ""
+			for keyword in expected_keywords:
+				message += "{}\"{}\"".format(sep, keyword.default_spelling)
+				sep = ", "
+		super().__init__(pos, message)
+
 class IllegalIdentifier(LDASyntaxError):
 	'''
 	Raised when an identifier was expected but the input doesn't conform to the
@@ -51,6 +52,15 @@ class IllegalIdentifier(LDASyntaxError):
 
 	def __init__(self, pos):
 		message = "mauvais format d'identifieur"
+		super().__init__(pos, message)
+
+class ReservedWord(LDASyntaxError):
+	'''
+	Raised when the user tries to use a reserved keyword for an identifier.
+	'''
+
+	def __init__(self, pos, word):
+		message = "\"{}\" est un mot réservé par le langage".format(word)
 		super().__init__(pos, message)
 
 class LDASemanticError(LDAError):
