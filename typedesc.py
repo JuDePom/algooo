@@ -152,8 +152,8 @@ class TypeAlias:
 			return context[self.name]
 		except KeyError:
 			raise CanNotBeResolved(self)
-	def __repr__(self):
-		return "TypeAlias<" + self.name + ">"
+	def lda_format(self, indent=0):
+		return self.name
 
 class Identifier:
 	def __init__(self, pos, name):
@@ -176,7 +176,7 @@ class Field(Identifier):
 
 	def lda_format(self, indent=0):
 		return "{} : {}".format(self.name, self.type_descriptor.lda_format())
-		
+
 class Lexicon:
 	def __init__(self, variables=None, composites=None, functions=None):
 		self.variables  = variables  if variables  is not None else {}
@@ -209,10 +209,10 @@ class Lexicon:
 		return subcontext
 
 	def lda_format(self, indent=0):
-		composites = "\n\t".join(comp.lda_format(indent, full=True) for comp in self.composites)
+		composites = "\n\t".join(comp.lda_format(indent, full=True) for comp in self.composites.values())
 		if composites != "":
 			composites = "\t" + composites + "\n"
-		variables = "\n\t".join(var.lda_format() for var in self.variables)
+		variables = "\n\t".join(var.lda_format() for var in self.variables.values())
 		if variables != "":
 			variables = "\t" + variables
 		if variables == "" and composites == "":

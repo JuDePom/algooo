@@ -65,13 +65,18 @@ class Function(StatementBlock):
 		return super().put_node(function_cluster)
 
 	def lda_format(self, indent=0):
+		# formal parameters
 		params = ", ".join(param.lda_format() for param in self.fp_list)
-		
+		# lexicon
+		if self.lexicon is None:
+			lexicon = ""
+		else:
+			lexicon = self.lexicon.lda_format(indent+1)
+		# return type
 		if self.return_type is typedesc.Void:
 			return_type = ""
 		else:
 			return_type = ": {}".format(self.return_type.lda_format())
-
 		return ("{kw.FUNCTION} {ident}({params}){return_type}\n"
 				"{lexicon}\n"
 				"{kw.BEGIN}\n{body}\n{kw.END}").format(
@@ -79,7 +84,7 @@ class Function(StatementBlock):
 						ident = self.ident.lda_format(),
 						params = params,
 						return_type = return_type,
-						lexicon = self.lexicon.lda_format(indent+1),
+						lexicon = lexicon,
 						body = self.body.lda_format(indent+1)
 					)
 
