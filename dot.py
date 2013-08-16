@@ -60,19 +60,14 @@ class Cluster:
 			cascade.extend(sc.node_cascade())
 		return cascade
 
-def format_tree(module):
-	supercluster = Cluster("module")
-	for f in module.functions:
-		f.put_node(supercluster)
-	if module.algorithm is not None:
-		module.algorithm.put_node(supercluster)
-	all_nodes = supercluster.node_cascade()
-
+def format(module):
+	master = Cluster("")
+	module.put_node(master)
+	all_nodes = master.node_cascade()
 	s = "digraph program {\nnode [shape=plaintext, height=0];\n\n"
-	s += ''.join([sc.dump_contents() for sc in supercluster.subclusters])
-	s += ''.join([n.dump_def() for n in all_nodes])
-	s += ''.join([n.dump_links() for n in all_nodes])
+	s += ''.join(sc.dump_contents() for sc in master.subclusters)
+	s += ''.join(n.dump_def() for n in all_nodes)
+	s += ''.join(n.dump_links() for n in all_nodes)
 	s += "}\n"
-
 	return s
 

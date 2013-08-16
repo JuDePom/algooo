@@ -36,19 +36,22 @@ module.check()
 
 print (" * Sémantique : OK.")
 
-if not args.no_output:
-	if   args.format == 'quick': import quick as formatter
-	elif args.format == 'dot'  : import dot   as formatter
-	elif args.format == 'lda'  : import ldaF  as formatter
-	elif args.format == 'js'   : import js    as formatter
-	else:
-		raise Exception("Format de sortie inconnu : " + args.format)
+if args.no_output:
+	sys.exit(0)
 
-	output = formatter.format_tree(module)
+if args.format == 'dot':
+	import dot
+	output = dot.format(module)
+elif args.format == 'lda':
+	output = module.lda_format()
+elif args.format == 'js':
+	output = module.js_format()
+else:
+	raise Exception("Format de sortie inconnu : " + args.format)
 
-	if args.output_file is None:
-		print (output)
-	else:
-		with open(args.output_file, 'wt', encoding='utf8') as output_file:
-			output_file.write(output)
+if args.output_file is None:
+	print(output)
+else:
+	with open(args.output_file, 'wt', encoding='utf8') as output_file:
+		output_file.write(output)
 

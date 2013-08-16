@@ -133,9 +133,6 @@ class CompositeType(TypeDescriptor):
 		if errors > 0:
 			print ("il y a eu des erreurs de résolution de types, la compilation ne pourra pas être terminée")
 
-	def __repr__(self):
-		return "CompositeType<{}>".format(self.field_list)
-
 	def lda_format(self, indent=0):
 		result = ", ".join(param.lda_format() for param in self.field_list)
 		return "<{}>".format(result)
@@ -156,10 +153,10 @@ class Identifier:
 	def __init__(self, pos, name):
 		self.pos = pos
 		self.name = name
-	def __repr__(self):
-		return "i_"+self.name
+
 	def lda_format(self, indent=0):
 		return self.name
+
 	def check(self, context):
 		return context[self.name]
 

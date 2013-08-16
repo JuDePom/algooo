@@ -44,9 +44,6 @@ class _Literal(Expression):
 		super().__init__(pos)
 		self.value = value
 
-	def __repr__(self):
-		return str(self.value)
-
 	def put_node(self, cluster):
 		return dot.Node(str(self), cluster)
 
@@ -67,9 +64,6 @@ class LiteralReal(_Literal):
 
 class LiteralString(_Literal):
 	_typedef = typedesc.String
-
-	def __repr__(self):
-		return "\"" + self.value + "\""
 
 	def lda_format(self, indent=0):
 		return '"{}"'.format(self.value)
