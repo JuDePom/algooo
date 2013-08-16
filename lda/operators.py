@@ -1,9 +1,9 @@
-import keywords as kw
-from expression import Expression
-from errors import *
-import typedesc
-import dot
-import module
+from . import keywords as kw
+from .expression import Expression
+from .errors import *
+from . import typedesc
+from . import module
+from . import dot
 
 #######################################################################
 #

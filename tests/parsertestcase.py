@@ -1,9 +1,9 @@
 import unittest
-import ldaparser
+import lda.parser
 
 class ParserTestCase(unittest.TestCase):
 	def setUp(self):
-		self.parser = ldaparser.Parser()
+		self.parser = lda.parser.Parser()
 	
 	def analyze(self, analysis_name, buf):
 		self.parser.set_buf(buf)

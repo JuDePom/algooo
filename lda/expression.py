@@ -1,7 +1,7 @@
-import position
-import dot
-import typedesc
-import keywords as kw
+from . import position
+from . import typedesc
+from . import keywords as kw
+from . import dot
 
 class Expression(position.SourceThing):
 	pass

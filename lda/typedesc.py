@@ -1,6 +1,5 @@
-import keywords as kw
-import errors
-import position
+from . import keywords as kw
+from . import errors
 
 class CanNotBeResolved(errors.LDASemanticError):
 	def __init__(self, alias):

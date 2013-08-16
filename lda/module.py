@@ -1,7 +1,7 @@
-import keywords as kw
-import dot
-from statements import StatementBlock
-import typedesc
+from . import keywords as kw
+from . import typedesc
+from . import dot
+from .statements import StatementBlock
 
 class Module:
 	def __init__(self, functions, algorithm=None):
@@ -31,7 +31,6 @@ class Module:
 	def js_format(self):
 		raise Exception("Faire du JavaScript c'est notre but "
 			"mais on n'y est pas encore... choisis un autre format de sortie.")
-
 
 class Algorithm(StatementBlock):
 	def __init__(self, pos, lexicon, body):

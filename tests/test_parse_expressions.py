@@ -1,7 +1,5 @@
 import parsertestcase
-import expression
-import operators
-import errors
+from lda import expression, operators, errors
 
 class test_expression_parsing(parsertestcase.ParserTestCase):
 	def _expr(self, buf):

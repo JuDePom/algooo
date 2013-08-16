@@ -4,9 +4,9 @@
 LDA compiler entry point.
 '''
 
-import ldaparser
+import lda.parser
+import lda.errors
 import argparse
-import errors
 import sys
 
 ap = argparse.ArgumentParser(
@@ -21,7 +21,7 @@ ap.add_argument('--no-output', '-n', action='store_true',
 
 args = ap.parse_args()
 
-parser = ldaparser.Parser(args.path)
+parser = lda.parser.Parser(args.path)
 
 try:
 	module = parser.analyze_module()
@@ -40,8 +40,8 @@ if args.no_output:
 	sys.exit(0)
 
 if args.format == 'dot':
-	import dot
-	output = dot.format(module)
+	from lda import dot
+	output = lda.dot.format(module)
 elif args.format == 'lda':
 	output = module.lda_format()
 elif args.format == 'js':

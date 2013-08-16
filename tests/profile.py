@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import ldaparser
+import lda.parser
 import sys
 import cProfile
 
@@ -9,12 +9,12 @@ path = sys.argv[2]
 
 print ("#### PROFIL : PARSER {}, {} FOIS ####".format(path, count))
 
-p = ldaparser.Parser(path)
+p = lda.parser.Parser(path)
 
 def doit():
 	for i in range(count):
 		p.reset_pos()
-		p.analyze_top_level()
+		p.analyze_module()
 
 cProfile.run("doit()", sort="time")
 

@@ -1,9 +1,5 @@
 import parsertestcase
-import expression
-import operators
-import errors
-import statements
-import typedesc
+from lda import expression, operators, errors, statements, typedesc
 
 class test_control_flow_parsing(parsertestcase.ParserTestCase):
 	def test_if_then(self):
