@@ -14,11 +14,13 @@ class Module:
 			function.check(supercontext)
 		if self.algorithm is not None:
 			self.algorithm.check(supercontext)
-	
+
 	def lda_format(self, indent=0):
 		result = '\n\n'.join(function.lda_format() for function in self.functions)
 		if self.algorithm is not None:
-			result += '\n\n' + self.algorithm.lda_format()
+			if result != "":
+				result += '\n\n'
+			result += self.algorithm.lda_format()
 		return result
 
 class Algorithm(StatementBlock):
