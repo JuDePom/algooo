@@ -50,9 +50,19 @@ class BinaryOp(Expression):
 				self.rhs.put_node(cluster))
 		op_node.shape = "circle"
 		return op_node
-	
+
 	def lda_format(self, indent=0):
-		return "{} {} {}".format(self.lhs.lda_format(), self.keyword_def.default_spelling, self.rhs.lda_format())
+		if self.encompass_varargs_till is None:
+			after_lhs = " {} ".format(self.keyword_def)
+			after_rhs = ""
+		else:
+			after_lhs = str(self.keyword_def)
+			after_rhs = str(self.encompass_varargs_till)
+		return "{lhs}{after_lhs}{rhs}{after_rhs}".format(
+				lhs = self.lhs.lda_format(),
+				rhs = self.rhs.lda_format(),
+				after_lhs = after_lhs,
+				after_rhs = after_rhs)
 
 	def check(self, context):
 		raise NotImplementedError

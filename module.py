@@ -14,6 +14,14 @@ class Module:
 			function.check(supercontext)
 		if self.algorithm is not None:
 			self.algorithm.check(supercontext)
+	
+	def lda_format(self, indent=0):
+		result = ""
+		for function in self.functions:
+			result += function.lda_format()
+		if self.algorithm is not None:
+			result += self.algorithm.lda_format()
+		return result
 
 class Algorithm(StatementBlock):
 	def __init__(self, pos, lexicon, body):
@@ -22,16 +30,16 @@ class Algorithm(StatementBlock):
 
 	def __repr__(self):
 		return "algorithme :\n{}\n{}".format(self.lexicon, self.body)
+
 	def put_node(self, cluster):
 		algorithm_cluster = dot.Cluster("algorithme", cluster)
 		return super().put_node(algorithm_cluster)
+
 	def lda_format(self, indent=0):
-		return "{}\n{}{}\n{}{}\n\n".format(
-			kw.ALGORITHM.lda_format(),
-			self.lexicon.lda_format(indent + 1),
-			kw.BEGIN.lda_format(),
-			self.body.lda_format(indent + 1),
-			kw.END.lda_format())
+		return "{kw.ALGORITHM}\n{lexicon}\n{kw.BEGIN}\n{body}\n{kw.END}".format(
+				kw = kw,
+				lexicon = self.lexicon.lda_format(indent+1),
+				body = self.body.lda_format(indent+1))
 
 	def check(self, context):
 		if self.lexicon is None:
@@ -51,26 +59,29 @@ class Function(StatementBlock):
 
 	def __repr__(self):
 		return "fonction {} :\n{}\n{}".format(self.ident, self.lexicon, self.body)
+
 	def put_node(self, cluster):
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
 		return super().put_node(function_cluster)
+
 	def lda_format(self, indent=0):
-		s = ""
-		s += ", ".join( (param.lda_format() for param in self.fp_list) )
-	
-		if self.return_type is not typedesc.Void :
-			return "{} {}({}):{}\n{}{}\n{}{}\n\n".format(
-				kw.FUNCTION.lda_format(), self.ident.lda_format(), s ,self.return_type.lda_format(),
-				self.lexicon.lda_format(indent + 1),
-				kw.BEGIN.lda_format(),
-				self.body.lda_format(indent + 1),
-				kw.END.lda_format())
-		return "{} {}({})\n{}{}\n{}{}\n\n".format(
-				kw.FUNCTION.lda_format(), self.ident.lda_format(), s ,
-				self.lexicon.lda_format(indent + 1),
-				kw.BEGIN.lda_format(),
-				self.body.lda_format(indent + 1),
-				kw.END.lda_format())
+		params = ", ".join(param.lda_format() for param in self.fp_list)
+		
+		if self.return_type is typedesc.Void:
+			return_type = ""
+		else:
+			return_type = ": {}".self.return_type.lda_format()
+
+		return ("{kw.FUNCTION} {ident}({params}){return_type}\n"
+				"{lexicon}\n"
+				"{kw.BEGIN}\n{body}\n{kw.END}").format(
+						kw = kw,
+						ident = self.ident.lda_format(),
+						params = params,
+						return_type = return_type,
+						lexicon = self.lexicon.lda_format(indent+1),
+						body = self.body.lda_format(indent+1)
+					)
 
 	check = Algorithm.check
 

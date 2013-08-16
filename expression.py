@@ -1,6 +1,7 @@
 import position
 import dot
 import typedesc
+import keywords as kw
 
 class Expression(position.SourceThing):
 	pass
@@ -31,10 +32,9 @@ class Varargs(Expression):
 			previous.children.append(current)
 		cluster.rank_chains.append(arg_nodes)
 		return arg_nodes[0]
+
 	def lda_format(self, indent=0):
-		result = ""
-		result += ", ".join( (param.lda_format() for param in self.arg_list) )
-		return result
+		return ", ".join(param.lda_format() for param in self.arg_list)
 		
 	def check(self, context):
 		return [arg.check(context) for arg in self]
@@ -46,38 +46,37 @@ class _Literal(Expression):
 
 	def __repr__(self):
 		return str(self.value)
+
 	def put_node(self, cluster):
 		return dot.Node(str(self), cluster)
-	def lda_format(self, indent=0):
-		return str(self.value)
 
 	def check(self, context):
 		return self._typedef
 
 class LiteralInteger(_Literal):
 	_typedef = typedesc.Integer
-	
+
 	def lda_format(self, indent=0):
-		return self.value
+		return str(self.value)
 
 class LiteralReal(_Literal):
 	_typedef = typedesc.Real
-	
+
 	def lda_format(self, indent=0):
-		return self.value
+		return str(self.value)
 
 class LiteralString(_Literal):
 	_typedef = typedesc.String
 
 	def __repr__(self):
 		return "\"" + self.value + "\""
-		
+
 	def lda_format(self, indent=0):
-		return self.value
+		return '"{}"'.format(self.value)
 		
 class LiteralBoolean(_Literal):
 	_typedef = typedesc.Boolean
-	
+
 	def lda_format(self, indent=0):
-		return self.value.lda_format()
+		return kw.TRUE.default_spelling if self.value else kw.FALSE.default_spelling
 

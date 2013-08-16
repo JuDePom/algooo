@@ -29,7 +29,7 @@ class Integer(Scalar):
 			return other
 		
 	def lda_format(self=None, indent=0):
-		return kw.INT.lda_format()
+		return str(kw.INT)
 	
 class Real(Scalar):
 	@staticmethod
@@ -42,7 +42,7 @@ class Real(Scalar):
 			return Real
 			
 	def lda_format(self=None, indent=0):
-		return kw.REAL.lda_format()
+		return str(kw.REAL)
 
 class Boolean(Scalar):
 	@staticmethod
@@ -50,7 +50,7 @@ class Boolean(Scalar):
 		return Boolean
 		
 	def lda_format(self=None, indent=0):
-		return kw.BOOL.lda_format()
+		return str(kw.BOOL)
 
 class Character(Scalar):
 	@staticmethod
@@ -58,7 +58,7 @@ class Character(Scalar):
 		return Character
 	
 	def lda_format(self=None, indent=0):
-		return kw.CHAR.lda_format()
+		return str(kw.CHAR)
 
 class String(Scalar):
 	@staticmethod
@@ -66,7 +66,7 @@ class String(Scalar):
 		return String
 	
 	def lda_format(self=None, indent=0):
-		return kw.STRING.lda_format()
+		return str(kw.STRING)
 
 class Void(TypeDescriptor):
 	@staticmethod
@@ -77,8 +77,6 @@ class Void(TypeDescriptor):
 		return "VOID"
 
 class Range(TypeDescriptor):
-	# min (expr)
-	# max (expr)
 	pass
 
 class ArrayType(TypeDescriptor):
@@ -94,9 +92,12 @@ class ArrayType(TypeDescriptor):
 		# TODO kludgey
 		self.resolved_element_type = self.element_type.check(context)
 		return self
-	
+
 	def lda_format(self=None, indent=0):
-		return "{} : {}".format( self.element_type.lda_format(), self.dimensions )
+		return "{kw.ARRAY} {element_type}[{dimensions}]".format(
+				kw = kw,
+				element_type = self.element_type.lda_format(),
+				dimensions = ", ".join(dim.lda_format() for dim in self.dimensions))
 
 class CompositeType(TypeDescriptor):
 	def __init__(self, ident, field_list):
@@ -132,10 +133,13 @@ class CompositeType(TypeDescriptor):
 
 	def __repr__(self):
 		return "CompositeType<{}>".format(self.field_list)
-	def lda_format(self, indent=0):
-		result = ""
-		result += ", ".join( (param.lda_format() for param in self.field_list) )
-		return indent*'\t' + "{} = <{}>".format(self.ident.lda_format(indent + 1), result)
+
+	def lda_format(self, indent=0, full=False):
+		if full:
+			result = ", ".join(param.lda_format() for param in self.field_list)
+			return indent*'\t' + "{} = <{}>".format(self.ident.lda_format(), result)
+		else:
+			return self.ident.lda_format()
 
 class TypeAlias:
 	def __init__(self, ident):
@@ -164,8 +168,10 @@ class Field(Identifier):
 	def __init__(self, ident, type_descriptor):
 		super().__init__(ident.pos, ident.name)
 		self.type_descriptor = type_descriptor
+
 	def check(self, context):
 		raise Exception("on ne peut pas faire d'analyse sémantique sur un field")
+
 	def lda_format(self, indent=0):
 		return "{} : {}".format(self.name, self.type_descriptor.lda_format())
 		
@@ -201,11 +207,16 @@ class Lexicon:
 		return subcontext
 
 	def lda_format(self, indent=0):
-		result = ""
-		if self.variables is not None:
-			result += "\t" + "\n\t".join( (var.lda_format() for var in self.variables) )
-		if self.composites is not None:
-			result += "\n\t" +  "\n\t".join( (comp.lda_format() for comp in self.composites) )
-		return "{}\n{}\n".format(
-			kw.LEXICON.lda_format(),
-			result)
+		composites = "\n\t".join(comp.lda_format(indent, full=True) for comp in self.composites)
+		if composites != "":
+			composites = "\t" + composites + "\n"
+		variables = "\n\t".join(var.lda_format() for var in self.variables)
+		if variables != "":
+			variables = "\t" + variables
+		if variables == "" and composites == "":
+			return ""
+		else:
+			return "{kw.LEXICON}\n{declarations}".format(
+					kw = kw,
+					declarations = ''.join([composites, variables]))
+

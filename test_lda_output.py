@@ -10,7 +10,7 @@ def _id(name):
 	return typedesc.Identifier(None, name)
 
 def _bogus_block(name_a, name_b):
-	''' 
+	'''
 	Return a StatementBlock containing an assignment of name_b to name_a
 	'''
 	assignment = operators.Assignment(None, _id(name_a), _id(name_b))
@@ -27,16 +27,16 @@ class test_lda_output(unittest.TestCase):
 		expected = (
 				"{0.LEXICON}\n"
 				"\tMoule = <prix : {0.INT}, nom : {0.STRING}>\n"
-				"\ttab : tableau Moule[0..i, 0..j]").format(kw)
+				"\ttab : tableau Moule[0 .. i, 0 .. j]").format(kw)
 		moule = typedesc.CompositeType(_id("Moule"), [
 						typedesc.Field(_id("prix"), typedesc.Integer),
 						typedesc.Field(_id("nom"), typedesc.String)])
-		range_i = operators.IntegerRange(expression.LiteralInteger(None, 0), _id("i"))
-		range_j = operators.IntegerRange(expression.LiteralInteger(None, 0), _id("j"))
+		range_i = operators.IntegerRange(None, expression.LiteralInteger(None, 0), _id("i"))
+		range_j = operators.IntegerRange(None, expression.LiteralInteger(None, 0), _id("j"))
 		tab = typedesc.Field(_id("tab"), typedesc.ArrayType(moule, [range_i, range_j]))
 		lexicon = typedesc.Lexicon(variables=[tab], composites=[moule])
 		self.assertEqual(lexicon.lda_format(), expected)
-		
+
 	def test_literals(self):
 		self.assertEqual(expression.LiteralInteger(None, 1).lda_format(), "1")
 		self.assertEqual(expression.LiteralReal(None, 1.1).lda_format(), "1.1")
@@ -56,13 +56,13 @@ class test_lda_output(unittest.TestCase):
 		expected_if_then = (
 				"{0.IF} a {0.LE} b {0.THEN}\n"
 				"\ta {0.ASSIGN} b\n"
-				"{0.END_IF}\n").format(kw)
+				"{0.END_IF}").format(kw)
 		expected_if_then_else = (
 				"{0.IF} a {0.LE} b {0.THEN}\n"
 				"\ta {0.ASSIGN} b\n"
 				"{0.ELSE}\n"
 				"\tb {0.ASSIGN} a\n"
-				"{0.END_IF}\n").format(kw)
+				"{0.END_IF}").format(kw)
 		condition = operators.LessOrEqual(None, _id("a"), _id("b"))
 		then_block = _bogus_block("a", "b")
 		else_block = _bogus_block("b", "a")
@@ -75,7 +75,7 @@ class test_lda_output(unittest.TestCase):
 		expected = (
 				"{0.FOR} i {0.FROM} a {0.TO} b {0.DO}\n"
 				"\tx {0.ASSIGN} y\n"
-				"{0.END_FOR}\n").format(kw)
+				"{0.END_FOR}").format(kw)
 		body = _bogus_block("x", "y")
 		for_loop = statements.For(None, _id("i"), _id("a"), _id("b"), body)
 		self.assertEqual(for_loop.lda_format(), expected)
@@ -84,7 +84,7 @@ class test_lda_output(unittest.TestCase):
 		expected = (
 				"{0.WHILE} {0.TRUE} {0.DO}\n"
 				"\ta {0.ASSIGN} b\n"
-				"{0.END_WHILE}\n").format(kw)
+				"{0.END_WHILE}").format(kw)
 		body = _bogus_block("a", "b")
 		while_loop = statements.While(None, expression.LiteralBoolean(None, True), body)
 		self.assertEqual(while_loop.lda_format(), expected)
@@ -97,7 +97,7 @@ class test_lda_output(unittest.TestCase):
 				"\tb : {0.INT}\n"
 				"{0.BEGIN}\n"
 				"\ta {0.ASSIGN} b\n"
-				"{0.END}\n").format(kw)
+				"{0.END}").format(kw)
 		lexicon = typedesc.Lexicon(
 				[typedesc.Field(_id("a"), typedesc.Integer),
 				 typedesc.Field(_id("b"), typedesc.Integer)])
@@ -113,7 +113,7 @@ class test_lda_output(unittest.TestCase):
 				"\tb : {0.INT}\n"
 				"{0.BEGIN}\n"
 				"\ta {0.ASSIGN} b\n"
-				"{0.END}\n").format(kw)
+				"{0.END}").format(kw)
 		name = _id("lolilol")
 		params = [typedesc.Field(_id("param"), typedesc.Integer)]
 		return_type = typedesc.Void
