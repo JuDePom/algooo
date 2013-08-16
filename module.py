@@ -70,7 +70,7 @@ class Function(StatementBlock):
 		if self.return_type is typedesc.Void:
 			return_type = ""
 		else:
-			return_type = ": {}".self.return_type.lda_format()
+			return_type = ": {}".format(self.return_type.lda_format())
 
 		return ("{kw.FUNCTION} {ident}({params}){return_type}\n"
 				"{lexicon}\n"

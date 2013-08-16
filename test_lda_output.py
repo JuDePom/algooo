@@ -107,7 +107,7 @@ class test_lda_output(unittest.TestCase):
 
 	def test_function(self):
 		expected = (
-				"{0.FUNCTION} lolilol(param : {0.INT})\n"
+				"{0.FUNCTION} lolilol(param : {0.INT}): {0.INT}\n"
 				"{0.LEXICON}\n"
 				"\ta : {0.INT}\n"
 				"\tb : {0.INT}\n"
@@ -116,7 +116,7 @@ class test_lda_output(unittest.TestCase):
 				"{0.END}").format(kw)
 		name = _id("lolilol")
 		params = [typedesc.Field(_id("param"), typedesc.Integer)]
-		return_type = typedesc.Void
+		return_type = typedesc.Integer
 		lexicon = typedesc.Lexicon(
 				[typedesc.Field(_id("a"), typedesc.Integer),
 				 typedesc.Field(_id("b"), typedesc.Integer)])

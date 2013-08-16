@@ -17,7 +17,7 @@ class ErroneousType(TypeDescriptor):
 
 class Scalar(TypeDescriptor):
 	pass
-	
+
 class Integer(Scalar):
 	@staticmethod
 	def check(context):
@@ -28,7 +28,8 @@ class Integer(Scalar):
 		if other in (Integer, Real):
 			return other
 		
-	def lda_format(self=None, indent=0):
+	@staticmethod
+	def lda_format(indent=0):
 		return str(kw.INT)
 	
 class Real(Scalar):
@@ -41,7 +42,8 @@ class Real(Scalar):
 		if other in (Integer, Real):
 			return Real
 			
-	def lda_format(self=None, indent=0):
+	@staticmethod
+	def lda_format(indent=0):
 		return str(kw.REAL)
 
 class Boolean(Scalar):
@@ -49,7 +51,8 @@ class Boolean(Scalar):
 	def check(context):
 		return Boolean
 		
-	def lda_format(self=None, indent=0):
+	@staticmethod
+	def lda_format(indent=0):
 		return str(kw.BOOL)
 
 class Character(Scalar):
@@ -57,7 +60,8 @@ class Character(Scalar):
 	def check(context):
 		return Character
 	
-	def lda_format(self=None, indent=0):
+	@staticmethod
+	def lda_format(indent=0):
 		return str(kw.CHAR)
 
 class String(Scalar):
@@ -65,7 +69,8 @@ class String(Scalar):
 	def check(context):
 		return String
 	
-	def lda_format(self=None, indent=0):
+	@staticmethod
+	def lda_format(indent=0):
 		return str(kw.STRING)
 
 class Void(TypeDescriptor):
@@ -73,9 +78,6 @@ class Void(TypeDescriptor):
 	def check(context):
 		return Void
 	
-	def lda_format(self=None, indent=0):
-		return "VOID"
-
 class Range(TypeDescriptor):
 	pass
 
@@ -93,7 +95,7 @@ class ArrayType(TypeDescriptor):
 		self.resolved_element_type = self.element_type.check(context)
 		return self
 
-	def lda_format(self=None, indent=0):
+	def lda_format(self, indent=0):
 		return "{kw.ARRAY} {element_type}[{dimensions}]".format(
 				kw = kw,
 				element_type = self.element_type.lda_format(),
