@@ -1,10 +1,6 @@
-import module
 import unittest
-import expression
-import keywords as kw
-import statements
-import typedesc
-import operators
+from lda import module, expression, statements, typedesc, operators
+import lda.keywords as kw
 
 def _id(name):
 	return typedesc.Identifier(None, name)

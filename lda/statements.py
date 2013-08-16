@@ -1,6 +1,6 @@
-import keywords as kw
-import position
-import dot
+from . import keywords as kw
+from . import position
+from . import dot
 
 class Statement(position.SourceThing):
 	pass

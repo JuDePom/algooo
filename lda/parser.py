@@ -1,12 +1,12 @@
 import re
-import keywords as kw
-import module
-import position
-import expression
-import operators
-import statements
-import typedesc
-from errors import *
+from . import keywords as kw
+from . import module
+from . import position
+from . import expression
+from . import operators
+from . import statements
+from . import typedesc
+from .errors import *
 
 re_identifier = re.compile(r'''
 	[^\d\W]    # The first character must be a non-digital word character.
