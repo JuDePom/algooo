@@ -25,7 +25,7 @@ parser = lda.parser.Parser(args.path)
 
 try:
 	module = parser.analyze_module()
-except errors.LDASyntaxError:
+except lda.errors.LDASyntaxError:
 	error = parser.syntax_errors[-1]
 	print(error, file=sys.stderr)
 	sys.exit(1)
