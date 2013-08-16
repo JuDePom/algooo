@@ -136,12 +136,9 @@ class CompositeType(TypeDescriptor):
 	def __repr__(self):
 		return "CompositeType<{}>".format(self.field_list)
 
-	def lda_format(self, indent=0, full=False):
-		if full:
-			result = ", ".join(param.lda_format() for param in self.field_list)
-			return indent*'\t' + "{} = <{}>".format(self.ident.lda_format(), result)
-		else:
-			return self.ident.lda_format()
+	def lda_format(self, indent=0):
+		result = ", ".join(param.lda_format() for param in self.field_list)
+		return "<{}>".format(result)
 
 class TypeAlias:
 	def __init__(self, ident):
@@ -209,16 +206,19 @@ class Lexicon:
 		return subcontext
 
 	def lda_format(self, indent=0):
-		composites = "\n\t".join(comp.lda_format(indent, full=True) for comp in self.composites.values())
-		if composites != "":
-			composites = "\t" + composites + "\n"
-		variables = "\n\t".join(var.lda_format() for var in self.variables.values())
-		if variables != "":
-			variables = "\t" + variables
+		composites = "\n".join("\t{} = {}".format(name, composite.lda_format())
+				for name, composite in sorted(self.composites.items()))
+		variables = "\n".join("\t{} : {}".format(name, variable.lda_format())
+				for name, variable in sorted(self.variables.items()))
 		if variables == "" and composites == "":
 			return ""
+		elif variables == "":
+			declarations = composites
+		elif composites == "":
+			declarations = variables
 		else:
-			return "{kw.LEXICON}\n{declarations}".format(
-					kw = kw,
-					declarations = ''.join([composites, variables]))
+			declarations = '\n'.join([composites, variables])
+		return "{kw.LEXICON}\n{declarations}".format(
+				kw = kw,
+				declarations = declarations)
 

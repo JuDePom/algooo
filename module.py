@@ -16,11 +16,9 @@ class Module:
 			self.algorithm.check(supercontext)
 	
 	def lda_format(self, indent=0):
-		result = ""
-		for function in self.functions:
-			result += function.lda_format()
+		result = '\n\n'.join(function.lda_format() for function in self.functions)
 		if self.algorithm is not None:
-			result += self.algorithm.lda_format()
+			result += '\n\n' + self.algorithm.lda_format()
 		return result
 
 class Algorithm(StatementBlock):
@@ -67,25 +65,29 @@ class Function(StatementBlock):
 	def lda_format(self, indent=0):
 		# formal parameters
 		params = ", ".join(param.lda_format() for param in self.fp_list)
-		# lexicon
-		if self.lexicon is None:
-			lexicon = ""
-		else:
-			lexicon = self.lexicon.lda_format(indent+1)
 		# return type
 		if self.return_type is typedesc.Void:
 			return_type = ""
 		else:
 			return_type = ": {}".format(self.return_type.lda_format())
+		# lexicon
+		if self.lexicon is None:
+			lexicon = ""
+		else:
+			lexicon = self.lexicon.lda_format(indent+1) + "\n"
+		# body
+		body = self.body.lda_format(indent+1)
+		if body != "":
+			body += "\n"
 		return ("{kw.FUNCTION} {ident}({params}){return_type}\n"
-				"{lexicon}\n"
-				"{kw.BEGIN}\n{body}\n{kw.END}").format(
+				"{lexicon}"
+				"{kw.BEGIN}\n{body}{kw.END}").format(
 						kw = kw,
 						ident = self.ident.lda_format(),
 						params = params,
 						return_type = return_type,
 						lexicon = lexicon,
-						body = self.body.lda_format(indent+1)
+						body = body,
 					)
 
 	check = Algorithm.check
