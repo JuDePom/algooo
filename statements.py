@@ -51,14 +51,6 @@ class IfThenElse(Statement):
 		self.then_block = then_block
 		self.else_block = else_block
 
-	def __repr__(self):
-		if self.else_block is None:
-			return "si {} alors \n{}fsi\n".format(
-					self.condition, self.then_block)
-		else :
-			return "si {} alors \n{}sinon \n{}fsi\n".format(
-					self.condition, self.then_block, self.else_block)
-
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)
 		then_cluster = dot.Cluster("alors", cluster)
@@ -92,9 +84,7 @@ class For(Statement):
 		self.initial = initial
 		self.final = final
 		self.block = block
-	def __repr__(self):
-		return "pour {} de {} a {} faire\n{}fpour\n".format(
-				self.counter, self.initial, self.final, self.block)
+
 	def put_node(self, cluster):
 		counter_node = self.counter.put_node(cluster)
 		initial_node = self.initial.put_node(cluster)
@@ -120,9 +110,6 @@ class While(Statement):
 		super().__init__(pos)
 		self.condition = condition
 		self.block = block	
-
-	def __repr__(self):
-		return "tantque {} faire\n{}ftant\n".format(self.condition, self.block)
 
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)

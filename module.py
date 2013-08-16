@@ -14,6 +14,13 @@ class Module:
 			function.check(supercontext)
 		if self.algorithm is not None:
 			self.algorithm.check(supercontext)
+	
+	def put_node(self, cluster):
+		supercluster = dot.Cluster("module", cluster)
+		for f in self.functions:
+			f.put_node(supercluster)
+		if self.algorithm is not None:
+			self.algorithm.put_node(supercluster)
 
 	def lda_format(self, indent=0):
 		result = '\n\n'.join(function.lda_format() for function in self.functions)
@@ -23,13 +30,15 @@ class Module:
 			result += self.algorithm.lda_format()
 		return result
 
+	def js_format(self):
+		raise Exception("Faire du JavaScript c'est notre but "
+			"mais on n'y est pas encore... choisis un autre format de sortie.")
+
+
 class Algorithm(StatementBlock):
 	def __init__(self, pos, lexicon, body):
 		super().__init__(pos, body)
 		self.lexicon = lexicon
-
-	def __repr__(self):
-		return "algorithme :\n{}\n{}".format(self.lexicon, self.body)
 
 	def put_node(self, cluster):
 		algorithm_cluster = dot.Cluster("algorithme", cluster)
@@ -56,9 +65,6 @@ class Function(StatementBlock):
 		self.fp_list = fp_list
 		self.lexicon = lexicon
 		self.return_type = return_type
-
-	def __repr__(self):
-		return "fonction {} :\n{}\n{}".format(self.ident, self.lexicon, self.body)
 
 	def put_node(self, cluster):
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
