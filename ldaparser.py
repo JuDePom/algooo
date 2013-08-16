@@ -164,12 +164,11 @@ class Parser:
 		algorithm = None
 		has_algorithm = False
 		while not self.eof():
-			function = self.analyze_function()
-			if function is not None:
-				functions.append(function)
+			with BacktrackFailure(self):
+				functions.append(self.analyze_function())
 				continue
-			algorithm = self.analyze_algorithm()
-			if algorithm is not None:
+			with BacktrackFailure(self):
+				algorithm = self.analyze_algorithm()
 				if has_algorithm:
 					raise LDASyntaxError(self.pos,
 							"Il ne peut y avoir qu'un seul algorithme par module")
