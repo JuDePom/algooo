@@ -44,7 +44,8 @@ class KeywordDef:
 		meta.all_keywords.extend(synonyms)
 
 	def __repr__(self):
-		return "k_" + self.default_spelling
+		return self.default_spelling
+
 	def lda_format(self, indent=0):
 		return self.default_spelling
 
