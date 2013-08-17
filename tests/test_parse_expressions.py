@@ -1,7 +1,7 @@
-import parsertestcase
+from tests.parsertestcase import ParserTestCase
 from lda import expression, operators, errors
 
-class test_expression_parsing(parsertestcase.ParserTestCase):
+class test_expression_parsing(ParserTestCase):
 	def _expr(self, buf):
 		return self.analyze('expression', buf)
 

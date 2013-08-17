@@ -1,7 +1,7 @@
-import parsertestcase
+from tests.parsertestcase import ParserTestCase
 from lda import expression, operators, errors, statements, typedesc
 
-class test_control_flow_parsing(parsertestcase.ParserTestCase):
+class test_control_flow_parsing(ParserTestCase):
 	def test_if_then(self):
 		stmt = self.analyze("if", "si toto.gentil alors bisou(toto) fsi")
 		self.assertIsInstance(stmt, statements.IfThenElse)
