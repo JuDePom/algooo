@@ -27,7 +27,7 @@ class test_control_flow_parsing(ParserTestCase):
 		self.assertRaises(errors.ExpectedItemError, self.analyze, "if", "si alors fsi")
 	
 	def test_for(self):
-		stmt = self.analyze("for", 
+		stmt = self.analyze("for",
 				"pour i de 1 jusque 3 faire fessée(toto) fpour")
 		self.assertIsInstance(stmt, statements.For)
 		self.assertIsInstance(stmt.counter, typedesc.Identifier)
