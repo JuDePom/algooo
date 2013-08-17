@@ -1,6 +1,5 @@
 _node_id_counter = 0
 
-_node_cache = {}
 def _fresh_id():
 	global _node_id_counter
 	i = _node_id_counter
