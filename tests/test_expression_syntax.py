@@ -1,12 +1,12 @@
-from tests.parsertestcase import ParserTestCase
-from lda import expression, operators, errors
+from tests.ldatestcase import LDATestCase
+from lda import expression
+from lda import operators
+from lda import typedesc
+from lda.errors import syntax
 
-class test_expression_parsing(ParserTestCase):
-	def _expr(self, buf):
-		return self.analyze('expression', buf)
-
+class TestExpressionSyntax(LDATestCase):
 	def _literal(self, expression_string, cls, convert):
-		literal = self._expr(expression_string)
+		literal = self.analyze('expression', expression_string)
 		self.assertIsInstance(literal, cls)
 		self.assertEqual(literal.value, convert(expression_string))
 			
@@ -34,8 +34,35 @@ class test_expression_parsing(ParserTestCase):
 		test('.023')
 		test('.0456')
 
+	def test_integer_literals_within_range(self):
+		rangeop = self.analyze('expression', '0..1')
+		self.assertIsInstance(rangeop, operators.IntegerRange)
+		self.assertIsInstance(rangeop.lhs, expression.LiteralInteger)
+		self.assertIsInstance(rangeop.rhs, expression.LiteralInteger)
+		self.assertEquals(rangeop.lhs.value, 0)
+		self.assertEquals(rangeop.rhs.value, 1)
+
+	def test_real_literals_within_range(self):
+		rangeop = self.analyze('expression', '0.123..4.567')
+		# Yes, it's an integer range with reals in it, but type checking is part
+		# of the semantic analysis. We're just checking the syntax for now.
+		self.assertIsInstance(rangeop, operators.IntegerRange)
+		self.assertIsInstance(rangeop.lhs, expression.LiteralReal)
+		self.assertIsInstance(rangeop.rhs, expression.LiteralReal)
+		self.assertEquals(rangeop.lhs.value, 0.123)
+		self.assertEquals(rangeop.rhs.value, 4.567)
+	
+	def test_identifiers_within_range(self):
+		rangeop = self.analyze('expression', 'a..b')
+		self.assertIsInstance(rangeop, operators.IntegerRange)
+		self.assertIsInstance(rangeop.lhs, typedesc.Identifier)
+		self.assertIsInstance(rangeop.rhs, typedesc.Identifier)
+		self.assertEquals(rangeop.lhs.name, 'a')
+		self.assertEquals(rangeop.rhs.name, 'b')
+
 	def test_incomplete_binary_operations(self):
-		test = lambda s: self.assertRaises(errors.LDASyntaxError, self._expr, s)
+		def test(s):
+			self.assertRaises(syntax.ExpectedItem, self.analyze, 'expression', s)
 		test('1-')
 		test('1 -')
 		test('1+')
@@ -58,7 +85,8 @@ class test_expression_parsing(ParserTestCase):
 		test('oh_no [ the_closing_square_bracket_is_missing')
 	
 	def test_root_in_binary_operation_tree(self):
-		test = lambda s, cls: self.assertIsInstance(self._expr(s), cls)
+		def test(s, cls):
+			self.assertIsInstance(self.analyze('expression', s), cls)
 		test('1+1', operators.Addition)
 		test('1-1', operators.Subtraction)
 		test('1/1', operators.Division)
@@ -82,7 +110,7 @@ class test_expression_parsing(ParserTestCase):
 
 	def test_array_subscript(self):
 		def test(s, indices):
-			subscript = self._expr(s)
+			subscript = self.analyze('expression', s)
 			self.assertIsInstance(subscript, operators.ArraySubscript)
 			self.assertIsInstance(subscript.rhs, expression.Varargs)
 			self.assertEqual(len(subscript.rhs), len(indices))

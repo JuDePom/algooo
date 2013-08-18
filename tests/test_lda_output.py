@@ -27,7 +27,7 @@ class test_lda_output(unittest.TestCase):
 		moule = typedesc.CompositeType(_id("Moule"), [
 						typedesc.Field(_id("prix"), typedesc.Integer),
 						typedesc.Field(_id("nom"), typedesc.String)])
-		moule_alias = typedesc.TypeAlias(_id("Moule"))
+		moule_alias = typedesc.TypeAlias(None, "Moule")
 		range_i = operators.IntegerRange(None, expression.LiteralInteger(None, 0), _id("i"))
 		range_j = operators.IntegerRange(None, expression.LiteralInteger(None, 0), _id("j"))
 		tab = typedesc.ArrayType(moule_alias, [range_i, range_j])

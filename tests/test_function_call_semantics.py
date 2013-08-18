@@ -1,17 +1,17 @@
-from tests.parsertestcase import ParserTestCase
-import lda
+from tests.ldatestcase import LDATestCase
+from lda.errors import semantic
 
-class test_function_call_semantics(ParserTestCase):
+class test_function_call_semantics(LDATestCase):
 	def test_wrong_effective_parameter_count_1_instead_of_0(self):
-		module = self.analyze('module', "fonction f0() lexique début f0(1) fin")
-		self.assertRaises(lda.errors.LDASemanticError, module.check)
+		self.assertRaises(semantic.ParameterCountMismatch, self.check, 'module',
+			'fonction f0() lexique début f0(1) fin')
 
 	def test_wrong_effective_parameter_count_0_instead_of_1(self):
-		module = self.analyze('module', "fonction f1(a:entier) lexique début f1() fin")
-		self.assertRaises(lda.errors.LDASemanticError, module.check)
+		self.assertRaises(semantic.ParameterCountMismatch, self.check, 'module',
+			'fonction f1(a:entier) lexique début f1() fin')
 
 	def test_wrong_return_type(self):
-		module = self.analyze('module', '''\
+		self.assertRaises(semantic.TypeMismatch, self.check, 'module', '''\
 				fonction f(): entier
 				lexique
 					Moule = <>
@@ -19,10 +19,9 @@ class test_function_call_semantics(ParserTestCase):
 				début
 					m <- f()
 				fin''')
-		self.assertRaises(lda.errors.LDASemanticError, module.check)
 
 	def test_effective_parameter_type_mismatch(self):
-		module = self.analyze('module', '''\
+		self.assertRaises(semantic.TypeMismatch, self.check, 'module', '''\
 				fonction f(a: entier)
 				lexique
 					Moule = <>
@@ -31,10 +30,18 @@ class test_function_call_semantics(ParserTestCase):
 				début
 					f(m)
 				fin''')
-		self.assertRaises(lda.errors.LDASemanticError, module.check)
+		self.assertRaises(semantic.TypeMismatch, self.check, 'module', '''\
+				fonction f(a: entier, b: chaîne, c: caractère)
+				lexique
+					Moule = <>
+					a: entier
+					m: Moule
+				début
+					f(m, a, m)
+				fin''')
 
 	def test_effective_parameter_equivalent_type(self):
-		module = self.analyze('module', '''\
+		self.check('module', '''\
 				fonction f(r: réel)
 				lexique
 					r: réel
@@ -43,15 +50,13 @@ class test_function_call_semantics(ParserTestCase):
 					e <- 50
 					f(e)
 				fin''')
-		module.check()
 
 	def test_calling_non_function(self):
-		module = self.analyze('module', '''\
+		self.assertRaises(semantic.NonCallable, self.check, 'module', '''\
 				algorithme
 				lexique
 					a: entier
 				début
 					a()
 				fin''')
-		self.assertRaises(lda.errors.LDASemanticError, module.check)
 
