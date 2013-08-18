@@ -1,7 +1,7 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 
-class test_lexicon_semantics(LDATestCase):
+class TestLexiconSemantics(LDATestCase):
 	def test_formal_parameter_absent_from_lexicon(self):
 		self.assertRaises(semantic.SemanticError, self.check, 'function',
 			'fonction f(a: entier) lexique début fin')

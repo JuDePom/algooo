@@ -1,7 +1,7 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 
-class test_function_call_semantics(LDATestCase):
+class TestFunctionCallSemantics(LDATestCase):
 	def test_wrong_effective_parameter_count_1_instead_of_0(self):
 		self.assertRaises(semantic.ParameterCountMismatch, self.check, 'module',
 			'fonction f0() lexique début f0(1) fin')
