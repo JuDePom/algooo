@@ -1,6 +1,6 @@
 from . import keywords as kw
 from .expression import Expression
-from .errors import *
+from .errors import semantic
 from . import typedesc
 from . import module
 from . import dot
@@ -73,7 +73,7 @@ class BinaryOpEquivalentSides(BinaryOp):
 		lhs_typedef = self.lhs.check(context)
 		rhs_typedef = self.rhs.check(context)
 		if not lhs_typedef.equivalent(rhs_typedef): # TODO!!!!!
-			raise TypeMismatch(self.pos, lhs_typedef, rhs_typedef)
+			raise semantic.TypeMismatch(self.pos, lhs_typedef, rhs_typedef)
 		# TODO avec les types équivalents, il ne faut pas forcément se contenter
 		# du type du LHS, mais plutôt du type le plus "fort" (genre réel >
 		# entier) - TODO voir avec max()
@@ -103,7 +103,8 @@ class _UnaryNumberSign(UnaryOp):
 	def check(self, context):
 		rhs_typedef = self.rhs.check(context)
 		if rhs_typedef not in (typedesc.Integer, typedesc.Real):
-			raise LDASemanticError(self.pos, "cet opérateur unaire "
+			# TODO peut-être que SpecificTypeExpected est plus adapté ici ?
+			raise semantic.SemanticError(self.pos, "cet opérateur unaire "
 					"ne peut être appliqué qu'à un nombre entier ou réel")
 		return rhs_typedef
 
@@ -136,23 +137,22 @@ class ArraySubscript(BinaryOp):
 	encompass_varargs_till = kw.RSBRACK
 
 	def check(self, context):
-		lhs_typedef = self.lhs.check(context)
-		if not isinstance(lhs_typedef, typedesc.ArrayType):
-			raise LDASemanticError(self.pos,
-					"l'élément indexé n'est pas un tableau")
-		# check if the dimension count in RHS matches LHS's typedef
-		ldims = len(lhs_typedef.dimensions)
+		array_type = self.lhs.check(context)
+		if not isinstance(array_type, typedesc.ArrayType):
+			raise semantic.NonSubscriptable(self.pos)
+		# check dimension count
+		ldims = len(array_type.dimensions)
 		rdims = len(self.rhs)
 		if ldims != rdims:
-			raise LDASemanticError(self.pos, "le nombre d'indices ne "
-					"correspond pas au nombre de dimensions du tableau")
+			raise semantic.DimensionCountMismatch(self.pos, given=rdims, expected=ldims)
 		# check index varargs
-		arg_typedefs = self.rhs.check(context)
-		for typedef in arg_typedefs:
-			if typedef != typedesc.Integer:
-				raise LDASemanticError(self.pos,
-						"tous les indices doivent être des entiers")
-		return lhs_typedef.resolved_element_type
+		index_types = self.rhs.check(context)
+		for type_, item in zip(index_types, self.rhs):
+			if type_ is not typedesc.Integer:
+				raise semantic.SpecificTypeExpected(item.pos,
+						"cet indice de tableau",
+						expected=typedesc.Integer, given=type_)
+		return array.resolved_element_type
 
 class FunctionCall(BinaryOp):
 	"""
@@ -168,13 +168,19 @@ class FunctionCall(BinaryOp):
 	encompass_varargs_till = kw.RPAREN
 
 	def check(self, context):
-		bound_function = self.lhs.check(context)
-		# TODO est-ce que le LHS doit vraiment retourner une fonction ? ou est-ce qu'on retourne un FunctionType ?
-		if not isinstance(bound_function, module.Function):
-			raise LDASemanticError("cet élément ne peut pas être appelé car "
-					"ce n'est pas une fonction")
-		# TODO check varargs
-		return bound_function.return_type
+		function = self.lhs.check(context)
+		if not isinstance(function, module.Function):
+			raise semantic.NonCallable(self.pos)
+		# check parameter count
+		expected_argc = len(function.fp_list)
+		given_argc = len(self.rhs)
+		if expected_argc != given_argc:
+			raise semantic.ParameterCountMismatch(self.pos,
+					given=given_argc, expected=expected_argc)
+		# TODO: check parameter types
+		raise NotImplementedError("PARAMETER TYPES!!!")
+		# TODO: chaque fonction doit avoir un mini-lexique PRÉ-REMPLI de ses paramètres
+		return function.return_type
 		
 
 class MemberSelect(BinaryOp):
@@ -192,8 +198,7 @@ class MemberSelect(BinaryOp):
 		# LHS is supposed to refer to a composite
 		composite = self.lhs.check(context)
 		if not isinstance(composite, typedesc.CompositeType):
-			raise LDASemanticError(self.pos, "sélection d'un membre "
-				"dans un élément non-composite")
+			raise semantic.NonComposite(self.pos)
 		# use composite context exclusively for RHS
 		return self.rhs.check(composite.context)
 
@@ -228,9 +233,12 @@ class IntegerRange(BinaryOp):
 	def check(self, context):
 		lhs_typedef = self.lhs.check(context)
 		rhs_typedef = self.rhs.check(context)
-		if not (lhs_typedef is typedesc.Integer and rhs_typedef is typedesc.Integer):
-			return LDASemanticError("les bornes d'un intervalles ne peuvent être que "
-					"des entiers")
+		for operand in (self.lhs, self.rhs):
+			operand_type = operand.check(context)
+			if operand_type is not typedesc.Integer:
+				raise semantic.SpecificTypeExpected(operand.pos,
+						"une borne d'intervalle",
+						expected=typedesc.Integer, given=operand_type)
 		return typedesc.Range
 
 class LessThan(ComparisonOp):

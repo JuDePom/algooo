@@ -1,14 +1,10 @@
 '''
-Lexical, syntactic, and semantic errors that can be raised as exceptions during
-compilation.
+Lexical and syntactic errors that can be raised during the parsing phase.
 '''
 
-class LDAError(Exception):
-	pass
-
-class LDASyntaxError(LDAError):
+class SyntaxError(Exception):
 	'''
-	Raised when the parser encounters an LDA syntax errorLDA.
+	Raised when the parser encounters an LDA syntax error.
 	'''
 
 	def __init__(self, pos, message):
@@ -16,7 +12,7 @@ class LDASyntaxError(LDAError):
 		message = "{} : erreur de syntaxe : {}".format(pos, message)
 		super().__init__(message)
 
-class ExpectedItemError(LDASyntaxError):
+class ExpectedItem(SyntaxError):
 	'''
 	Raised when the parser expects an item at a certain position, but encounters
 	something else.
@@ -26,7 +22,7 @@ class ExpectedItemError(LDASyntaxError):
 		message = item_name + " est attendu(e) ici"
 		super().__init__(pos, message)
 
-class ExpectedKeywordError(ExpectedItemError):
+class ExpectedKeyword(ExpectedItem):
 	'''
 	Raised when the parser expects a keyword at a certain position, but encounters
 	something else.
@@ -37,24 +33,21 @@ class ExpectedKeywordError(ExpectedItemError):
 			message = "mot-clé \"{}\"".format(
 					expected_keywords[0].default_spelling)
 		else:
-			message = "l'un des mot-clés suivants : "
-			sep = ""
-			for keyword in expected_keywords:
-				message += "{}\"{}\"".format(sep, keyword.default_spelling)
-				sep = ", "
+			message = "l'un des mot-clés suivants : {}".format(
+				", ".join('"{}"'.format(k) for k in expected_keywords))
 		super().__init__(pos, message)
 
-class IllegalIdentifier(LDASyntaxError):
+class IllegalIdentifier(SyntaxError):
 	'''
 	Raised when an identifier was expected but the input doesn't conform to the
-	identifier naming format
+	identifier naming format.
 	'''
 
 	def __init__(self, pos):
 		message = "mauvais format d'identifieur"
 		super().__init__(pos, message)
 
-class ReservedWord(LDASyntaxError):
+class ReservedWord(SyntaxError):
 	'''
 	Raised when the user tries to use a reserved keyword for an identifier.
 	'''
@@ -63,18 +56,12 @@ class ReservedWord(LDASyntaxError):
 		message = "\"{}\" est un mot réservé par le langage".format(word)
 		super().__init__(pos, message)
 
-class LDASemanticError(LDAError):
-	def __init__(self, pos, message):
-		message = pos.pretty() + ": erreur de sémantique : " + message
-		super().__init__(message)
+class MissingRightOperand(SyntaxError):
+	'''
+	Raised when a unary or binary operator is missing its right operand.
+	'''
 
-class MissingDeclaration(LDASemanticError):
-	def __init__(self, ident):
-		message = "cet identificateur n'a pas été déclaré : " + str(ident)
-		super().__init__(ident.pos, message)
-
-class TypeMismatch(LDASemanticError):
-	def __init__(self, pos, a, b):
-		message = "types conflictuels : {} vs. {}".format(a, b)
-		super().__init__(pos, message)
+	def __init__(self, pos):
+		super().__init__(pos, "cet opérateur requiert une opérande "
+			"valide à sa droite")
 

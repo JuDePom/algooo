@@ -6,7 +6,7 @@ from . import expression
 from . import operators
 from . import statements
 from . import typedesc
-from .errors import *
+from .errors import syntax
 
 re_identifier = re.compile(r'''
 	[^\d\W]    # The first character must be a non-digital word character.
@@ -23,9 +23,11 @@ re_integer = re.compile(r'''
 re_real = re.compile(r'''
 	(\d+\.\d*  # At least one digit, followed by a dot, and zero or more digits.
 	|\.\d+)    # Or a dot followed by at least one digit.
-	(?![\.\w]) # The last digit may not be followed by another dot
+	((?![\.\w])# The last digit may not be followed by another dot
 	           # or a "word" character.
-	''', re.VERBOSE)
+	|(?=\.\.)  # But the last digit may be followed by two dots (range operator).
+	           # (Although semantically, ranges can't contain reals.)
+	)''', re.VERBOSE)
 
 re_string = re.compile(r'".*?"') # TODO- escaping
 
@@ -37,7 +39,7 @@ class ParserContextManager:
 		self.pos = self.parser.pos
 	
 	def __exit__(self, exc_type, exc_value, traceback):
-		if isinstance(exc_value, LDASyntaxError):
+		if isinstance(exc_value, syntax.SyntaxError):
 			self.parser.append_syntax_error(exc_value)
 			self.syntax_error(exc_value)
 			# Don't let the exception propagate if we got here.
@@ -56,7 +58,7 @@ class CriticalItem(ParserContextManager):
 		self.expected_item_name = expected_item_name
 
 	def syntax_error(self, exc_value):
-		raise ExpectedItemError(self.pos, self.expected_item_name)
+		raise syntax.ExpectedItem(self.pos, self.expected_item_name)
 
 class Parser:
 	'''
@@ -89,10 +91,14 @@ class Parser:
 		self.advance()
 
 	def append_syntax_error(self, new_error):
-		if not self.syntax_errors or new_error.pos > self.syntax_errors[-1].pos:
+		if not self.syntax_errors or new_error.pos > self.relevant_syntax_error.pos:
 			self.syntax_errors = [new_error]
-		elif new_error.pos == self.syntax_errors[-1].pos:
+		elif new_error.pos == self.relevant_syntax_error.pos:
 			self.syntax_errors.append(new_error)
+	
+	@property
+	def relevant_syntax_error(self):
+		return self.syntax_errors[-1]
 
 	def advance(self, chars=0):
 		'''
@@ -141,7 +147,7 @@ class Parser:
 		found_string = keyword.find(self.buf, self.pos.char)
 		if found_string is None:
 			if not soft:
-				raise ExpectedKeywordError(self.pos, keyword)
+				raise syntax.ExpectedKeyword(self.pos, keyword)
 			else:
 				return False
 		self.advance(len(found_string))
@@ -151,13 +157,13 @@ class Parser:
 		for keyword in choices:
 			if self.consume_keyword(keyword, soft=True):
 				return keyword
-		raise ExpectedKeywordError(self.pos, *choices)
+		raise syntax.ExpectedKeyword(self.pos, *choices)
 
 	def analyze_multiple(self, group_name, *analysis_order):
 		for analyze in analysis_order:
 			with BacktrackFailure(self):
 				return analyze()
-		raise ExpectedItemError(self.pos, group_name)
+		raise syntax.ExpectedItem(self.pos, group_name)
 
 	def analyze_module(self):
 		functions = []
@@ -170,11 +176,11 @@ class Parser:
 			with BacktrackFailure(self):
 				algorithm = self.analyze_algorithm()
 				if has_algorithm:
-					raise LDASyntaxError(self.pos,
-							"Il ne peut y avoir qu'un seul algorithme par module")
+					raise syntax.SyntaxError(self.pos,
+							"il ne peut y avoir qu'un seul algorithme par module")
 				has_algorithm = True
 				continue
-			raise ExpectedItemError(self.pos, "une fonction ou un algorithme")
+			raise syntax.ExpectedItem(self.pos, "une fonction ou un algorithme")
 			# TODO : ... ou une def de composite ?
 		return module.Module(functions, algorithm)
 
@@ -239,8 +245,7 @@ class Parser:
 		return typedesc.ArrayType(element_type, dimensions)
 
 	def analyze_type_alias(self):
-		alias_id = self.analyze_identifier()
-		return typedesc.TypeAlias(alias_id)
+		return self.analyze_identifier(typedesc.TypeAlias)
 
 	def analyze_type_descriptor(self):
 		with BacktrackFailure(self):
@@ -249,7 +254,7 @@ class Parser:
 			return self.analyze_scalar_type()
 		with BacktrackFailure(self):
 			return self.analyze_type_alias()
-		raise ExpectedItemError(self.pos, "un descripteur de type")
+		raise syntax.ExpectedItem(self.pos, "un descripteur de type")
 
 	def analyze_field(self):
 		ident = self.analyze_identifier()
@@ -257,7 +262,7 @@ class Parser:
 		type_descriptor = self.analyze_type_descriptor()
 		return typedesc.Field(ident, type_descriptor)
 
-	def analyze_composite_declaration(self):
+	def analyze_composite_type(self):
 		ident = self.analyze_identifier()
 		self.consume_keyword(kw.EQ)
 		self.consume_keyword(kw.LT)
@@ -275,22 +280,22 @@ class Parser:
 				variables[v.name] = v.type_descriptor
 				continue
 			with BacktrackFailure(self):
-				c = self.analyze_composite_declaration()
+				c = self.analyze_composite_type()
 				composites[c.name] = c
 				continue
 			break
 		return typedesc.Lexicon(variables, composites)
 
-	def analyze_identifier(self):
+	def analyze_identifier(self, identifier_class=typedesc.Identifier):
 		match = re_identifier.match(self.buf, self.pos.char)
 		if match is None:
-			raise IllegalIdentifier(self.pos)
+			raise syntax.IllegalIdentifier(self.pos)
 		name = match.group(0)
 		if name in kw.meta.all_keywords:
-			raise ReservedWord(self.pos, name)
+			raise syntax.ReservedWord(self.pos, name)
 		pos = self.pos
 		self.advance(len(name))
-		return typedesc.Identifier(pos, name)
+		return identifier_class(pos, name)
 
 	def analyze_statement_block(self, *end_marker_keywords):
 		pos = self.pos
@@ -332,7 +337,7 @@ class Parser:
 		self.consume_keyword(kw.FOR)
 		# counter
 		with CriticalItem(self, "compteur de la boucle"):
-			counter = self.analyze_identifier()
+			counter = self.analyze_expression()
 		# initial value
 		self.consume_keyword(kw.FROM)
 		with CriticalItem(self, "valeur initiale du compteur"):
@@ -384,9 +389,6 @@ class Parser:
 			# At this point, either bo2 is an operator that's not supposed to be part
 			# of bo1's RHS, or we hit a non-expression token (in which case bo2 is
 			# None). Finish the bo1 node properly, and move onto bo2 if needed.
-			if rhs is None:
-				raise LDASyntaxError(self.pos, "cet opérateur binaire requiert "
-						"une opérande à sa droite")
 			bo1.lhs, bo1.rhs = lhs, rhs
 			# Use bo1's node as the LHS for the next operator (bo2)
 			lhs = bo1
@@ -414,7 +416,7 @@ class Parser:
 		# check for a unary operator
 		try:
 			uo = self.analyze_unary_operator()
-		except ExpectedItemError:
+		except syntax.ExpectedItem:
 			pass
 		else:
 			# analyze primary after the unary operator
@@ -439,20 +441,20 @@ class Parser:
 		for op_class in op_list:
 			if self.consume_keyword(op_class.keyword_def, soft=True):
 				return op_class(pos)
-		raise ExpectedItemError(self.pos, "un opérateur")
+		raise syntax.ExpectedItem(self.pos, "un opérateur")
 
 	def analyze_varargs(self, analyze_arg):
 		pos = self.pos
 		arg_list = []
-		arg = None
 		has_next = True
 		while has_next:
+			arg = None
 			with BacktrackFailure(self):
 				arg = analyze_arg()
 				arg_list.append(arg)
 			has_next = self.consume_keyword(kw.COMMA, soft=True)
 			if has_next and arg is None:
-				raise LDASyntaxError(self.pos, "argument vide")
+				raise syntax.SyntaxError(self.pos, "argument vide")
 		return expression.Varargs(pos, arg_list)
 
 	def analyze_literal(self, compiled_regexp, literal_class, converter):
@@ -462,7 +464,7 @@ class Parser:
 			string = match.group(0)
 			self.advance(len(string))
 			return literal_class(pos, converter(string))
-		raise ExpectedItemError(self.pos, "un littéral de la classe " + str(literal_class))
+		raise syntax.ExpectedItem(self.pos, "un littéral de la classe " + str(literal_class))
 
 	def analyze_literal_boolean(self):
 		with CriticalItem(self, "un booléen littéral"):

@@ -1,6 +1,8 @@
 from . import keywords as kw
 from . import position
+from . import typedesc
 from . import dot
+from .errors import semantic
 
 class Statement(position.SourceThing):
 	pass
@@ -51,6 +53,15 @@ class IfThenElse(Statement):
 		self.then_block = then_block
 		self.else_block = else_block
 
+	def check(self, context):
+		condition_type = self.condition.check(context)
+		if condition_type is not typedesc.Boolean:
+			raise semantic.SpecificTypeExpected(self.pos, "la condition",
+					expected=typedesc.Boolean, given=condition_type)
+		self.then_block.check(context)
+		if self.else_block is not None:
+			self.else_block.check(context)
+
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)
 		then_cluster = dot.Cluster("alors", cluster)
@@ -78,12 +89,27 @@ class IfThenElse(Statement):
 		return result
 
 class For(Statement):
+	_COMPONENT_NAMES = [
+			"le compteur de la boucle",
+			"la valeur initiale du compteur",
+			"la valeur finale du compteur"
+	]
+
 	def __init__(self, pos, counter, initial, final, block):
 		super().__init__(pos)
 		self.counter = counter
 		self.initial = initial
 		self.final = final
 		self.block = block
+	
+	def check(self, context):
+		components = [self.counter, self.initial, self.final]
+		for component, name in zip(components, For._COMPONENT_NAMES):
+			component_type = component.check(context)
+			if component_type is not typedesc.Integer:
+				raise semantic.SpecificTypeExpected(component.pos, name,
+						expected=typedesc.Integer, given=component_type)
+		self.block.check(context)
 
 	def put_node(self, cluster):
 		counter_node = self.counter.put_node(cluster)
@@ -93,6 +119,7 @@ class For(Statement):
 		block_node = self.block.put_node(block_cluster)
 		return dot.Node("pour", cluster, counter_node, initial_node,
 				final_node, block_node)
+
 	def lda_format(self, indent=0):
 		return ("{indent}{kw.FOR} {counter} {kw.FROM} {initial} "
 				"{kw.TO} {final} {kw.DO}\n"
@@ -110,6 +137,14 @@ class While(Statement):
 		super().__init__(pos)
 		self.condition = condition
 		self.block = block	
+
+	def check(self, context):
+		condition_type = self.condition.check(context)
+		if condition_type is not typedesc.Boolean:
+			raise semantic.SpecificTypeExpected(self.condition.pos,
+					"la condition de la boucle",
+					expected=typedesc.Boolean, given=condition_type)
+		self.block.check(context)
 
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)

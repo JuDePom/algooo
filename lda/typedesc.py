@@ -1,11 +1,5 @@
 from . import keywords as kw
-from . import errors
-
-class CanNotBeResolved(errors.LDASemanticError):
-	def __init__(self, alias):
-		super().__init__(alias.pos, "nom de type inconnu : \"{}\"".format(alias))
-	def add_errors_to(self, what):
-		what.append(self)
+from .errors import semantic
 
 class TypeDescriptor:
 	pass
@@ -30,7 +24,7 @@ class Integer(Scalar):
 	@staticmethod
 	def lda_format(indent=0):
 		return str(kw.INT)
-	
+
 class Real(Scalar):
 	@staticmethod
 	def check(context):
@@ -87,7 +81,8 @@ class ArrayType(TypeDescriptor):
 
 	def check(self, context):
 		if len(self.dimensions) == 0:
-			raise LDASemanticError("un tableau doit avoir au moins une dimension")
+			raise semantic.SemanticError(self.dimensions.pos,
+					"un tableau doit avoir au moins une dimension")
 		for dim in self.dimensions:
 			dim_type = dim.check(context)
 		# TODO kludgey
@@ -106,16 +101,18 @@ class CompositeType(TypeDescriptor):
 		self.name = ident.name
 		self.field_list = field_list
 
-	def duplicate_fields(self):
-		names = [f.name for f in self.field_list]
-		dupe_names = [n for n in set(names) if names.count(n) > 1]
-		return (f for f in self.field_list if f.name in dupe_names)
+	def check_duplicate_fields(self):
+		pioneers = {}
+		for f in self.field_list:
+			try:
+				pioneer = pioneers[f.name]
+				raise semantic.DuplicateDeclaration(f, pioneer)
+			except KeyError:
+				pioneers[f.name] = f
 
 	def check(self, supercontext):
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
-		for df in self.duplicate_fields():
-			raise errors.LDASemanticError(df.ident.pos, "ce nom de champ "
-					"apparaît plusieurs fois dans le type composite")
+		self.check_duplicate_fields()
 		# add to context
 		self.context = {}
 		errors = 0
@@ -124,7 +121,7 @@ class CompositeType(TypeDescriptor):
 				type_descriptor = field.type_descriptor.check(supercontext)
 				assert type_descriptor is not None, "un check() a retourné None"
 				self.context[field.name] = type_descriptor
-			except CanNotBeResolved as e:
+			except semantic.UnresolvableTypeAlias as e:
 				errors += 1
 				# TODO il faudrait le logger au lieu de le printer à l'arrache
 				self.context[field.name] = ErroneousType(field.name)
@@ -136,28 +133,29 @@ class CompositeType(TypeDescriptor):
 		result = ", ".join(param.lda_format() for param in self.field_list)
 		return "<{}>".format(result)
 
-class TypeAlias:
-	def __init__(self, ident):
-		self.pos = ident.pos
-		self.name = ident.name
-	def check(self, context):
-		try:
-			return context[self.name]
-		except KeyError:
-			raise CanNotBeResolved(self)
-	def lda_format(self, indent=0):
-		return self.name
-
 class Identifier:
 	def __init__(self, pos, name):
 		self.pos = pos
 		self.name = name
 
+	def __repr__(self):
+		return self.name
+
 	def lda_format(self, indent=0):
 		return self.name
 
 	def check(self, context):
-		return context[self.name]
+		try:
+			return context[self.name]
+		except KeyError:
+			raise semantic.MissingDeclaration(self)
+
+class TypeAlias(Identifier):
+	def check(self, context):
+		try:
+			return context[self.name]
+		except KeyError:
+			raise semantic.UnresolvableTypeAlias(self)
 
 class Field(Identifier):
 	def __init__(self, ident, type_descriptor):

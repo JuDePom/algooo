@@ -8,7 +8,9 @@ class Module:
 		self.functions = functions
 		self.algorithm = algorithm
 
-	def check(self):
+	def check(self, context=None):
+		if context is None:
+			context = {}
 		supercontext = {f.ident.name: f for f in self.functions}
 		for function in self.functions:
 			function.check(supercontext)
