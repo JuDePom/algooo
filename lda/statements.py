@@ -2,6 +2,7 @@ from . import keywords as kw
 from . import position
 from . import typedesc
 from . import dot
+from . import expression
 from .errors import semantic
 
 class Statement(position.SourceThing):
@@ -109,6 +110,9 @@ class For(Statement):
 			if component_type is not typedesc.Integer:
 				raise semantic.SpecificTypeExpected(component.pos, name,
 						expected=typedesc.Integer, given=component_type)
+		if isinstance(self.counter, expression._Literal):
+			raise semantic.SemanticError(self.counter.pos,
+					"le compteur ne peut pas être constant")
 		self.block.check(context)
 
 	def put_node(self, cluster):
