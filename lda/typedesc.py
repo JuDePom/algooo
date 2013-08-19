@@ -1,5 +1,6 @@
 from . import keywords as kw
 from .errors import semantic
+from types import MethodType
 
 class TypeDescriptor:
 	pass
@@ -9,68 +10,43 @@ class ErroneousType(TypeDescriptor):
 		self.name = name
 
 class Scalar(TypeDescriptor):
-	pass
+	def __init__(self, keyword):
+		self.keyword = keyword
 
-class Integer(Scalar):
-	@staticmethod
-	def check(context):
-		return Integer
+	def check(self, context):
+		return self
 
-	@staticmethod
-	def equivalent(other):
-		if other in (Integer, Real):
+	def equivalent(self, other):
+		if other is self:
+			return self
+	
+	def lda_format(self, indent=0):
+		return str(self.keyword)
+
+def _dual_scalar_compatibility(weak, strong):
+	def weak_equivalent(self, other):
+		if other in (weak, strong):
 			return other
-		
-	@staticmethod
-	def lda_format(indent=0):
-		return str(kw.INT)
+	def strong_equivalent(self, other):
+		if other in (weak, strong):
+			return self
+	weak.equivalent   = MethodType(weak_equivalent, weak)
+	strong.equivalent = MethodType(strong_equivalent, strong)
 
-class Real(Scalar):
-	@staticmethod
-	def check(context):
-		return Real
+Integer   = Scalar(kw.INT)
+Real      = Scalar(kw.REAL)
+Boolean   = Scalar(kw.BOOL)
+Character = Scalar(kw.CHAR)
+String    = Scalar(kw.STRING)
 
-	@staticmethod
-	def equivalent(other):
-		if other in (Integer, Real):
-			return Real
-			
-	@staticmethod
-	def lda_format(indent=0):
-		return str(kw.REAL)
-
-class Boolean(Scalar):
-	@staticmethod
-	def check(context):
-		return Boolean
-		
-	@staticmethod
-	def lda_format(indent=0):
-		return str(kw.BOOL)
-
-class Character(Scalar):
-	@staticmethod
-	def check(context):
-		return Character
-	
-	@staticmethod
-	def lda_format(indent=0):
-		return str(kw.CHAR)
-
-class String(Scalar):
-	@staticmethod
-	def check(context):
-		return String
-	
-	@staticmethod
-	def lda_format(indent=0):
-		return str(kw.STRING)
+_dual_scalar_compatibility(weak=Integer, strong=Real)
+_dual_scalar_compatibility(weak=Character, strong=String)
 
 class Void(TypeDescriptor):
 	@staticmethod
 	def check(context):
 		return Void
-	
+
 class Range(TypeDescriptor):
 	pass
 
