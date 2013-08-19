@@ -24,10 +24,10 @@ class TestForSyntax(LDATestCase):
 		self.assertIsInstance(stmt.counter, operators.MemberSelect)
 
 	def test_for_missing_keywords(self):
-		def test(s):
-			self.assertRaises(syntax.ExpectedKeyword, self.analyze, "for", s)
-		test("pour i 1 jusque 3 faire fessée(toto) fpour")
-		test("pour i de 1 3 faire fessée(toto) fpour")
-		test("pour i de 1 jusque 3 fessée(toto) fpour")
-		test("pour i de 1 jusque 3 faire fessée(toto)")
+		def test(p):
+			self.assert_syntax_error(syntax.ExpectedKeyword, analyze='for', program=p)
+		test("pour i(**)1 jusque 3 faire fessée(toto) fpour")
+		test("pour i de 1(**)3 faire fessée(toto) fpour")
+		test("pour i de 1 jusque 3(**)fessée(toto) fpour")
+		test("pour i de 1 jusque 3 faire fessée(toto)(**)")
 	

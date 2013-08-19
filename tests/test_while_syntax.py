@@ -15,15 +15,15 @@ class TestWhileSyntax(LDATestCase):
 		self.assertIsInstance(stmt, statements.While)
 	
 	def test_while_missing_keyword(self):
-		def test(s):
-			self.assertRaises(syntax.ExpectedKeyword, self.analyze, "while", s)
-		test("tantque toto.gentil bisou(toto) ftant")
-		test("tantque toto.gentil faire bisou(toto)")
-		test("tantque toto.gentil")
+		def test(p):
+			self.assert_syntax_error(syntax.ExpectedKeyword, analyze='while', program=p)
+		test("tantque toto.gentil (**)bisou(toto) ftant")
+		test("tantque toto.gentil faire bisou(toto)(**)")
+		test("tantque toto.gentil(**)")
 	
 	def test_while_missing_condition(self):
-		self.assertRaises(syntax.ExpectedItem, self.analyze, "while",
-				"tantque (* pas de condition! *) faire bisou(toto) ftant")
-		self.assertRaises(syntax.ExpectedItem, self.analyze, "while",
-				"tantque")
+		def test(p):
+			self.assert_syntax_error(syntax.ExpectedItem, analyze='while', program=p)
+		test("tantque(**)faire bisou(toto) ftant")
+		test("tantque(**)")
 	

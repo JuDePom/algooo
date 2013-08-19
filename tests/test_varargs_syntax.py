@@ -4,8 +4,9 @@ from lda import expression
 from lda.errors import syntax
 
 class TestVarargsSyntax(LDATestCase):
-	def _analyze_id_varargs(self, buf):
-		varargs = self.analyze('varargs', buf, self.parser.analyze_identifier)
+	def _analyze_id_varargs(self, program):
+		varargs = self.analyze('varargs', program,
+				analyze_arg=self.parser.analyze_identifier)
 		self.assertIsInstance(varargs, expression.Varargs)
 		return varargs
 
@@ -26,6 +27,8 @@ class TestVarargsSyntax(LDATestCase):
 			self.assertIsInstance(arg, typedesc.Identifier)
 
 	def test_varargs_with_empty_arg(self):
-		self.assertRaises(syntax.SyntaxError,
-				self._analyze_id_varargs, "ident,,ident")
+		self.assert_syntax_error(syntax.SyntaxError,
+				analyze='varargs',
+				program='ident,(**),ident',
+				analyze_arg=self.parser.analyze_identifier)
 

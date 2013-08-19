@@ -40,13 +40,13 @@ class TestIfSyntax(LDATestCase):
 		self.assertIsInstance(stmt.statements.else_block.else_block.else_block, statements.FunctionCall)
 
 	def test_if_missing_keyword(self):
-		def test(s):
-			self.assertRaises(syntax.ExpectedKeyword, self.analyze, "if", s)
-		test("si toto.gentil bisou(toto) fsi")
-		test("si toto.gentil alors bisou(toto)")
-		test("si toto.gentil alors bisou(toto) sinon fessée(toto)")
+		def test(p):
+			self.assert_syntax_error(syntax.ExpectedKeyword, analyze='if', program=p)
+		test("si toto.gentil(**)bisou(toto) fsi")
+		test("si toto.gentil alors bisou(toto)(**)")
+		test("si toto.gentil alors bisou(toto) sinon fessée(toto)(**)")
 	
 	def test_if_then_without_condition(self):
-		self.assertRaises(syntax.ExpectedItem, self.analyze, "if", "si alors fsi")
-	
+		self.assert_syntax_error(syntax.ExpectedItem, analyze='if',
+				program='si (**)alors fsi')
 
