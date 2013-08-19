@@ -33,7 +33,7 @@ re_string = re.compile(r'".*?"') # TODO- escaping
 
 re_character = re.compile(r"'.'") # TODO- escaping
 
-class ParserContextManager:
+class RelevantFailureLogger:
 	def __init__(self, parser):
 		self.parser = parser
 	
@@ -43,18 +43,22 @@ class ParserContextManager:
 	def __exit__(self, exc_type, exc_value, traceback):
 		if isinstance(exc_value, syntax.SyntaxError):
 			self.parser.append_syntax_error(exc_value)
-			self.syntax_error(exc_value)
-			# Don't let the exception propagate if we got here.
-			return True
+			return self.syntax_error(exc_value)
 		else:
 			# Unknown error. Let Python handle it.
 			return False
+	
+	def syntax_error(self, exc_value):
+		# Propagate exception
+		return False
 
-class BacktrackFailure(ParserContextManager):
+class BacktrackFailure(RelevantFailureLogger):
 	def syntax_error(self, exc_value):
 		self.parser.pos = self.pos
+		# Don't let the exception propagate
+		return True
 
-class CriticalItem(ParserContextManager):
+class CriticalItem(RelevantFailureLogger):
 	def __init__(self, parser, expected_item_name=None):
 		super().__init__(parser)
 		self.expected_item_name = expected_item_name

@@ -1,17 +1,18 @@
 import unittest
-import lda.parser
-import lda.errors
+from lda import parser
+from lda import errors
 
 class LDATestCase(unittest.TestCase):
 	def setUp(self):
-		self.parser = lda.parser.Parser()
+		self.parser = parser.Parser()
 
 	def analyze(self, analysis_name, buf, *extra_analysis_args):
 		self.parser.set_buf(buf)
 		analyze = getattr(self.parser, 'analyze_' + analysis_name)
 		try:
-			thing = analyze(*extra_analysis_args)
-		except lda.errors.syntax.SyntaxError:
+			with parser.RelevantFailureLogger(self.parser):
+				thing = analyze(*extra_analysis_args)
+		except errors.syntax.SyntaxError:
 			# TODO get rid of this kludge ASAP (e.g. by decorating all
 			# parser methods so that they raise relevant_syntax_error)
 			raise self.parser.relevant_syntax_error
