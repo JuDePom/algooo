@@ -71,6 +71,16 @@ class ArrayType(TypeDescriptor):
 				element_type = self.element_type.lda_format(),
 				dimensions = ", ".join(dim.lda_format() for dim in self.dimensions))
 
+	def equivalent(self, other):
+		if not isinstance(other, ArrayType):
+			return
+		if self.element_type != other.element_type:
+			return
+		if len(self.dimensions) != len(other.dimensions):
+			return
+		# TODO est-ce qu'on s'occupe des intervalles ?
+		return self
+
 class CompositeType(TypeDescriptor):
 	def __init__(self, ident, field_list):
 		self.ident = ident
