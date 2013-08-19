@@ -457,12 +457,13 @@ class Parser:
 		has_next = True
 		while has_next:
 			arg = None
+			arg_pos = self.pos
 			with BacktrackFailure(self):
 				arg = analyze_arg()
 				arg_list.append(arg)
 			has_next = self.consume_keyword(kw.COMMA, soft=True)
 			if has_next and arg is None:
-				raise syntax.SyntaxError(self.pos, "argument vide")
+				raise syntax.SyntaxError(arg_pos, "argument vide")
 		return expression.Varargs(pos, arg_list)
 
 	def consume_regex(self, compiled_regexp):
