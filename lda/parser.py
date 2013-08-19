@@ -244,7 +244,7 @@ class Parser:
 
 	def analyze_array_type(self):
 		self.consume_keyword(kw.ARRAY)
-		element_type = self.analyze_type_descriptor()
+		element_type = self.analyze_non_array_type_descriptor()
 		self.consume_keyword(kw.LSBRACK)
 		dimensions = self.analyze_varargs(self.analyze_expression)
 		self.consume_keyword(kw.RSBRACK)
@@ -256,6 +256,9 @@ class Parser:
 	def analyze_type_descriptor(self):
 		with BacktrackFailure(self):
 			return self.analyze_array_type()
+		return self.analyze_non_array_type_descriptor()
+
+	def analyze_non_array_type_descriptor(self):
 		with BacktrackFailure(self):
 			return self.analyze_scalar_type()
 		with BacktrackFailure(self):
