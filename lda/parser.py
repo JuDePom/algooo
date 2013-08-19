@@ -31,6 +31,8 @@ re_real = re.compile(r'''
 
 re_string = re.compile(r'".*?"') # TODO- escaping
 
+re_character = re.compile(r"'.'") # TODO- escaping
+
 class ParserContextManager:
 	def __init__(self, parser):
 		self.parser = parser
@@ -422,11 +424,12 @@ class Parser:
 			# analyze primary after the unary operator
 			uo.rhs = self.analyze_primary_expression()
 			return uo
-		# terminal symbol
+		# terminal
 		return self.analyze_multiple("une expression primaire",
-			lambda: self.analyze_literal(re_integer, expression.LiteralInteger, int),
-			lambda: self.analyze_literal(re_real, expression.LiteralReal, float),
-			lambda: self.analyze_literal(re_string, expression.LiteralString, lambda s: s[1:-1]),
+			self.analyze_literal_integer,
+			self.analyze_literal_real,
+			self.analyze_literal_string,
+			self.analyze_literal_character,
 			self.analyze_literal_boolean,
 			self.analyze_identifier,)
 
@@ -457,18 +460,37 @@ class Parser:
 				raise syntax.SyntaxError(self.pos, "argument vide")
 		return expression.Varargs(pos, arg_list)
 
-	def analyze_literal(self, compiled_regexp, literal_class, converter):
-		pos = self.pos
+	def consume_regex(self, compiled_regexp):
 		match = compiled_regexp.match(self.buf, self.pos.char)
-		if match is not None:
+		try:
 			string = match.group(0)
 			self.advance(len(string))
-			return literal_class(pos, converter(string))
-		raise syntax.ExpectedItem(self.pos, "un littéral de la classe " + str(literal_class))
+			return string
+		except AttributeError:
+			raise syntax.ExpectedItem(self.pos, "regex non matchée")
+
+	def analyze_literal_integer(self):
+		pos = self.pos
+		match = self.consume_regex(re_integer)
+		return expression.LiteralInteger(pos, int(match))
+	
+	def analyze_literal_real(self):
+		pos = self.pos
+		match = self.consume_regex(re_real)
+		return expression.LiteralReal(pos, float(match))
+	
+	def analyze_literal_string(self):
+		pos = self.pos
+		match = self.consume_regex(re_string)
+		return expression.LiteralString(pos, match[1:-1])
+
+	def analyze_literal_character(self):
+		pos = self.pos
+		match = self.consume_regex(re_character)
+		return expression.LiteralCharacter(pos, match[1:-1])
 
 	def analyze_literal_boolean(self):
-		with CriticalItem(self, "un booléen littéral"):
-			pos = self.pos
-			true_kw = self.consume_keyword_choice(kw.TRUE, kw.FALSE)
-			return expression.LiteralBoolean(pos, true_kw == kw.TRUE)
+		pos = self.pos
+		true_kw = self.consume_keyword_choice(kw.TRUE, kw.FALSE)
+		return expression.LiteralBoolean(pos, true_kw == kw.TRUE)
 

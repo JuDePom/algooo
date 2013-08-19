@@ -67,7 +67,17 @@ class LiteralString(_Literal):
 
 	def lda_format(self, indent=0):
 		return '"{}"'.format(self.value)
-		
+
+class LiteralCharacter(_Literal):
+	_typedef = typedesc.Character
+
+	def __init__(self, pos, value):
+		super().__init__(pos, value)
+		assert len(value) == 1
+
+	def lda_format(self, indent=0):
+		return "'{}'".format(self.value)
+
 class LiteralBoolean(_Literal):
 	_typedef = typedesc.Boolean
 
