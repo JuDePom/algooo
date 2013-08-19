@@ -39,8 +39,8 @@ class TestExpressionSyntax(LDATestCase):
 		self.assertIsInstance(rangeop, operators.IntegerRange)
 		self.assertIsInstance(rangeop.lhs, expression.LiteralInteger)
 		self.assertIsInstance(rangeop.rhs, expression.LiteralInteger)
-		self.assertEquals(rangeop.lhs.value, 0)
-		self.assertEquals(rangeop.rhs.value, 1)
+		self.assertEqual(rangeop.lhs.value, 0)
+		self.assertEqual(rangeop.rhs.value, 1)
 
 	def test_real_literals_within_range(self):
 		rangeop = self.analyze('expression', '0.123..4.567')
@@ -49,16 +49,16 @@ class TestExpressionSyntax(LDATestCase):
 		self.assertIsInstance(rangeop, operators.IntegerRange)
 		self.assertIsInstance(rangeop.lhs, expression.LiteralReal)
 		self.assertIsInstance(rangeop.rhs, expression.LiteralReal)
-		self.assertEquals(rangeop.lhs.value, 0.123)
-		self.assertEquals(rangeop.rhs.value, 4.567)
+		self.assertEqual(rangeop.lhs.value, 0.123)
+		self.assertEqual(rangeop.rhs.value, 4.567)
 	
 	def test_identifiers_within_range(self):
 		rangeop = self.analyze('expression', 'a..b')
 		self.assertIsInstance(rangeop, operators.IntegerRange)
 		self.assertIsInstance(rangeop.lhs, typedesc.Identifier)
 		self.assertIsInstance(rangeop.rhs, typedesc.Identifier)
-		self.assertEquals(rangeop.lhs.name, 'a')
-		self.assertEquals(rangeop.rhs.name, 'b')
+		self.assertEqual(rangeop.lhs.name, 'a')
+		self.assertEqual(rangeop.rhs.name, 'b')
 
 	def test_incomplete_binary_operations(self):
 		def test(s):
