@@ -8,6 +8,10 @@ class TestLexiconSemantics(LDATestCase):
 
 	def test_formal_parameter_present_in_lexicon(self):
 		self.check('function', 'fonction f(a: entier) lexique début fin')
+	
+	def test_formal_parameter_different_type_in_lexicon(self):
+		self.assertRaises(semantic.TypeMismatch, self.check, 'function',
+			'fonction f(a: entier) lexique a: réel début fin')
 
 	def test_variable_absent_from_lexicon(self):
 		self.assertRaises(semantic.MissingDeclaration, self.check, 'algorithm',
@@ -19,7 +23,7 @@ class TestLexiconSemantics(LDATestCase):
 
 	def test_variable_declared_twice(self):
 		self.assertRaises(semantic.DuplicateDeclaration, self.check, 'algorithm',
-			'algorithme lexique a:entier b:entier début fin')
+			'algorithme lexique a:entier a:entier début fin')
 	
 	def test_composite_declared_twice(self):
 		self.assertRaises(semantic.DuplicateDeclaration, self.check, 'algorithm',
