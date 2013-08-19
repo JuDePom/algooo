@@ -2,6 +2,16 @@ from . import keywords as kw
 from .errors import semantic
 from types import MethodType
 
+def _hunt_duplicates(item_list):
+	seen = {}
+	for item in item_list:
+		name = item.ident.name
+		try:
+			pioneer = seen[name]
+			raise semantic.DuplicateDeclaration(item.ident, pioneer.ident)
+		except KeyError:
+			seen[name] = item
+
 class TypeDescriptor:
 	pass
 		
@@ -84,33 +94,24 @@ class ArrayType(TypeDescriptor):
 class CompositeType(TypeDescriptor):
 	def __init__(self, ident, field_list):
 		self.ident = ident
-		self.name = ident.name
 		self.field_list = field_list
-
-	def check_duplicate_fields(self):
-		pioneers = {}
-		for f in self.field_list:
-			try:
-				pioneer = pioneers[f.name]
-				raise semantic.DuplicateDeclaration(f, pioneer)
-			except KeyError:
-				pioneers[f.name] = f
 
 	def check(self, supercontext):
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
-		self.check_duplicate_fields()
+		_hunt_duplicates(self.field_list)
 		# add to context
 		self.context = {}
 		errors = 0
 		for field in self.field_list:
+			name = field.ident.name
 			try:
 				type_descriptor = field.type_descriptor.check(supercontext)
 				assert type_descriptor is not None, "un check() a retourné None"
-				self.context[field.name] = type_descriptor
+				self.context[name] = type_descriptor
 			except semantic.UnresolvableTypeAlias as e:
 				errors += 1
 				# TODO il faudrait le logger au lieu de le printer à l'arrache
-				self.context[field.name] = ErroneousType(field.name)
+				self.context[name] = ErroneousType(name)
 				print (e)
 		if errors > 0:
 			print ("il y a eu des erreurs de résolution de types, la compilation ne pourra pas être terminée")
@@ -143,35 +144,39 @@ class TypeAlias(Identifier):
 		except KeyError:
 			raise semantic.UnresolvableTypeAlias(self)
 
-class Field(Identifier):
+class Field:
 	def __init__(self, ident, type_descriptor):
-		super().__init__(ident.pos, ident.name)
+		self.ident = ident
 		self.type_descriptor = type_descriptor
 
-	def check(self, context):
-		raise Exception("on ne peut pas faire d'analyse sémantique sur un field")
-
 	def lda_format(self, indent=0):
-		return "{} : {}".format(self.name, self.type_descriptor.lda_format())
+		return "{} : {}".format(self.ident.name,
+				self.type_descriptor.lda_format())
 
 class Lexicon:
 	def __init__(self, variables=None, composites=None, functions=None):
-		self.variables  = variables  if variables  is not None else {}
-		self.composites = composites if composites is not None else {}
-		self.functions  = functions  if functions  is not None else {}
+		assert(variables  is None or type(variables)  is list)
+		assert(composites is None or type(composites) is list)
+		assert(functions  is None or type(functions)  is list)
+		self.variables  = variables  if variables  is not None else []
+		self.composites = composites if composites is not None else []
+		self.functions  = functions  if functions  is not None else []
 	
 	def check(self, supercontext=None):
+		# initialize supercontext if needed
 		if supercontext is None:
 			supercontext = {}
-		# TODO : vérif qu'il n'y ait pas 2x le même nom de champ
+		# hunt duplicates
+		all_items = self.variables + self.composites + self.functions
+		all_items.sort(key = lambda item: item.ident.pos)
+		_hunt_duplicates(all_items)
 		# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
 		# fill subcontext with the composites' yet-incomplete contexts
 		# so that composites can cross-reference themselves during the next pass
 		subcontext = supercontext.copy()
-		subcontext.update({name: composite
-				for name, composite in self.composites.items()})
+		subcontext.update({c.ident.name: c for c in self.composites})
 		# refine composite subcontexts
-		for name, composite in self.composites.items():
+		for composite in self.composites:
 			composite.check(subcontext)
 		# do the semantic analysis on the variables last so that they can take
 		# advantage of the composites that were defined in this lexicon.
@@ -179,17 +184,17 @@ class Lexicon:
 		# another variable's type by using its name as a TypeAlias.
 		# TODO - if there are any global variables this will need to be refined.
 		# TODO - they might still be able to borrow function return types from the name of the function...
-		variable_context = {name: variable.check(subcontext)
-				for name, variable in self.variables.items()}
+		variable_context = {v.ident.name: v.type_descriptor.check(subcontext)
+				for v in self.variables}
 		# merge
 		subcontext.update(variable_context)
 		return subcontext
 
 	def lda_format(self, indent=0):
-		composites = "\n".join("\t{} = {}".format(name, composite.lda_format())
-				for name, composite in sorted(self.composites.items()))
-		variables = "\n".join("\t{} : {}".format(name, variable.lda_format())
-				for name, variable in sorted(self.variables.items()))
+		composites = "\n".join("\t{} = {}".format(c.ident.name, c.lda_format())
+				for c in sorted(self.composites, key=lambda c: c.ident.name))
+		variables = "\n".join("\t" + v.lda_format()
+				for v in sorted(self.variables, key=lambda v: v.ident.name))
 		if variables == "" and composites == "":
 			return ""
 		elif variables == "":

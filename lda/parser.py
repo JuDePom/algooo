@@ -274,16 +274,14 @@ class Parser:
 
 	def analyze_lexicon(self):
 		self.consume_keyword(kw.LEXICON)
-		variables = {}
-		composites = {}
+		variables = []
+		composites = []
 		while True:
 			with BacktrackFailure(self):
-				v = self.analyze_field()
-				variables[v.name] = v.type_descriptor
+				variables.append(self.analyze_field())
 				continue
 			with BacktrackFailure(self):
-				c = self.analyze_composite_type()
-				composites[c.name] = c
+				composites.append(self.analyze_composite_type())
 				continue
 			break
 		return typedesc.Lexicon(variables, composites)

@@ -31,7 +31,8 @@ class test_lda_output(unittest.TestCase):
 		range_i = operators.IntegerRange(None, expression.LiteralInteger(None, 0), _id("i"))
 		range_j = operators.IntegerRange(None, expression.LiteralInteger(None, 0), _id("j"))
 		tab = typedesc.ArrayType(moule_alias, [range_i, range_j])
-		lexicon = typedesc.Lexicon(variables={"tab": tab}, composites={"Moule": moule})
+		tab_field = typedesc.Field(_id("tab"), tab)
+		lexicon = typedesc.Lexicon(variables=[tab_field], composites=[moule])
 		self.assertEqual(lexicon.lda_format(), expected)
 
 	def test_literals(self):
@@ -95,7 +96,9 @@ class test_lda_output(unittest.TestCase):
 				"{0.BEGIN}\n"
 				"\ta {0.ASSIGN} b\n"
 				"{0.END}").format(kw)
-		lexicon = typedesc.Lexicon({"a": typedesc.Integer, "b": typedesc.Integer})
+		a = typedesc.Field(_id("a"), typedesc.Integer)
+		b = typedesc.Field(_id("b"), typedesc.Integer)
+		lexicon = typedesc.Lexicon([a, b])
 		body = _bogus_block("a", "b")
 		algorithm = module.Algorithm(None, lexicon, body)
 		self.assertEqual(algorithm.lda_format(), expected)
@@ -112,7 +115,9 @@ class test_lda_output(unittest.TestCase):
 		name = _id("lolilol")
 		params = [typedesc.Field(_id("param"), typedesc.Integer)]
 		return_type = typedesc.Integer
-		lexicon = typedesc.Lexicon({"a": typedesc.Integer, "b": typedesc.Integer})
+		a = typedesc.Field(_id("a"), typedesc.Integer)
+		b = typedesc.Field(_id("b"), typedesc.Integer)
+		lexicon = typedesc.Lexicon([a, b])
 		body = _bogus_block("a", "b")
 		function_node = module.Function(None, name, params, return_type, lexicon, body)
 		self.assertEqual(function_node.lda_format(), expected)
