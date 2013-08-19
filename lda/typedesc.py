@@ -71,6 +71,9 @@ class ArrayType(TypeDescriptor):
 					"un tableau doit avoir au moins une dimension")
 		for dim in self.dimensions:
 			dim_type = dim.check(context)
+			if dim_type is not Range:
+				raise semantic.SpecificTypeExpected(
+						dim.pos, "une dimension de tableau", Range, dim_type)
 		# TODO kludgey
 		self.resolved_element_type = self.element_type.check(context)
 		return self

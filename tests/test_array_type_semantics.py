@@ -16,6 +16,10 @@ class TestArrayTypeSemantics(LDATestCase):
 		self.check('array_type', 'tableau entier[0..5, 0..5]')
 	
 	def test_non_intrange(self):
-		self.assertRaises(semantic.SemanticError, self.check, 'array_type',
+		self.assertRaises(semantic.SpecificTypeExpected, self.check, 'array_type',
 			'tableau entier["coucou"]')
+		self.assertRaises(semantic.SpecificTypeExpected, self.check, 'array_type',
+			"tableau entier['c']")
+		self.assertRaises(semantic.SpecificTypeExpected, self.check, 'array_type',
+			'tableau entier[1]')
 
