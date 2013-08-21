@@ -20,10 +20,10 @@ class TestLexiconSemantics(LDATestCase):
 				Moule = <>
 				algorithme lexique m : Moule début fin''')
 
-	def test_variable_tries_to_use_function_name_as_type_alias(self):
-		self.assertRaises(semantic.SemanticError, self.check, 'module', '''\
-				fonction wasabi() lexique début fin
-				algorithme lexique w: wasabi début fin''')
+	def test_function_returns_composite(self):
+		self.check('module', '''\
+				Moule = <>
+				fonction f(): Moule lexique début fin''')
 
 	def test_undefined_type_alias(self):
 		self.assertRaises(semantic.MissingDeclaration, self.check, 'algorithm',
@@ -59,4 +59,23 @@ class TestLexiconSemantics(LDATestCase):
 		self.assertRaises(semantic.DuplicateDeclaration, self.check, 'module', '''\
 			fonction f() lexique début fin
 			f = <>''')
+
+	def test_cyclic_composite(self):
+		self.assertRaises(semantic.SemanticError, self.check, 'module',
+				'algorithme lexique Moule = <m: Moule> début fin')
+
+	def test_function_tries_using_function_name_as_return_type_alias(self):
+		self.assertRaises(semantic.SemanticError, self.check, 'module', '''\
+				fonction f() lexique début fin
+				fonction g(): f lexique début fin''')
+
+	def test_composite_tries_using_function_name_as_member_type_alias(self):
+		self.assertRaises(semantic.SemanticError, self.check, 'module', '''\
+				fonction f() lexique début fin
+				Moule = <a: f>''')
+
+	def test_variable_tries_using_function_name_as_type_alias(self):
+		self.assertRaises(semantic.SemanticError, self.check, 'module', '''\
+				fonction wasabi() lexique début fin
+				algorithme lexique w: wasabi début fin''')
 
