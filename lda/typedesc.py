@@ -13,7 +13,14 @@ def _hunt_duplicates(item_list):
 			seen[name] = item
 
 class TypeDescriptor:
-	pass
+	def equivalent(self, other):
+		raise NotImplementedError
+
+	def __eq__(self, other):
+		raise NotImplementedError
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
 		
 class ErroneousType(TypeDescriptor):
 	def __init__(self, name):
@@ -22,6 +29,9 @@ class ErroneousType(TypeDescriptor):
 class Scalar(TypeDescriptor):
 	def __init__(self, keyword):
 		self.keyword = keyword
+
+	def __eq__(self, other):
+		return self is other
 
 	def check(self, context):
 		return self
@@ -64,6 +74,13 @@ class ArrayType(TypeDescriptor):
 	def __init__(self, element_type, dimensions):
 		self.element_type = element_type
 		self.dimensions = dimensions
+
+	def __eq__(self, other):
+		if self is other:
+			return True
+		if not self.equivalent(other):
+			return False
+		return self.dimensions == other.dimensions
 
 	def check(self, context):
 		if len(self.dimensions) == 0:
@@ -130,6 +147,12 @@ class Identifier:
 
 	def __repr__(self):
 		return self.name
+
+	def __eq__(self, other):
+		return self.name == other.name
+
+	def __ne__(self, other):
+		return self.name != other.name
 
 	def lda_format(self, indent=0):
 		return self.name

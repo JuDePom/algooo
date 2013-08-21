@@ -18,6 +18,9 @@ class UnaryOp(Expression):
 		super().__init__(pos)
 		self.rhs = rhs
 
+	def __eq__(self, other):
+		return type(self) == type(other) and self.rhs == other.rhs
+
 	def put_node(self, cluster):
 		op_node = dot.Node(self.keyword_def.default_spelling,
 				cluster, self.rhs.put_node(cluster))
@@ -38,6 +41,11 @@ class BinaryOp(Expression):
 		super().__init__(pos)
 		self.lhs = lhs
 		self.rhs = rhs
+
+	def __eq__(self, other):
+		return type(self) == type(other) and \
+				self.lhs == other.lhs and \
+				self.rhs == other.rhs
 
 	def part_of_rhs(self, whose):
 		return self.precedence > whose.precedence or \

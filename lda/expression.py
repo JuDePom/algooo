@@ -4,7 +4,11 @@ from . import keywords as kw
 from . import dot
 
 class Expression(position.SourceThing):
-	pass
+	def __eq__(self, other):
+		raise NotImplementedError
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
 
 class Varargs(Expression):
 	def __init__(self, pos, arg_list):
@@ -17,6 +21,9 @@ class Varargs(Expression):
 
 	def __len__(self):
 		return len(self.arg_list)
+
+	def __eq__(self, other):
+		return self.arg_list == other.arg_list
 
 	def put_node(self, cluster):
 		def make_arg_node(i, item):
@@ -43,6 +50,9 @@ class _Literal(Expression):
 	def __init__(self, pos, value):
 		super().__init__(pos)
 		self.value = value
+
+	def __eq__(self, other):
+		return type(self) == type(other) and self.value == other.value
 
 	def put_node(self, cluster):
 		return dot.Node(str(self), cluster)
