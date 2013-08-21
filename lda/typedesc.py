@@ -197,13 +197,16 @@ class Lexicon:
 		# hunt duplicates
 		_hunt_duplicates(sorted(self.all_items, key = lambda item: item.ident.pos))
 		# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
-		# fill subcontext with the composites' yet-incomplete contexts
-		# so that composites can cross-reference themselves during the next pass
+		# fill subcontext with references to the composites so that they can
+		# cross-reference themselves during the next pass
 		subcontext = supercontext.copy()
 		subcontext.update({c.ident.name: c for c in self.composites})
+		subcontext.update({f.ident.name: f for f in self.functions})
 		# refine composite subcontexts
 		for composite in self.composites:
 			composite.check(subcontext)
+		for function in self.functions:
+			function.check(subcontext)
 		# do the semantic analysis on the variables last so that they can take
 		# advantage of the composites that were defined in this lexicon.
 		# Put their resolved types in a separate context so that they can't "borrow"

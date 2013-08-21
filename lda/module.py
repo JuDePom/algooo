@@ -4,19 +4,15 @@ from . import dot
 from .errors import semantic
 from .statements import StatementBlock
 
-class Module:
-	def __init__(self, functions, algorithm=None):
-		self.functions = functions
+class Module(typedesc.Lexicon):
+	def __init__(self, variables, composites, functions, algorithm):
+		super().__init__(variables, composites, functions)
 		self.algorithm = algorithm
 
 	def check(self, context=None):
-		if context is None:
-			context = {}
-		supercontext = {f.ident.name: f for f in self.functions}
-		for function in self.functions:
-			function.check(supercontext)
+		subcontext = super().check(context)
 		if self.algorithm is not None:
-			self.algorithm.check(supercontext)
+			self.algorithm.check(subcontext)
 	
 	def put_node(self, cluster):
 		supercluster = dot.Cluster("module", cluster)

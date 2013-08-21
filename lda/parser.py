@@ -173,22 +173,27 @@ class Parser:
 
 	def analyze_module(self):
 		functions = []
+		composites = []
 		algorithm = None
-		has_algorithm = False
 		while not self.eof():
 			with BacktrackFailure(self):
 				functions.append(self.analyze_function())
 				continue
 			with BacktrackFailure(self):
-				algorithm = self.analyze_algorithm()
-				if has_algorithm:
+				new_algorithm = self.analyze_algorithm()
+				if algorithm is None:
+					algorithm = new_algorithm
+				else:
 					raise syntax.SyntaxError(self.pos,
 							"il ne peut y avoir qu'un seul algorithme par module")
-				has_algorithm = True
 				continue
-			raise syntax.ExpectedItem(self.pos, "une fonction ou un algorithme")
-			# TODO : ... ou une def de composite ?
-		return module.Module(functions, algorithm)
+			with BacktrackFailure(self):
+				composites.append(self.analyze_composite_type())
+				continue
+			raise syntax.ExpectedItem(self.pos, "une fonction, un algorithme, "
+					"ou une définition de type composite")
+		return module.Module(variables=None, composites=composites,
+				functions=functions, algorithm=algorithm)
 
 	def analyze_algorithm(self):
 		pos = self.pos
