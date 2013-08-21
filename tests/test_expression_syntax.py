@@ -6,8 +6,7 @@ from lda.errors import syntax
 
 class TestExpressionSyntax(LDATestCase):
 	def _literal(self, expression_string, cls, convert):
-		literal = self.analyze('expression', expression_string)
-		self.assertIsInstance(literal, cls)
+		literal = self.analyze_expression(cls, expression_string)
 		self.assertEqual(literal.value, convert(expression_string))
 			
 	def test_literal_integers(self):
@@ -35,26 +34,23 @@ class TestExpressionSyntax(LDATestCase):
 		test('.0456')
 
 	def test_integer_literals_within_range(self):
-		rangeop = self.analyze('expression', '0..1')
-		self.assertIsInstance(rangeop, operators.IntegerRange)
+		rangeop = self.analyze_expression(operators.IntegerRange, '0..1')
 		self.assertIsInstance(rangeop.lhs, expression.LiteralInteger)
 		self.assertIsInstance(rangeop.rhs, expression.LiteralInteger)
 		self.assertEqual(rangeop.lhs.value, 0)
 		self.assertEqual(rangeop.rhs.value, 1)
 
 	def test_real_literals_within_range(self):
-		rangeop = self.analyze('expression', '0.123..4.567')
+		rangeop = self.analyze_expression(operators.IntegerRange, '0.123..4.567')
 		# Yes, it's an integer range with reals in it, but type checking is part
 		# of the semantic analysis. We're just checking the syntax for now.
-		self.assertIsInstance(rangeop, operators.IntegerRange)
 		self.assertIsInstance(rangeop.lhs, expression.LiteralReal)
 		self.assertIsInstance(rangeop.rhs, expression.LiteralReal)
 		self.assertEqual(rangeop.lhs.value, 0.123)
 		self.assertEqual(rangeop.rhs.value, 4.567)
 	
 	def test_identifiers_within_range(self):
-		rangeop = self.analyze('expression', 'a..b')
-		self.assertIsInstance(rangeop, operators.IntegerRange)
+		rangeop = self.analyze_expression(operators.IntegerRange, 'a..b')
 		self.assertIsInstance(rangeop.lhs, typedesc.Identifier)
 		self.assertIsInstance(rangeop.rhs, typedesc.Identifier)
 		self.assertEqual(rangeop.lhs.name, 'a')
@@ -83,56 +79,32 @@ class TestExpressionSyntax(LDATestCase):
 		test('(**).')
 		test('moule. (**).champ')
 		test('oh_no [ the_closing_square_bracket_is_missing(**)')
-			self.assertRaises(syntax.ExpectedItem, self.analyze, 'expression', s)
-		test('1-')
-		test('1 -')
-		test('1+')
-		test('1 +')
-		test('1*')
-		test('1 *')
-		test('1/')
-		test('1 /')
-		test('1 mod ')
-		test('1..')
-		test('1 ..')
-		test('ident [')
-		test('ident.')
-		test('..')
-		test('*')
-		test('/')
-		test('mod')
-		test('.')
-		test('moule. .champ')
-		test('oh_no [ the_closing_square_bracket_is_missing')
 	
 	def test_root_in_binary_operation_tree(self):
-		def test(s, cls):
-			self.assertIsInstance(self.analyze('expression', s), cls)
-		test('1+1', operators.Addition)
-		test('1-1', operators.Subtraction)
-		test('1/1', operators.Division)
-		test('1*1', operators.Multiplication)
-		test('1..2', operators.IntegerRange)
-		test('ident[ident]', operators.ArraySubscript)
-		test('ident.ident', operators.MemberSelect)
-		test('ident()', operators.FunctionCall)
-		test('ident(ident)', operators.FunctionCall)
-		test('ident(ident, ident, ident)', operators.FunctionCall)
-		test('1+1*1', operators.Addition)
-		test('1*1+1', operators.Addition)
-		test('(1+1)*1', operators.Multiplication)
-		test('1*(1+1)', operators.Multiplication)
-		test('1+1/1', operators.Addition)
-		test('1/1+1', operators.Addition)
-		test('ident[ident].ident', operators.MemberSelect)
-		test('ident.ident[ident]', operators.ArraySubscript)
-		test('ident <- ident < ident', operators.Assignment)
-		test('ident(ident < ident)', operators.FunctionCall)
+		self.analyze_expression(operators.Addition, '1+1')
+		self.analyze_expression(operators.Subtraction, '1-1')
+		self.analyze_expression(operators.Division, '1/1')
+		self.analyze_expression(operators.Multiplication, '1*1')
+		self.analyze_expression(operators.IntegerRange, '1..2')
+		self.analyze_expression(operators.ArraySubscript, 'ident[ident]')
+		self.analyze_expression(operators.MemberSelect, 'ident.ident')
+		self.analyze_expression(operators.FunctionCall, 'ident()')
+		self.analyze_expression(operators.FunctionCall, 'ident(ident)')
+		self.analyze_expression(operators.FunctionCall, 'ident(ident, ident, ident)')
+		self.analyze_expression(operators.Addition, '1+1*1')
+		self.analyze_expression(operators.Addition, '1*1+1')
+		self.analyze_expression(operators.Multiplication, '(1+1)*1')
+		self.analyze_expression(operators.Multiplication, '1*(1+1)')
+		self.analyze_expression(operators.Addition, '1+1/1')
+		self.analyze_expression(operators.Addition, '1/1+1')
+		self.analyze_expression(operators.MemberSelect, 'ident[ident].ident')
+		self.analyze_expression(operators.ArraySubscript, 'ident.ident[ident]')
+		self.analyze_expression(operators.Assignment, 'ident <- ident < ident')
+		self.analyze_expression(operators.FunctionCall, 'ident(ident < ident)')
 
 	def test_array_subscript(self):
 		def test(s, indices):
-			subscript = self.analyze('expression', s)
-			self.assertIsInstance(subscript, operators.ArraySubscript)
+			subscript = self.analyze_expression(operators.ArraySubscript, s)
 			self.assertIsInstance(subscript.rhs, expression.Varargs)
 			self.assertEqual(len(subscript.rhs), len(indices))
 			for rhs_int, reference in zip(subscript.rhs, indices):

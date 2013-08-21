@@ -36,6 +36,19 @@ class LDATestCase(unittest.TestCase):
 			raise Exception("program couldn't be parsed entirely")
 		return thing
 
+	def analyze_expression(self, cls, program, **kwargs):
+		"""
+		Parse an expression and ensure the root node of the result is an instance of
+		the expected expression class.
+		:param cls: The expected class of the parsed expression.
+		:param program: String containing the expression itself.
+		:param kwargs: Optional arguments to pass to the analysis function.
+		:type cls: A subclass of Expression.
+		"""
+		expression = self.analyze('expression', program, **kwargs)
+		self.assertIsInstance(expression, cls)
+		return expression
+
 	def assert_syntax_error(self, error_class, error_marker="(**)", **kwargs):
 		"""
 		Ensure a syntax error is raised at a specific point in the input program.
