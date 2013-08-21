@@ -1,6 +1,7 @@
 from . import keywords as kw
 from . import typedesc
 from . import dot
+from .errors import semantic
 from .statements import StatementBlock
 
 class Module:
@@ -56,8 +57,7 @@ class Algorithm(StatementBlock):
 			subcontext = context
 		else:
 			subcontext = self.lexicon.check(context)
-		for statement in self:
-			statement.check(subcontext)
+		StatementBlock.check(self, subcontext)
 
 class Function(StatementBlock):
 	def __init__(self, pos, ident, fp_list, return_type, lexicon, body):
@@ -66,6 +66,26 @@ class Function(StatementBlock):
 		self.fp_list = fp_list
 		self.lexicon = lexicon
 		self.return_type = return_type
+
+	def check(self, context):
+		# check lexicon
+		if self.lexicon is None:
+			subcontext = context
+		else:
+			subcontext = self.lexicon.check(context)
+		# hunt duplicates among formal parameters
+		typedesc._hunt_duplicates(self.fp_list)
+		# ensure each formal parameter matches its declaration in the lexicon
+		for fp in self.fp_list:
+			try:
+				fp_type = fp.type_descriptor
+				fp_lexicon_type = self.lexicon.symbol_dict[fp.ident.name].type_descriptor
+				if fp_type != fp_lexicon_type:
+					raise semantic.TypeMismatch(fp.ident.pos, fp_type, fp_lexicon_type)
+			except KeyError:
+				raise semantic.FormalParameterMissingInLexicon(fp.ident)
+		# check statements
+		StatementBlock.check(self, subcontext)
 
 	def put_node(self, cluster):
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
@@ -96,8 +116,5 @@ class Function(StatementBlock):
 						params = params,
 						return_type = return_type,
 						lexicon = lexicon,
-						body = body,
-					)
-
-	check = Algorithm.check
+						body = body)
 

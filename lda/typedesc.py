@@ -187,15 +187,15 @@ class Lexicon:
 		self.variables  = variables  if variables  is not None else []
 		self.composites = composites if composites is not None else []
 		self.functions  = functions  if functions  is not None else []
+		self.all_items = self.variables + self.composites + self.functions
+		self.symbol_dict = {item.ident.name: item for item in self.all_items}
 	
 	def check(self, supercontext=None):
 		# initialize supercontext if needed
 		if supercontext is None:
 			supercontext = {}
 		# hunt duplicates
-		all_items = self.variables + self.composites + self.functions
-		all_items.sort(key = lambda item: item.ident.pos)
-		_hunt_duplicates(all_items)
+		_hunt_duplicates(sorted(self.all_items, key = lambda item: item.ident.pos))
 		# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
 		# fill subcontext with the composites' yet-incomplete contexts
 		# so that composites can cross-reference themselves during the next pass

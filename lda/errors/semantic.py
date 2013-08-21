@@ -26,6 +26,15 @@ class MissingDeclaration(SemanticError):
 class UnresolvableTypeAlias(MissingDeclaration):
 	pass
 
+class FormalParameterMissingInLexicon(SemanticError):
+	"""
+	Raised when a function's formal parameter was not found in its lexicon.
+	"""
+	def __init__(self, ident):
+		message = ("ce paramètre formel n'a pas été déclaré dans le "
+			"lexique de la fonction : ") + str(ident)
+		super().__init__(ident.pos, message)
+
 class DuplicateDeclaration(SemanticError):
 	def __init__(self, ident, previous_ident):
 		message = ("l'identificateur \"{}\" est déjà pris "
