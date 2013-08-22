@@ -210,6 +210,11 @@ class Lexicon:
 		# refine composite subcontexts
 		for composite in self.composites:
 			composite.check(subcontext)
+		# Function pass 1: signatures. Resolve function signatures before function
+		# bodies, so that the bodies can refer to other functions.
+		for function in self.functions:
+			function.check_signature(subcontext)
+		# Function pass 2: bodies.
 		for function in self.functions:
 			function.check(subcontext)
 		# do the semantic analysis on the variables last so that they can take

@@ -63,6 +63,12 @@ class Function(StatementBlock):
 		self.lexicon = lexicon
 		self.return_type = return_type
 
+	def check_signature(self, context):
+		self.resolved_return_type = self.return_type.check(context)
+		self.resolved_parameter_types = []
+		for fp in self.fp_list:
+			self.resolved_parameter_types.append(fp.type_descriptor.check(context))
+
 	def check(self, context):
 		# check lexicon
 		if self.lexicon is None:
