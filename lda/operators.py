@@ -186,11 +186,13 @@ class FunctionCall(BinaryOp):
 		if expected_argc != given_argc:
 			raise semantic.ParameterCountMismatch(self.pos,
 					given=given_argc, expected=expected_argc)
-		# TODO: check parameter types
-		raise NotImplementedError("PARAMETER TYPES!!!")
-		# TODO: chaque fonction doit avoir un mini-lexique PRÉ-REMPLI de ses paramètres
-		return function.return_type
-		
+		# check parameter types
+		for effective_param, formal_type in zip(self.rhs, function.resolved_parameter_types):
+			effective_type = effective_param.check(context)
+			if effective_type != formal_type:
+				raise semantic.SpecificTypeExpected(effective_param.pos,
+						"ce paramètre effectif", formal_type, effective_type)
+		return function.resolved_return_type
 
 class MemberSelect(BinaryOp):
 	"""
