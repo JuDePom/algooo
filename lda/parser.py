@@ -174,18 +174,13 @@ class Parser:
 	def analyze_module(self):
 		functions = []
 		composites = []
-		algorithm = None
+		algorithms = []
 		while not self.eof():
 			with BacktrackFailure(self):
 				functions.append(self.analyze_function())
 				continue
 			with BacktrackFailure(self):
-				new_algorithm = self.analyze_algorithm()
-				if algorithm is None:
-					algorithm = new_algorithm
-				else:
-					raise syntax.SyntaxError(self.pos,
-							"il ne peut y avoir qu'un seul algorithme par module")
+				algorithms.append(self.analyze_algorithm())
 				continue
 			with BacktrackFailure(self):
 				composites.append(self.analyze_composite_type())
@@ -193,13 +188,15 @@ class Parser:
 			raise syntax.ExpectedItem(self.pos, "une fonction, un algorithme, "
 					"ou une définition de type composite")
 		return module.Module(variables=None, composites=composites,
-				functions=functions, algorithm=algorithm)
+				functions=functions, algorithms=algorithms)
 
 	def analyze_algorithm(self):
 		pos = self.pos
 		self.consume_keyword(kw.ALGORITHM)
 		# lexicon
-		lexicon = self.analyze_lexicon()
+		lexicon = None
+		with BacktrackFailure(self):
+			lexicon = self.analyze_lexicon()
 		# statement block
 		self.consume_keyword(kw.BEGIN)
 		body, _ = self.analyze_statement_block(kw.END)

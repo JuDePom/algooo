@@ -5,28 +5,33 @@ from .errors import semantic
 from .statements import StatementBlock
 
 class Module(typedesc.Lexicon):
-	def __init__(self, variables, composites, functions, algorithm):
+	def __init__(self, variables, composites, functions, algorithms):
 		super().__init__(variables, composites, functions)
-		self.algorithm = algorithm
+		self.algorithms = algorithms
 
 	def check(self, context=None):
 		subcontext = super().check(context)
-		if self.algorithm is not None:
-			self.algorithm.check(subcontext)
+		if len(self.algorithms) > 1:
+			for a in self.algorithms[1:]:
+				# TODO log these errors
+				raise semantic.SemanticError(a.pos,
+						"il ne peut y avoir qu'un seul algorithme par module")
+		elif len(self.algorithms) == 1:
+			self.algorithms[0].check(subcontext)
 	
 	def put_node(self, cluster):
 		supercluster = dot.Cluster("module", cluster)
 		for f in self.functions:
 			f.put_node(supercluster)
-		if self.algorithm is not None:
-			self.algorithm.put_node(supercluster)
+		if self.algorithms:
+			self.algorithms[0].put_node(supercluster)
 
 	def lda_format(self, indent=0):
 		result = '\n\n'.join(function.lda_format() for function in self.functions)
-		if self.algorithm is not None:
+		if self.algorithms:
 			if result != "":
 				result += '\n\n'
-			result += self.algorithm.lda_format()
+			result += self.algorithms[0].lda_format()
 		return result
 
 	def js_format(self):
