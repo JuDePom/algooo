@@ -166,9 +166,14 @@ class Identifier:
 class TypeAlias(Identifier):
 	def check(self, context):
 		try:
-			return context[self.name]
+			symbol = context[self.name]
 		except KeyError:
 			raise semantic.UnresolvableTypeAlias(self)
+		if isinstance(symbol, CompositeType):
+			return symbol
+		else:
+			raise semantic.SpecificTypeExpected(self.pos,
+					"cet alias", CompositeType, type(symbol))
 
 class Field:
 	def __init__(self, ident, type_descriptor):
