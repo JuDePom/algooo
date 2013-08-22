@@ -81,7 +81,8 @@ class BinaryOpEquivalentSides(BinaryOp):
 		lhs_typedef = self.lhs.check(context)
 		rhs_typedef = self.rhs.check(context)
 		if not lhs_typedef.equivalent(rhs_typedef): # TODO!!!!!
-			raise semantic.TypeMismatch(self.pos, lhs_typedef, rhs_typedef)
+			raise semantic.TypeMismatch(self.pos, "les types des opérandes doivent "
+				"être équivalents", lhs_typedef, rhs_typedef)
 		# TODO avec les types équivalents, il ne faut pas forcément se contenter
 		# du type du LHS, mais plutôt du type le plus "fort" (genre réel >
 		# entier) - TODO voir avec max()

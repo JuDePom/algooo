@@ -56,6 +56,8 @@ class TypeMismatch(TypeError):
 	Raised when two types are expected to be equivalent or identical, and the
 	compiler cannot decide which type makes the most sense to use.
 	"""
+	def __init__(self, pos, what, a, b):
+		message = "{} ({} vs. {})".format(what, a, b)
 		super().__init__(pos, message)
 
 class SpecificTypeExpected(TypeError):

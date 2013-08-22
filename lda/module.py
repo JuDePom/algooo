@@ -18,7 +18,7 @@ class Module(typedesc.Lexicon):
 						"il ne peut y avoir qu'un seul algorithme par module")
 		elif len(self.algorithms) == 1:
 			self.algorithms[0].check(subcontext)
-	
+
 	def put_node(self, cluster):
 		supercluster = dot.Cluster("module", cluster)
 		for f in self.functions:
@@ -85,9 +85,13 @@ class Function(StatementBlock):
 		# ensure each formal parameter matches its declaration in the lexicon
 		for fp in self.fp_list:
 			try:
+				fp_type = fp.type_descriptor
 				fp_lexicon = self.lexicon.symbol_dict[fp.ident.name]
-				if fp != fp_lexicon:
-					raise semantic.TypeMismatch(fp_lexicon.type_descriptor.pos, fp.type_descriptor, fp_lexicon.type_descriptor)
+				fp_lexicon_type = fp_lexicon.type_descriptor
+				if fp_type != fp_lexicon_type:
+					raise semantic.TypeMismatch(fp_lexicon.ident.pos, "le type de ce paramètre "
+						"formel doit rester le même dans l'en-tête de la fonction et dans "
+						"le lexique de la fonction", fp_lexicon_type, fp_type)
 			except KeyError:
 				raise semantic.FormalParameterMissingInLexicon(fp.ident)
 		# check statements
