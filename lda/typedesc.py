@@ -119,9 +119,8 @@ class CompositeType(TypeDescriptor):
 	def check(self, supercontext):
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
 		_hunt_duplicates(self.field_list)
-		# add to context
+		# create and populate this composite's context
 		self.context = {}
-		errors = 0
 		for field in self.field_list:
 			name = field.ident.name
 			try:
@@ -129,12 +128,9 @@ class CompositeType(TypeDescriptor):
 				assert type_descriptor is not None, "un check() a retourné None"
 				self.context[name] = type_descriptor
 			except semantic.UnresolvableTypeAlias as e:
-				errors += 1
-				# TODO il faudrait le logger au lieu de le printer à l'arrache
+				# TODO il faudrait le logger au lieu de le lever à l'arrache
 				self.context[name] = ErroneousType(name)
-				print (e)
-		if errors > 0:
-			print ("il y a eu des erreurs de résolution de types, la compilation ne pourra pas être terminée")
+				raise e
 
 	def lda_format(self, indent=0):
 		result = ", ".join(param.lda_format() for param in self.field_list)
