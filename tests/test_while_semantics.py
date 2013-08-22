@@ -1,5 +1,6 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
+from lda.module import Algorithm
 
 class TestWhileSemantics(LDATestCase):
 	def test_while_non_boolean_condition(self):
@@ -14,9 +15,9 @@ class TestWhileSemantics(LDATestCase):
 					ca: caractère
 					m: Moule
 				début
-					tantque {} faire ftant
+					tantque (**){} faire ftant
 				fin'''.format(raw_condition)
-			self.assertRaises(semantic.SemanticError, self.check, 'module', program)
+			self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm, program=program)
 		test('1234')
 		test('123.456')
 		test('"les poules ont des dents"')

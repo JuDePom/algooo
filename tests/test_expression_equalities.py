@@ -67,7 +67,7 @@ class TestExpressionEqualities(ldatestcase.LDATestCase):
 		self.assertNotEqual(not1, not3)
 		
 	def test_range_equalities(self):
-		r = lambda program: self.analyze_expression(ops.IntegerRange, program)
+		r = lambda program: self.analyze(ops.IntegerRange, program)
 		self.assertEqual(r('0..5'), r('  0..5'))
 		self.assertEqual(r('0..5'), r('  0 .. 5 '))
 		self.assertEqual(r('0..5'), r('0 ..5'))

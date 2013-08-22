@@ -57,7 +57,7 @@ class IfThenElse(Statement):
 	def check(self, context):
 		condition_type = self.condition.check(context)
 		if condition_type is not typedesc.Boolean:
-			raise semantic.SpecificTypeExpected(self.pos, "la condition",
+			raise semantic.SpecificTypeExpected(self.condition.pos, "la condition",
 					expected=typedesc.Boolean, given=condition_type)
 		self.then_block.check(context)
 		if self.else_block is not None:

@@ -10,6 +10,7 @@ class SemanticError(Exception):
 	invariably fail to produce a working program.
 	'''
 	def __init__(self, pos, message):
+		self.pos = pos
 		message = pos.pretty() + ": erreur de sémantique : " + message
 		super().__init__(message)
 

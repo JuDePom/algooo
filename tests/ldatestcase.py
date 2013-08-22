@@ -1,5 +1,5 @@
 import unittest
-from lda import parser
+from lda import parser, module, expression, typedesc, statements
 from lda import errors
 
 class LDATestCase(unittest.TestCase):
@@ -10,21 +10,42 @@ class LDATestCase(unittest.TestCase):
 	def setUp(self):
 		self.parser = parser.Parser()
 
-	def analyze(self, analyze, program, **kwargs):
+		self.parsing_functions = {
+				module.Module:               self.parser.analyze_module,
+				module.Function:             self.parser.analyze_function,
+				module.Algorithm:            self.parser.analyze_algorithm,
+				expression.Varargs:          self.parser.analyze_varargs,
+				typedesc.ArrayType:          self.parser.analyze_array_type,
+				typedesc.Lexicon:            self.parser.analyze_lexicon,
+				typedesc.CompositeType:      self.parser.analyze_composite_type,
+				statements.While:            self.parser.analyze_while,
+				statements.For:              self.parser.analyze_for,
+				statements.IfThenElse:       self.parser.analyze_if,
+		}
+
+	def analyze(self, cls, program, **kwargs):
 		"""
-		Parse a program and raise the most relevant syntax error if needed.
-		If the program couldn't be parsed in its entirety, an exception
-		will be raised.
+		Parse a program. Raise the most relevant syntax error if needed.
+		If the program was syntactically correct, ensure that:
+		- the resulting node is an instance of the class passed as a parameter
+		- the program was parsed in its entirety
 
 		:param analyze: The string "analyze_" will be prepended to this in order to
 			obtain the full name of the desired analysis method of the Parser class.
 			For example, if you want to use "analyze_expression", set this argument
 			to "expression".
+		:param cls: The expected class of the resulting node.
 		:param program: String containing the program itself.
 		:param kwargs: Optional arguments to pass to the analysis function.
 		"""
 		self.parser.set_buf(program)
-		analyze_func = getattr(self.parser, 'analyze_' + analyze)
+		try:
+			analyze_func = self.parsing_functions[cls]
+		except KeyError as e:
+			if issubclass(cls, expression.Expression):
+				analyze_func = self.parser.analyze_expression
+			else:
+				raise e
 		try:
 			with parser.RelevantFailureLogger(self.parser):
 				thing = analyze_func(**kwargs)
@@ -32,24 +53,11 @@ class LDATestCase(unittest.TestCase):
 			# TODO get rid of this kludge ASAP (e.g. by decorating all
 			# parser methods so that they raise relevant_syntax_error)
 			raise self.parser.relevant_syntax_error
-		if not self.parser.eof():
-			raise Exception("program couldn't be parsed entirely")
+		self.assertTrue(self.parser.eof(), "program couldn't be parsed entirely")
+		self.assertIsInstance(thing, cls)
 		return thing
 
-	def analyze_expression(self, cls, program, **kwargs):
-		"""
-		Parse an expression and ensure the root node of the result is an instance of
-		the expected expression class.
-		:param cls: The expected class of the parsed expression.
-		:param program: String containing the expression itself.
-		:param kwargs: Optional arguments to pass to the analysis function.
-		:type cls: A subclass of Expression.
-		"""
-		expression = self.analyze('expression', program, **kwargs)
-		self.assertIsInstance(expression, cls)
-		return expression
-
-	def assert_syntax_error(self, error_class, error_marker="(**)", **kwargs):
+	def assertLDAError(self, error_class, analyzer, error_marker="(**)", **kwargs):
 		"""
 		Ensure a syntax error is raised at a specific point in the input program.
 
@@ -62,14 +70,14 @@ class LDATestCase(unittest.TestCase):
 		:param
 		"""
 		with self.assertRaises(error_class) as cm:
-			self.analyze(**kwargs)
+			analyzer(**kwargs)
 		error = cm.exception
 		marker_pos = kwargs['program'].find(error_marker)
 		self.assertGreaterEqual(marker_pos, 0, "can't find error_marker")
 		self.assertEqual(error.pos.char, marker_pos + len(error_marker),
 				"exception wasn't raised at expected position")
 
-	def check(self, analysis_name, program, context=None):
+	def check(self, context=None, **kwargs):
 		"""
 		Perform syntactic and semantic analysis of a program.
 
@@ -80,5 +88,5 @@ class LDATestCase(unittest.TestCase):
 		"""
 		if context is None:
 			context = {}
-		return self.analyze(analysis_name, program).check(context)
+		return self.analyze(**kwargs).check(context)
 
