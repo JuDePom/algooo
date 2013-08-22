@@ -85,10 +85,9 @@ class Function(StatementBlock):
 		# ensure each formal parameter matches its declaration in the lexicon
 		for fp in self.fp_list:
 			try:
-				fp_type = fp.type_descriptor
-				fp_lexicon_type = self.lexicon.symbol_dict[fp.ident.name].type_descriptor
-				if fp_type != fp_lexicon_type:
-					raise semantic.TypeMismatch(fp.ident.pos, fp_type, fp_lexicon_type)
+				fp_lexicon = self.lexicon.symbol_dict[fp.ident.name]
+				if fp != fp_lexicon:
+					raise semantic.TypeMismatch(fp_lexicon.type_descriptor.pos, fp.type_descriptor, fp_lexicon.type_descriptor)
 			except KeyError:
 				raise semantic.FormalParameterMissingInLexicon(fp.ident)
 		# check statements

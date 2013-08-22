@@ -13,15 +13,19 @@ def _hunt_duplicates(item_list):
 			seen[name] = item
 
 class TypeDescriptor:
-	def equivalent(self, other):
-		raise NotImplementedError
-
 	def __eq__(self, other):
 		raise NotImplementedError
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
-		
+
+	def equivalent(self, other):
+		if self.__eq__(other):
+			return self
+
+	def compatible(self, other):
+		return self.__eq__(other.equivalent(self))
+
 class ErroneousType(TypeDescriptor):
 	def __init__(self, name):
 		self.name = name
@@ -30,16 +34,15 @@ class Scalar(TypeDescriptor):
 	def __init__(self, keyword):
 		self.keyword = keyword
 
+	def __repr__(self):
+		return str(self.keyword)
+
 	def __eq__(self, other):
 		return self is other
 
 	def check(self, context):
 		return self
 
-	def equivalent(self, other):
-		if other is self:
-			return self
-	
 	def lda_format(self, indent=0):
 		return str(self.keyword)
 
@@ -116,6 +119,13 @@ class CompositeType(TypeDescriptor):
 		self.ident = ident
 		self.field_list = field_list
 
+	def __eq__(self, other):
+		if self is other:
+			return True
+		if not isinstance(other, CompositeType):
+			return False
+		return self.ident == other.ident and self.field_list == other.field_list
+
 	def check(self, supercontext):
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
 		_hunt_duplicates(self.field_list)
@@ -175,6 +185,11 @@ class Field:
 	def __init__(self, ident, type_descriptor):
 		self.ident = ident
 		self.type_descriptor = type_descriptor
+
+	def __eq__(self, other):
+		if self is other:
+			return True
+		return self.ident == other.ident and self.type_descriptor == other.type_descriptor
 
 	def lda_format(self, indent=0):
 		return "{} : {}".format(self.ident.name,
