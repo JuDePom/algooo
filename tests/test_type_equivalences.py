@@ -29,18 +29,18 @@ class TestTypeEquivalences(LDATestCase):
 		self._test_conflict_both_ways(Integer, String)
 		self._test_conflict_both_ways(Integer, Character)
 		self._test_conflict_both_ways(Integer, Boolean)
-		self._test_conflict_both_ways(Integer, self.analyze(ArrayType, 'tableau entier[0..5]'))
+		self._test_conflict_both_ways(Integer, self.analyze(Array, 'tableau entier[0..5]'))
 		self._test_conflict_both_ways(Integer, self.analyze(CompositeType, 'Moule = <a: entier>'))
 
 	def test_real_incompatible_with_non_numbers(self):
 		self._test_conflict_both_ways(Real, String)
 		self._test_conflict_both_ways(Real, Character)
 		self._test_conflict_both_ways(Real, Boolean)
-		self._test_conflict_both_ways(Real, self.analyze(ArrayType, 'tableau réel[0..5]'))
+		self._test_conflict_both_ways(Real, self.analyze(Array, 'tableau réel[0..5]'))
 		self._test_conflict_both_ways(Real, self.analyze(CompositeType, 'Moule = <a: réel>'))
 
 	def test_string_incompatible_with_composite_and_array(self):
-		self._test_conflict_both_ways(String, self.analyze(ArrayType, 'tableau caractère[0..5]'))
+		self._test_conflict_both_ways(String, self.analyze(Array, 'tableau caractère[0..5]'))
 		self._test_conflict_both_ways(String, self.analyze(CompositeType, 'Moule = <a: chaîne>'))
 
 	def test_composite_compatible_with_itself(self):
@@ -54,28 +54,50 @@ class TestTypeEquivalences(LDATestCase):
 		moule2 = self.analyze(CompositeType, 'Moule2 = <>')
 		self._test_conflict_both_ways(moule1, moule2)
 
-	def test_array_compatible_with_itself(self):
-		array = self.analyze(ArrayType, 'tableau entier[0..5]')
+	def test_1d_static_array_compatible_with_itself(self):
+		array = self.analyze(Array, 'tableau entier[0..5]')
 		self._test_self_compatibility(array)
 
-	def test_array_incompatible_with_array_of_same_type_and_different_dimensions(self):
-		array1d = self.analyze(ArrayType, 'tableau entier[0..5]')
-		array2d = self.analyze(ArrayType, 'tableau entier[0..5,0..5]')
+	def test_2d_static_array_compatible_with_itself(self):
+		array = self.analyze(Array, 'tableau entier[0..5, -1337..1337]')
+		self._test_self_compatibility(array)
+
+	def test_1d_static_array_incompatible_with_2d_static_array(self):
+		array1d = self.analyze(Array, 'tableau entier[0..5]')
+		array2d = self.analyze(Array, 'tableau entier[0..5,0..5]')
 		self._test_conflict_both_ways(array1d, array2d)
 
-	def test_array_incompatible_with_array_of_same_type_and_different_bounds(self):
-		array1 = self.analyze(ArrayType, 'tableau entier[0..1]')
-		array2 = self.analyze(ArrayType, 'tableau entier[0..2]')
-		array3 = self.analyze(ArrayType, 'tableau entier[-1..1]')
-		array4 = self.analyze(ArrayType, 'tableau entier[-1..2]')
+	def test_1d_static_array_incompatible_with_1d_static_array_with_other_bounds(self):
+		array1 = self.analyze(Array, 'tableau entier[0..1]')
+		array2 = self.analyze(Array, 'tableau entier[0..2]')
+		array3 = self.analyze(Array, 'tableau entier[-1..1]')
+		array4 = self.analyze(Array, 'tableau entier[-1..2]')
 		self._test_conflict_both_ways(array1, array2)
 		self._test_conflict_both_ways(array1, array3)
 		self._test_conflict_both_ways(array1, array4)
 
-	def test_array_incompatible_with_array_of_different_type_and_same_dimensions(self):
-		int_array  = self.analyze(ArrayType, 'tableau entier[0..5]')
-		real_array = self.analyze(ArrayType, 'tableau réel[0..5]')
+	def test_1d_static_array_incompatible_with_1d_array_of_different_type_and_same_bounds(self):
+		int_array  = self.analyze(Array, 'tableau entier[0..5]')
+		real_array = self.analyze(Array, 'tableau réel[0..5]')
 		self._test_conflict_both_ways(int_array, real_array)
+	
+	def test_1d_dynamic_array_compatible_with_itself(self):
+		array = self.analyze(Array, 'tableau entier[?]')
+		self._test_self_compatibility(array)
+
+	def test_1d_dynamic_array_compatible_with_other_1d_dynamic_array(self):
+		array1 = self.analyze(Array, 'tableau entier[?]')
+		array2 = self.analyze(Array, 'tableau entier[?]')
+		self._test_compatibility_both_ways(array1, array2)
+
+	def test_2d_half_dynamic_half_static_array_compatible_with_itself(self):
+		array = self.analyze(Array, 'tableau entier[?, 0..5]')
+		self._test_self_compatibility(array)
+
+	def test_2d_half_dynamic_half_static_array_compatible_with_other_such_array(self):
+		array1 = self.analyze(Array, 'tableau entier[?, 0..5]')
+		array2 = self.analyze(Array, 'tableau entier[?, 0..5]')
+		self._test_compatibility_both_ways(array1, array2)
 
 	def test_pass_real_to_function_expecting_integer(self):
 		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=Module, program='''\

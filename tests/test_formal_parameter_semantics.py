@@ -10,13 +10,9 @@ class TestFormalParameterSemantics(LDATestCase):
 	def test_scalar_formal_parameter_present_in_lexicon(self):
 		self.check(cls=Function, program='fonction f(a: entier) lexique a: entier début fin')
 
-	def test_fixed_array_formal_parameter_present_in_lexicon(self):
+	def test_static_array_formal_parameter_present_in_lexicon(self):
 		self.check(cls=Function, program='''fonction f(a: tableau entier[0..5])
 			lexique a: tableau entier[0..5] début fin''')
-
-	def test_array_of_unknown_size_formal_parameter_present_in_lexicon(self):
-		self.check(cls=Function, program='''fonction f(a: tableau entier[0..n], n: entier)
-			lexique a: tableau entier[0..n] n: entier début fin''')
 
 	def test_formal_parameter_different_type_in_lexicon(self):
 		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Function,

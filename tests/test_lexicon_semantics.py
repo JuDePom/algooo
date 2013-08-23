@@ -3,23 +3,6 @@ from lda.errors import semantic
 from lda.module import Module, Algorithm
 
 class TestLexiconSemantics(LDATestCase):
-	def test_array_type_using_variable_in_its_dimensions(self):
-		self.check(cls=Algorithm, program='''algorithme
-				lexique t: tableau entier[0..n] n: entier
-				début fin''')
-
-	def test_composite_containing_array_type_using_function_level_variable_in_its_dimensions(self):
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm,
-				program='''algorithme
-				lexique Moule=<t:tableau entier[0..n]> n:entier
-				début fin''')
-
-	def test_illegal_recursive_array_type(self):
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm,
-				program='''algorithme
-				lexique t: tableau entier[0..(**)t]
-				début fin''')
-
 	def test_variable_absent_from_lexicon(self):
 		self.assertLDAError(semantic.MissingDeclaration, self.check, cls=Algorithm,
 			program='algorithme lexique début (**)a <- 3 fin')

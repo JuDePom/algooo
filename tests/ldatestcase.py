@@ -15,7 +15,7 @@ class LDATestCase(unittest.TestCase):
 				module.Function:             self.parser.analyze_function,
 				module.Algorithm:            self.parser.analyze_algorithm,
 				expression.Varargs:          self.parser.analyze_varargs,
-				typedesc.ArrayType:          self.parser.analyze_array_type,
+				typedesc.Array:              self.parser.analyze_array,
 				typedesc.Lexicon:            self.parser.analyze_lexicon,
 				typedesc.CompositeType:      self.parser.analyze_composite_type,
 				statements.While:            self.parser.analyze_while,
@@ -53,8 +53,9 @@ class LDATestCase(unittest.TestCase):
 			# TODO get rid of this kludge ASAP (e.g. by decorating all
 			# parser methods so that they raise relevant_syntax_error)
 			raise self.parser.relevant_syntax_error
-		self.assertTrue(self.parser.eof(), "program couldn't be parsed entirely")
 		self.assertIsInstance(thing, cls)
+		self.assertTrue(self.parser.eof(), ("program couldn't be parsed entirely, "
+				"stopped at {}").format(self.parser.pos))
 		return thing
 
 	def assertLDAError(self, error_class, analyzer, error_marker="(**)", **kwargs):

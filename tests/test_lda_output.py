@@ -30,7 +30,7 @@ class test_lda_output(unittest.TestCase):
 		moule_alias = typedesc.TypeAlias(None, "Moule")
 		range_i = operators.IntegerRange(None, expression.LiteralInteger(None, 0), _id("i"))
 		range_j = operators.IntegerRange(None, expression.LiteralInteger(None, 0), _id("j"))
-		tab = typedesc.ArrayType(moule_alias, [range_i, range_j])
+		tab = typedesc.Array(moule_alias, [range_i, range_j])
 		tab_field = typedesc.Field(_id("tab"), tab)
 		lexicon = typedesc.Lexicon(variables=[tab_field], composites=[moule])
 		self.assertEqual(lexicon.lda_format(), expected)

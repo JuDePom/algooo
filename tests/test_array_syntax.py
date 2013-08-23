@@ -1,8 +1,13 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import syntax
-from lda.module import Algorithm
+from lda.module import Algorithm, Function
+from lda.typedesc import Array, Lexicon
 
-class TestArrayTypeSyntax(LDATestCase):
+class TestArraySyntax(LDATestCase):
+	def test_incomplete_intrange(self):
+		self.assertLDAError(syntax.ExpectedItem, self.analyze, cls=Array,
+			program='tableau entier[1 ..(**)]')
+
 	def test_illegal_nested_array_syntax(self):
 		# This one has to be parsed as an entire algorithm, not just as a bare
 		# lexicon. This is because a lexicon is delimited by the first unknown
