@@ -1,8 +1,16 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
+from lda.statements import IfThenElse
 from lda.module import Algorithm
 
 class TestIfSemantics(LDATestCase):
+	def test_if_literal_boolean_condition(self):
+		self.check(cls=IfThenElse, program="si vrai alors fsi")
+		self.check(cls=IfThenElse, program="si faux alors fsi")
+
+	def test_if_boolean_expression_condition(self):
+		self.check(cls=IfThenElse, program="si 1+1=2 alors fsi")
+
 	def test_if_non_boolean_condition(self):
 		def test(raw_condition):
 			program = '''\

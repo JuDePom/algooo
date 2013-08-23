@@ -97,6 +97,8 @@ class TestExpressionSyntax(LDATestCase):
 		self.analyze(operators.Multiplication, '1*(1+1)')
 		self.analyze(operators.Addition, '1+1/1')
 		self.analyze(operators.Addition, '1/1+1')
+		self.analyze(operators.Equal, '1+1=2')
+		self.analyze(operators.Equal, '2=1+1')
 		self.analyze(operators.MemberSelect, 'ident[ident].ident')
 		self.analyze(operators.ArraySubscript, 'ident.ident[ident]')
 		self.analyze(operators.Assignment, 'ident <- ident < ident')

@@ -1,11 +1,19 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
+from lda.statements import While
 from lda.module import Algorithm
 
 class TestWhileSemantics(LDATestCase):
+	def test_while_literal_boolean_condition(self):
+		self.check(cls=While, program="tantque vrai faire ftant")
+		self.check(cls=While, program="tantque faux faire ftant")
+
+	def test_while_boolean_expression_condition(self):
+		self.check(cls=While, program="tantque 1+1=2 faire ftant")
+
 	def test_while_non_boolean_condition(self):
 		def test(raw_condition):
-			program = '''
+			program = '''\
 				algorithme
 				lexique
 					Moule = <>
