@@ -62,6 +62,6 @@ class MissingRightOperand(SyntaxError):
 	'''
 
 	def __init__(self, pos):
-		super().__init__(pos, "cet opérateur requiert une opérande "
+		super().__init__(pos, "cet opérateur requiert un opérande "
 			"valide à sa droite")
 
