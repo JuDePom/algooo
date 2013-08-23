@@ -13,6 +13,9 @@ def _hunt_duplicates(item_list):
 			seen[name] = item
 
 class TypeDescriptor:
+	def __init__(self):
+		self.resolved_type = self
+
 	def __eq__(self, other):
 		raise NotImplementedError
 
@@ -28,10 +31,12 @@ class TypeDescriptor:
 
 class ErroneousType(TypeDescriptor):
 	def __init__(self, name):
+		super().__init__()
 		self.name = name
 
 class Scalar(TypeDescriptor):
 	def __init__(self, keyword):
+		super().__init__()
 		self.keyword = keyword
 
 	def __repr__(self):
@@ -61,20 +66,17 @@ Real      = Scalar(kw.REAL)
 Boolean   = Scalar(kw.BOOL)
 Character = Scalar(kw.CHAR)
 String    = Scalar(kw.STRING)
+Void      = Scalar(None)
 
 _dual_scalar_compatibility(weak=Integer, strong=Real)
 _dual_scalar_compatibility(weak=Character, strong=String)
-
-class Void(TypeDescriptor):
-	@staticmethod
-	def check(context):
-		return Void
 
 class Range(TypeDescriptor):
 	pass
 
 class ArrayType(TypeDescriptor):
 	def __init__(self, element_type, dimensions):
+		super().__init__()
 		self.element_type = element_type
 		self.dimensions = dimensions
 
@@ -90,12 +92,12 @@ class ArrayType(TypeDescriptor):
 			raise semantic.SemanticError(self.dimensions.pos,
 					"un tableau doit avoir au moins une dimension")
 		for dim in self.dimensions:
-			dim_type = dim.check(context)
+			dim_type = dim.check(context).resolved_type
 			if dim_type is not Range:
 				raise semantic.SpecificTypeExpected(
 						dim.pos, "une dimension de tableau", Range, dim_type)
 		# TODO kludgey
-		self.resolved_element_type = self.element_type.check(context)
+		self.resolved_element_type = self.element_type.check(context).resolved_type
 		return self
 
 	def lda_format(self, indent=0):
@@ -116,6 +118,7 @@ class ArrayType(TypeDescriptor):
 
 class CompositeType(TypeDescriptor):
 	def __init__(self, ident, field_list):
+		super().__init__()
 		self.ident = ident
 		self.field_list = field_list
 
@@ -174,6 +177,7 @@ class TypeAlias(Identifier):
 		try:
 			symbol = context[self.name]
 		except KeyError:
+			# TODO return ErroneousType ?
 			raise semantic.UnresolvableTypeAlias(self)
 		if isinstance(symbol, CompositeType):
 			return symbol
@@ -190,6 +194,10 @@ class Field:
 		if self is other:
 			return True
 		return self.ident == other.ident and self.type_descriptor == other.type_descriptor
+
+	def check(self, context):
+		self.resolved_type = self.type_descriptor.check(context).resolved_type
+		return self
 
 	def lda_format(self, indent=0):
 		return "{} : {}".format(self.ident.name,

@@ -69,10 +69,13 @@ class Function(StatementBlock):
 		self.return_type = return_type
 
 	def check_signature(self, context):
-		self.resolved_return_type = self.return_type.check(context)
+		subcontext = context.copy()
+		for fp in self.fp_list:
+			subcontext[fp.ident.name] = fp
+		self.resolved_return_type = self.return_type.check(subcontext)
 		self.resolved_parameter_types = []
 		for fp in self.fp_list:
-			self.resolved_parameter_types.append(fp.type_descriptor.check(context))
+			self.resolved_parameter_types.append(fp.type_descriptor.check(subcontext).resolved_type)
 
 	def check(self, context):
 		# check lexicon

@@ -55,7 +55,7 @@ class IfThenElse(Statement):
 		self.else_block = else_block
 
 	def check(self, context):
-		condition_type = self.condition.check(context)
+		condition_type = self.condition.check(context).resolved_type
 		if condition_type is not typedesc.Boolean:
 			raise semantic.SpecificTypeExpected(self.condition.pos, "la condition",
 					expected=typedesc.Boolean, given=condition_type)
@@ -106,14 +106,15 @@ class For(Statement):
 	def check(self, context):
 		components = [self.counter, self.initial, self.final]
 		for component, name in zip(components, For._COMPONENT_NAMES):
-			component_type = component.check(context)
+			component_type = component.check(context).resolved_type
 			if component_type is not typedesc.Integer:
 				raise semantic.SpecificTypeExpected(component.pos, name,
 						expected=typedesc.Integer, given=component_type)
-		if isinstance(self.counter, expression._Literal):
+		if isinstance(self.counter, expression.Literal):
 			raise semantic.SemanticError(self.counter.pos,
 					"le compteur ne peut pas être constant")
 		self.block.check(context)
+		return self
 
 	def put_node(self, cluster):
 		counter_node = self.counter.put_node(cluster)
@@ -143,12 +144,13 @@ class While(Statement):
 		self.block = block	
 
 	def check(self, context):
-		condition_type = self.condition.check(context)
+		condition_type = self.condition.check(context).resolved_type
 		if condition_type is not typedesc.Boolean:
 			raise semantic.SpecificTypeExpected(self.condition.pos,
 					"la condition de la boucle",
 					expected=typedesc.Boolean, given=condition_type)
 		self.block.check(context)
+		return self
 
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)

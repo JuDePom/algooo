@@ -44,9 +44,10 @@ class Varargs(Expression):
 		return ", ".join(param.lda_format() for param in self.arg_list)
 		
 	def check(self, context):
-		return [arg.check(context) for arg in self]
+		self.resolved_type = [arg.check(context) for arg in self]
+		return self
 
-class _Literal(Expression):
+class Literal(Expression):
 	def __init__(self, pos, value):
 		super().__init__(pos)
 		self.value = value
@@ -58,28 +59,28 @@ class _Literal(Expression):
 		return dot.Node(str(self), cluster)
 
 	def check(self, context):
-		return self._typedef
+		return self
 
-class LiteralInteger(_Literal):
-	_typedef = typedesc.Integer
-
-	def lda_format(self, indent=0):
-		return str(self.value)
-
-class LiteralReal(_Literal):
-	_typedef = typedesc.Real
+class LiteralInteger(Literal):
+	resolved_type = typedesc.Integer
 
 	def lda_format(self, indent=0):
 		return str(self.value)
 
-class LiteralString(_Literal):
-	_typedef = typedesc.String
+class LiteralReal(Literal):
+	resolved_type = typedesc.Real
+
+	def lda_format(self, indent=0):
+		return str(self.value)
+
+class LiteralString(Literal):
+	resolved_type = typedesc.String
 
 	def lda_format(self, indent=0):
 		return '"{}"'.format(self.value)
 
-class LiteralCharacter(_Literal):
-	_typedef = typedesc.Character
+class LiteralCharacter(Literal):
+	resolved_type = typedesc.Character
 
 	def __init__(self, pos, value):
 		super().__init__(pos, value)
@@ -88,8 +89,8 @@ class LiteralCharacter(_Literal):
 	def lda_format(self, indent=0):
 		return "'{}'".format(self.value)
 
-class LiteralBoolean(_Literal):
-	_typedef = typedesc.Boolean
+class LiteralBoolean(Literal):
+	resolved_type = typedesc.Boolean
 
 	def lda_format(self, indent=0):
 		return kw.TRUE.default_spelling if self.value else kw.FALSE.default_spelling
