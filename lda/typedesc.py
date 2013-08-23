@@ -74,7 +74,45 @@ _dual_scalar_compatibility(weak=Character, strong=String)
 class Range(TypeDescriptor):
 	pass
 
-class ArrayType(TypeDescriptor):
+class Array(TypeDescriptor):
+	class StaticDimension:
+		def __init__(self, expression):
+			self.expression = expression
+
+		def __eq__(self, other):
+			return self is other or (isinstance(other, Array.StaticDimension) and \
+					self.expression == other.expression)#self.low == other.low and self.high == other.high)
+
+		def check(self):
+			try:
+				self.expression.check({})
+			except semantic.MissingDeclaration as e:
+				raise semantic.SemanticError(e.pos,
+						"une borne de tableau statique doit être construite à partir "
+						"d'une expression constante")
+			if self.expression.resolved_type is not Range:
+				raise semantic.SemanticError(self.expression.pos,
+						"les bornes d'un tableau statique doivent être données "
+						"sous forme d'intervalle d'entiers littéraux")
+			self.low  = self.expression.lhs
+			self.high = self.expression.rhs
+
+		def lda_format(self):
+			return self.expression.lda_format()
+
+	class DynamicDimension:
+		def __init__(self, pos):
+			self.pos = pos
+
+		def __eq__(self, other):
+			return isinstance(other, Array.DynamicDimension)
+
+		def check(self):
+			pass
+
+		def lda_format(self):
+			return "?"
+
 	def __init__(self, element_type, dimensions):
 		super().__init__()
 		self.element_type = element_type
@@ -92,22 +130,18 @@ class ArrayType(TypeDescriptor):
 			raise semantic.SemanticError(self.dimensions.pos,
 					"un tableau doit avoir au moins une dimension")
 		for dim in self.dimensions:
-			dim_type = dim.check(context).resolved_type
-			if dim_type is not Range:
-				raise semantic.SpecificTypeExpected(
-						dim.pos, "une dimension de tableau", Range, dim_type)
-		# TODO kludgey
+			dim.check()
 		self.resolved_element_type = self.element_type.check(context).resolved_type
 		return self
 
-	def lda_format(self, indent=0):
+	def lda_format(self):
 		return "{kw.ARRAY} {element_type}[{dimensions}]".format(
 				kw = kw,
 				element_type = self.element_type.lda_format(),
 				dimensions = ", ".join(dim.lda_format() for dim in self.dimensions))
 
 	def equivalent(self, other):
-		if not isinstance(other, ArrayType):
+		if not isinstance(other, Array):
 			return
 		if self.element_type != other.element_type:
 			return
@@ -222,31 +256,28 @@ class Lexicon:
 		# hunt duplicates
 		_hunt_duplicates(sorted(self.all_items, key = lambda item: item.ident.pos))
 		# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
-		# fill subcontext with references to the composites so that they can
-		# cross-reference themselves during the next pass
+		# fill subcontext with the contents of the lexicon so that items can
+		# refer to other items in the lexicon
 		subcontext = supercontext.copy()
 		subcontext.update({c.ident.name: c for c in self.composites})
 		subcontext.update({f.ident.name: f for f in self.functions})
+		subcontext.update({v.ident.name: v for v in self.variables})
 		# refine composite subcontexts
 		for composite in self.composites:
 			composite.check(subcontext)
-		# Function pass 1: signatures. Resolve function signatures before function
-		# bodies, so that the bodies can refer to other functions.
+		# resolve function signatures before function bodies,  so that the
+		# functions can call functions defined within this lexicon
 		for function in self.functions:
 			function.check_signature(subcontext)
 		# Function pass 2: bodies.
 		for function in self.functions:
 			function.check(subcontext)
-		# do the semantic analysis on the variables last so that they can take
-		# advantage of the composites that were defined in this lexicon.
-		# Put their resolved types in a separate context so that they can't "borrow"
-		# another variable's type by using its name as a TypeAlias.
-		# TODO - if there are any global variables this will need to be refined.
-		# TODO - they might still be able to borrow function return types from the name of the function...
-		variable_context = {v.ident.name: v.type_descriptor.check(subcontext)
-				for v in self.variables}
-		# merge
-		subcontext.update(variable_context)
+		# resolve variable types
+		for variable in self.variables:
+			variable.check(subcontext)
+		# detect infinite recursion in composites
+		for composite in self.composites:
+			composite.detect_loops(composite)
 		return subcontext
 
 	def lda_format(self, indent=0):

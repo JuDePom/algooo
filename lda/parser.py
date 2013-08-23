@@ -240,32 +240,43 @@ class Parser:
 				kw.CHAR   : typedesc.Character,
 				kw.STRING : typedesc.String,
 		}
-		with CriticalItem(self, "un type scalaire"):
-			scalar_kw = self.consume_keyword_choice(*scalars.keys())
-			return scalars[scalar_kw]
+		scalar_kw = self.consume_keyword_choice(*scalars.keys())
+		return scalars[scalar_kw]
 
-	def analyze_array_type(self):
+	def analyze_array(self):
 		self.consume_keyword(kw.ARRAY)
 		element_type = self.analyze_non_array_type_descriptor()
 		self.consume_keyword(kw.LSBRACK)
-		dimensions = self.analyze_varargs(self.analyze_expression)
+		# TODO: strictly literal integer range, not full-blown expression; also can parse "?"
+		dimensions = self.analyze_varargs(self.analyze_array_dimension)
 		self.consume_keyword(kw.RSBRACK)
-		return typedesc.ArrayType(element_type, dimensions)
+		return typedesc.Array(element_type, dimensions)
+
+	def analyze_array_dimension(self):
+		return self.analyze_multiple("une dimension de tableau statique ou dynamique",
+				self.analyze_static_array_dimension,
+				self.analyze_dynamic_array_dimension)
+
+	def analyze_static_array_dimension(self):
+		return typedesc.Array.StaticDimension(self.analyze_expression())
+
+	def analyze_dynamic_array_dimension(self):
+		pos = self.pos
+		self.consume_keyword(kw.QUESTION_MARK)
+		return typedesc.Array.DynamicDimension(pos)
 
 	def analyze_type_alias(self):
 		return self.analyze_identifier(typedesc.TypeAlias)
 
 	def analyze_type_descriptor(self):
 		with BacktrackFailure(self):
-			return self.analyze_array_type()
+			return self.analyze_array()
 		return self.analyze_non_array_type_descriptor()
 
 	def analyze_non_array_type_descriptor(self):
-		with BacktrackFailure(self):
-			return self.analyze_scalar_type()
-		with BacktrackFailure(self):
-			return self.analyze_type_alias()
-		raise syntax.ExpectedItem(self.pos, "un descripteur de type")
+		return self.analyze_multiple("un descripteur de type non-tableau",
+			self.analyze_scalar_type,
+			self.analyze_type_alias)
 
 	def analyze_field(self):
 		ident = self.analyze_identifier()

@@ -174,7 +174,7 @@ class ArraySubscript(BinaryOp):
 
 	def check(self, context):
 		array_type = self.lhs.check(context).resolved_type
-		if not isinstance(array_type, typedesc.ArrayType):
+		if not isinstance(array_type, typedesc.Array):
 			raise semantic.NonSubscriptable(self.pos)
 		# check dimension count
 		ldims = len(array_type.dimensions)
