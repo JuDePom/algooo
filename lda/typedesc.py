@@ -132,18 +132,19 @@ class CompositeType(TypeDescriptor):
 	def check(self, supercontext):
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
 		_hunt_duplicates(self.field_list)
-		# create and populate this composite's context
-		self.context = {}
+		self.context = {field.ident.name: field for field in self.field_list}
 		for field in self.field_list:
-			name = field.ident.name
+			field.check(supercontext)
+		return self
+
+	def detect_loops(self, composite):
+		for field in self.field_list:
+			if field.resolved_type is composite:
+				raise semantic.RecursiveDeclaration(field.ident.pos)
 			try:
-				type_descriptor = field.type_descriptor.check(supercontext)
-				assert type_descriptor is not None, "un check() a retourné None"
-				self.context[name] = type_descriptor
-			except semantic.UnresolvableTypeAlias as e:
-				# TODO il faudrait le logger au lieu de le lever à l'arrache
-				self.context[name] = ErroneousType(name)
-				raise e
+				field.resolved_type.detect_loops(composite)
+			except AttributeError:
+				pass
 
 	def lda_format(self, indent=0):
 		result = ", ".join(param.lda_format() for param in self.field_list)

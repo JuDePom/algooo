@@ -121,3 +121,7 @@ class ParameterCountMismatch(CountMismatch):
 	singular = ("paramètre", "est fourni")
 	plural = ("paramètres", "sont fournis")
 
+class RecursiveDeclaration(SemanticError):
+	def __init__(self, pos):
+		super().__init__(pos, "déclaration récursive")
+
