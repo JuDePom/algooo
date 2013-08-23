@@ -1,7 +1,8 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 from lda.typedesc import *
-from lda.module import Module
+from lda.operators import LogicalOr
+from lda.module import Module, Algorithm
 
 class TestTypeEquivalences(LDATestCase):
 	def _test_self_compatibility(self, a):
@@ -93,4 +94,42 @@ class TestTypeEquivalences(LDATestCase):
 				début
 					f(3)
 				fin''')
+
+	def test_assign_integer_literal_to_real(self):
+		self.check(cls=Algorithm, program='''\
+				algorithme
+				lexique r:réel
+				début r<-3 fin''')
+
+	def test_assign_integer_variable_to_real(self):
+		self.check(cls=Algorithm, program='''\
+				algorithme
+				lexique r:réel e:entier
+				début e<-3   r<-e fin''')
+
+	def test_assign_real_literal_to_integer(self):
+		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Algorithm,
+				program='''algorithme
+				lexique e:entier
+				début e<-(**)3.00000 fin''')
+
+	def test_assign_real_variable_to_integer(self):
+		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Algorithm,
+				program='''algorithme
+				lexique r:réel e:entier
+				début r<-3.00000  e<-(**)r  fin''')
+
+	def test_binary_logical_op_with_binary_operands(self):
+		self.check(cls=LogicalOr, program='vrai ou faux')
+		self.check(cls=LogicalOr, program='vrai ou vrai')
+		self.check(cls=LogicalOr, program='faux ou vrai')
+		self.check(cls=LogicalOr, program='faux ou faux')
+
+	def test_binary_logical_op_with_non_binary_operands(self):
+		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=LogicalOr,
+				program='vrai ou (**)3')
+		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=LogicalOr,
+				program='(**)3 ou vrai')
+		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=LogicalOr,
+				program='(**)3 ou (**)4')
 

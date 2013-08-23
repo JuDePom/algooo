@@ -7,7 +7,7 @@ from . import dot
 
 #######################################################################
 #
-# BASE OPERATOR CLASSES
+# GENERIC OPERATOR BASE CLASSES
 #
 #######################################################################
 
@@ -75,40 +75,16 @@ class BinaryOp(Expression):
 	def check(self, context):
 		raise NotImplementedError
 
-class BinaryOpEquivalentSides(BinaryOp):
-	def check(self, context):
-		# TODO types "équivalents" (réels ~ entiers)
-		lhs_typedef = self.lhs.check(context)
-		rhs_typedef = self.rhs.check(context)
-		if not lhs_typedef.equivalent(rhs_typedef): # TODO!!!!!
-			raise semantic.TypeMismatch(self.pos, "les types des opérandes doivent "
-				"être équivalents", lhs_typedef, rhs_typedef)
-		# TODO avec les types équivalents, il ne faut pas forcément se contenter
-		# du type du LHS, mais plutôt du type le plus "fort" (genre réel >
-		# entier) - TODO voir avec max()
-		if self._take_on_typedef:
-			return lhs_typedef
-		else:
-			return self._typedef
-
-class ArithmeticOp(BinaryOpEquivalentSides):
-	_take_on_typedef = True
-
-class BinaryBooleanOp(BinaryOpEquivalentSides):
-	_typedef = typedesc.Boolean
-	_take_on_typedef = False
-
-ComparisonOp = BinaryBooleanOp
-
-BinaryLogicalOp = BinaryBooleanOp
-
 #######################################################################
 #
-# UNARY OPERATORS
+# SPECIFIC OPERATOR BASE CLASSES
 #
 #######################################################################
 
-class _UnaryNumberSign(UnaryOp):
+class UnaryNumberOp(UnaryOp):
+	"""
+	Unary operator that can only be used with a number type.
+	"""
 	def check(self, context):
 		rhs_typedef = self.rhs.check(context)
 		if rhs_typedef not in (typedesc.Integer, typedesc.Real):
@@ -117,10 +93,50 @@ class _UnaryNumberSign(UnaryOp):
 					"ne peut être appliqué qu'à un nombre entier ou réel")
 		return rhs_typedef
 
-class UnaryPlus(_UnaryNumberSign):
+class BinaryChameleonOp(BinaryOp):
+	"""
+	Binary operator taking operands of equivalent types. The type of the operator
+	is determined by the strongest type among the operands.
+	"""
+	def check(self, context):
+		ltype = self.lhs.check(context)
+		rtype = self.rhs.check(context)
+		strongtype = ltype.equivalent(rtype)
+		if strongtype is None:
+			raise semantic.TypeMismatch(self.pos, "les types des opérandes doivent "
+					"être équivalents", ltype, rtype)
+		return strongtype
+
+class BinaryComparisonOp(BinaryOp):
+	"""
+	Binary operator of boolean type, taking operands of equivalent types.
+	"""
+	def check(self, context):
+		BinaryChameleonOp.check(self, context)
+		return typedesc.Boolean
+
+class BinaryLogicalOp(BinaryOp):
+	"""
+	Binary operator of boolean type, taking operands of boolean types.
+	"""
+	def check(self, context):
+		for side in (self.lhs, self.rhs):
+			sidetype = side.check(context)
+			if sidetype is not typedesc.Boolean:
+				raise semantic.SpecificTypeExpected(side.pos, "cet opérande",
+						expected=typedesc.Boolean, given=sidetype)
+		return typedesc.Boolean
+
+#######################################################################
+#
+# UNARY OPERATORS
+#
+#######################################################################
+
+class UnaryPlus(UnaryNumberOp):
 	keyword_def = kw.PLUS
 
-class UnaryMinus(_UnaryNumberSign):
+class UnaryMinus(UnaryNumberOp):
 	keyword_def = kw.MINUS
 
 class LogicalNot(UnaryOp):
@@ -189,7 +205,7 @@ class FunctionCall(BinaryOp):
 		# check parameter types
 		for effective_param, formal_type in zip(self.rhs, function.resolved_parameter_types):
 			effective_type = effective_param.check(context)
-			if effective_type != formal_type:
+			if not formal_type.compatible(effective_type):
 				raise semantic.SpecificTypeExpected(effective_param.pos,
 						"ce paramètre effectif", formal_type, effective_type)
 		return function.resolved_return_type
@@ -213,7 +229,7 @@ class MemberSelect(BinaryOp):
 		# use composite context exclusively for RHS
 		return self.rhs.check(composite.context)
 
-class Power(ArithmeticOp):
+class Power(BinaryChameleonOp):
 	"""
 	Exponent.
 
@@ -224,26 +240,24 @@ class Power(ArithmeticOp):
 	keyword_def = kw.POWER
 	right_ass = True
 
-class Multiplication(ArithmeticOp):
+class Multiplication(BinaryChameleonOp):
 	keyword_def = kw.TIMES
 
-class Division(ArithmeticOp):
+class Division(BinaryChameleonOp):
 	keyword_def = kw.SLASH
 
-class Modulo(ArithmeticOp):
+class Modulo(BinaryChameleonOp):
 	keyword_def = kw.MODULO
 
-class Addition(ArithmeticOp):
+class Addition(BinaryChameleonOp):
 	keyword_def = kw.PLUS
 
-class Subtraction(ArithmeticOp):
+class Subtraction(BinaryChameleonOp):
 	keyword_def = kw.MINUS
 
 class IntegerRange(BinaryOp):
 	keyword_def = kw.DOTDOT
 	def check(self, context):
-		lhs_typedef = self.lhs.check(context)
-		rhs_typedef = self.rhs.check(context)
 		for operand in (self.lhs, self.rhs):
 			operand_type = operand.check(context)
 			if operand_type is not typedesc.Integer:
@@ -252,22 +266,22 @@ class IntegerRange(BinaryOp):
 						expected=typedesc.Integer, given=operand_type)
 		return typedesc.Range
 
-class LessThan(ComparisonOp):
+class LessThan(BinaryComparisonOp):
 	keyword_def = kw.LT
 
-class GreaterThan(ComparisonOp):
+class GreaterThan(BinaryComparisonOp):
 	keyword_def = kw.GT
 
-class LessOrEqual(ComparisonOp):
+class LessOrEqual(BinaryComparisonOp):
 	keyword_def = kw.LE
 
-class GreaterOrEqual(ComparisonOp):
+class GreaterOrEqual(BinaryComparisonOp):
 	keyword_def = kw.GE
 
-class Equal(ComparisonOp):
+class Equal(BinaryComparisonOp):
 	keyword_def = kw.EQ
 
-class NotEqual(ComparisonOp):
+class NotEqual(BinaryComparisonOp):
 	keyword_def = kw.NE
 
 class LogicalAnd(BinaryLogicalOp):
@@ -276,13 +290,20 @@ class LogicalAnd(BinaryLogicalOp):
 class LogicalOr(BinaryLogicalOp):
 	keyword_def = kw.OR
 
-class Assignment(BinaryOpEquivalentSides):
+class Assignment(BinaryOp):
 	keyword_def = kw.ASSIGN
 	right_ass = True
-	# an assignment cannot be part of another expression,
-	# therefore its type always resolves to None
-	_typedef = None
-	_take_on_typedef = False
+
+	def check(self, context):
+		ltype = self.lhs.check(context)
+		rtype = self.rhs.check(context)
+		if not ltype.compatible(rtype):
+			raise semantic.TypeMismatch(self.rhs.pos, "le type de l'opérande de "
+					"droite doit être compatible avec le type de l'opérande de gauche",
+					ltype, rtype)
+		# an assignment cannot be part of another expression,
+		# therefore its type always resolves to None
+		return None
 
 #######################################################################
 #
