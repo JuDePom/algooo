@@ -12,12 +12,14 @@ class TestLexiconSemantics(LDATestCase):
 
 	def test_variable_uses_type_descriptor_with_module_scope(self):
 		self.check(cls=Module, program='''\
-				Moule = <>
+				lexique
+					Moule = <>
 				algorithme lexique m : Moule début fin''')
 
 	def test_function_returns_composite(self):
 		self.check(cls=Module, program='''\
-				Moule = <>
+				lexique
+					Moule = <>
 				fonction f(): Moule lexique début fin''')
 
 	def test_undefined_type_alias(self):
