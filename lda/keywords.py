@@ -125,6 +125,7 @@ END_WHILE      = AlphaKeywordDef("ftantque", "ftant")
 IF             = AlphaKeywordDef("si")
 THEN           = AlphaKeywordDef("alors")
 ELSE           = AlphaKeywordDef("sinon")
+ELIF           = AlphaKeywordDef("snsi")
 END_IF         = AlphaKeywordDef("fsi")
 
 INOUT          = AlphaKeywordDef("inout")
