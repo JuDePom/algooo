@@ -235,12 +235,12 @@ class MemberSelect(BinaryOp):
 	keyword_def = kw.DOT
 
 	def check(self, context):
-		# LHS is supposed to refer to a composite
-		composite = self.lhs.check(context)
+		# LHS is supposed to refer to a TypeAlias, which refers to a composite
+		composite = self.lhs.check(context).resolved_type
 		if not isinstance(composite, typedesc.CompositeType):
-			raise semantic.NonComposite(self.pos)
+			raise semantic.NonComposite(self.pos, composite)
 		# use composite context exclusively for RHS
-		self.resolved_type = self.rhs.check(composite.context)
+		self.resolved_type = self.rhs.check(composite.context).resolved_type
 		return self
 
 class Power(BinaryChameleonOp):

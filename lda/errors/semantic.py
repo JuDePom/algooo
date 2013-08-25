@@ -74,9 +74,10 @@ class NonComposite(SemanticError):
 	"""
 	Raised when the user tries to access a member within a non-composite item.
 	"""
-	def __init__(self, pos):
+	def __init__(self, pos, given_type):
 		super().__init__(pos, "cet élément n'a aucun membre car "
-			"il n'est pas de type composite")
+				"il n'est pas de type composite (il est de type {})"
+				.format(given_type))
 
 class NonSubscriptable(SemanticError):
 	"""
