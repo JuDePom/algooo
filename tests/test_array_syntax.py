@@ -6,7 +6,7 @@ from lda.typedesc import Array, Lexicon
 class TestArraySyntax(LDATestCase):
 	def test_incomplete_intrange(self):
 		self.assertLDAError(syntax.ExpectedItem, self.analyze, cls=Array,
-			program='tableau entier[1 ..(**)]')
+				program='tableau entier[1 ..(**)]')
 
 	def test_illegal_nested_array_syntax(self):
 		# This one has to be parsed as an entire algorithm, not just as a bare
@@ -15,6 +15,6 @@ class TestArraySyntax(LDATestCase):
 		# unknown token will be passed back to the algorithm, which won't know
 		# what to do with it, and will raise a syntax error.
 		self.assertLDAError(syntax.SyntaxError, self.analyze, cls=Algorithm,
-			program='''algorithme lexique a: tableau(**)tableau entier
+				program='''algorithme lexique a: tableau(**)tableau entier
 				[0..5][0..5] début fin''')
 

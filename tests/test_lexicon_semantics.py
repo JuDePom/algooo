@@ -5,7 +5,7 @@ from lda.module import Module, Algorithm
 class TestLexiconSemantics(LDATestCase):
 	def test_variable_absent_from_lexicon(self):
 		self.assertLDAError(semantic.MissingDeclaration, self.check, cls=Algorithm,
-			program='algorithme lexique début (**)a <- 3 fin')
+				program='algorithme lexique début (**)a <- 3 fin')
 
 	def test_composite_in_module_scope(self):
 		self.check(cls=Module, program='lexique Moule = <>')
@@ -24,37 +24,37 @@ class TestLexiconSemantics(LDATestCase):
 
 	def test_undefined_type_alias(self):
 		self.assertLDAError(semantic.MissingDeclaration, self.check, cls=Algorithm,
-			program='algorithme lexique m: (**)TypeMysterieux début fin')
+				program='algorithme lexique m: (**)TypeMysterieux début fin')
 
 	def test_variable_declared_twice(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Algorithm,
-			program='algorithme lexique a:entier (**)a:entier début fin')
+				program='algorithme lexique a:entier (**)a:entier début fin')
 
 	def test_variable_uses_its_own_name_as_type(self):
 		self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm,
-			program='algorithme lexique a:(**)a début fin')
+				program='algorithme lexique a:(**)a début fin')
 
 	def test_composite_declared_twice(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Algorithm,
-			program='algorithme lexique M=<> (**)M=<> début fin')
+				program='algorithme lexique M=<> (**)M=<> début fin')
 
 	def test_composite_and_variable_with_same_name(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Algorithm,
-			program='algorithme lexique a=<> (**)a:entier début fin')
+				program='algorithme lexique a=<> (**)a:entier début fin')
 
 	def test_use_existing_function_name_for_variable_and_try_calling_it(self):
 		# has to be analyzed as a whole module so that "f" is accounted for
 		# in the global lexicon
 		self.assertLDAError(semantic.NonCallable, self.check, cls=Module, program='''\
-			fonction f() lexique début fin
-			algorithme
-			lexique f: entier
-			début f(**)() fin''')
+				fonction f() lexique début fin
+				algorithme
+				lexique f: entier
+				début f(**)() fin''')
 
 	def test_function_defined_twice(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Module, program='''\
-			fonction f() lexique début fin
-			fonction (**)f() lexique début fin''')
+				fonction f() lexique début fin
+				fonction (**)f() lexique début fin''')
 
 	def test_function_and_global_composite_name_clash(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Module,

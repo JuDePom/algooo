@@ -25,7 +25,8 @@ class TestIfSemantics(LDATestCase):
 				début
 					si (**){} alors fsi
 				fin'''.format(raw_condition)
-			self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm, program=program)
+			self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm,
+					program=program)
 		test('1234')
 		test('123.456')
 		test('"les poules ont des dents"')

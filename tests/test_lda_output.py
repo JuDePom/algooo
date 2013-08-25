@@ -25,8 +25,8 @@ class test_lda_output(unittest.TestCase):
 				"\tMoule = <prix : {0.INT}, nom : {0.STRING}>\n"
 				"\ttab : tableau Moule[0 .. i, 0 .. j]").format(kw)
 		moule = typedesc.CompositeType(_id("Moule"), [
-						typedesc.Field(_id("prix"), typedesc.Integer),
-						typedesc.Field(_id("nom"), typedesc.String)])
+				typedesc.Field(_id("prix"), typedesc.Integer),
+				typedesc.Field(_id("nom"), typedesc.String)])
 		moule_alias = typedesc.TypeAlias(None, "Moule")
 		range_i = operators.IntegerRange(None, expression.LiteralInteger(None, 0), _id("i"))
 		range_j = operators.IntegerRange(None, expression.LiteralInteger(None, 0), _id("j"))

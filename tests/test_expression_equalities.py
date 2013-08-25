@@ -40,7 +40,6 @@ class TestExpressionEqualities(ldatestcase.LDATestCase):
 		]
 		plus5678 = ops.UnaryPlus(None, litint5678)
 		minus1234 = ops.UnaryMinus(None, litint1234[0])
-
 		self.assertEqual(plus1234[0], plus1234[0])
 		self.assertEqual(plus1234[0], plus1234[1])
 		self.assertEqual(plus1234[0], plus1234[2])

@@ -12,8 +12,8 @@ class TestFunctionCallSemantics(LDATestCase):
 			program='fonction f1(a:entier) lexique a:entier début f1(**)() fin')
 
 	def test_wrong_return_type(self):
-		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Module, program='''\
-				fonction f(): entier
+		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Module,
+				program='''fonction f(): entier
 				lexique
 					Moule = <>
 					m: Moule
@@ -22,8 +22,8 @@ class TestFunctionCallSemantics(LDATestCase):
 				fin''')
 
 	def test_parameter_type_mismatch_1(self):
-		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=Module, program='''\
-				fonction f(a: entier)
+		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=Module,
+				program='''fonction f(a: entier)
 				lexique
 					Moule = <>
 					a: entier
@@ -33,8 +33,8 @@ class TestFunctionCallSemantics(LDATestCase):
 				fin''')
 
 	def test_parameter_type_mismatch_3(self):
-		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=Module, program='''\
-				fonction f(a: entier, b: chaîne, c: caractère)
+		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=Module,
+				program='''fonction f(a: entier, b: chaîne, c: caractère)
 				lexique
 					Moule = <>
 					a: entier
@@ -46,8 +46,8 @@ class TestFunctionCallSemantics(LDATestCase):
 				fin''')
 
 	def test_calling_non_function(self):
-		self.assertLDAError(semantic.NonCallable, self.check, cls=Module, program='''\
-				algorithme
+		self.assertLDAError(semantic.NonCallable, self.check, cls=Module,
+				program='''algorithme
 				lexique
 					a: entier
 				début

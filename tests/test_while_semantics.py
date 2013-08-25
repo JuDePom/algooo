@@ -14,17 +14,17 @@ class TestWhileSemantics(LDATestCase):
 	def test_while_non_boolean_condition(self):
 		def test(raw_condition):
 			program = '''\
-				algorithme
-				lexique
-					Moule = <>
-					en: entier
-					re: réel
-					ch: chaîne
-					ca: caractère
-					m: Moule
-				début
-					tantque (**){} faire ftant
-				fin'''.format(raw_condition)
+					algorithme
+					lexique
+						Moule = <>
+						en: entier
+						re: réel
+						ch: chaîne
+						ca: caractère
+						m: Moule
+					début
+						tantque (**){} faire ftant
+					fin'''.format(raw_condition)
 			self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm, program=program)
 		test('1234')
 		test('123.456')

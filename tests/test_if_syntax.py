@@ -18,15 +18,15 @@ class TestIfSyntax(LDATestCase):
 	
 	def test_nested_ifs_single_endif(self):
 		stmt = self.analyze(IfThenElse, '''\
-			si toto.gentil alors
-				bisou(toto)
-			sinon si toto.triste alors
-				nourrir(toto)
-			sinon si toto.age < 5 alors
-				au_coin(toto)
-			sinon
-				fessée(toto)
-			fsi''')
+				si toto.gentil alors
+					bisou(toto)
+				sinon si toto.triste alors
+					nourrir(toto)
+				sinon si toto.age < 5 alors
+					au_coin(toto)
+				sinon
+					fessée(toto)
+				fsi''')
 		# !gentil, triste?
 		self.assertIsInstance(stmt.statements.else_block, statements.IfThenElse)
 		# !gentil, !triste, age<5?

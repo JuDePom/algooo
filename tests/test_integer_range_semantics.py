@@ -17,17 +17,17 @@ class TestIntegerRangeSemantics(LDATestCase):
 	
 	def test_illegal_constant_string_range(self):
 		self.assertLDAError(semantic.SpecificTypeExpected, self.check,
-			cls=IntegerRange, program='(**)"coucou".."salut"')
+				cls=IntegerRange, program='(**)"coucou".."salut"')
 	
 	def test_illegal_constant_real_range(self):
 		self.assertLDAError(semantic.SpecificTypeExpected, self.check,
-			cls=IntegerRange, program='(**)1.234..5.678')
+				cls=IntegerRange, program='(**)1.234..5.678')
 	
 	def test_illegal_constant_character_range(self):
 		self.assertLDAError(semantic.SpecificTypeExpected, self.check,
-			cls=IntegerRange, program="(**)'a'..'b'")
+				cls=IntegerRange, program="(**)'a'..'b'")
 
 	def test_illegal_constant_boolean_range(self):
 		self.assertLDAError(semantic.SpecificTypeExpected, self.check,
-			cls=IntegerRange, program='(**)vrai..faux')
+				cls=IntegerRange, program='(**)vrai..faux')
 

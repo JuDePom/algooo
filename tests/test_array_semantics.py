@@ -6,7 +6,7 @@ from lda.typedesc import Array, Lexicon
 class TestArraySemantics(LDATestCase):
 	def test_0d(self):
 		self.assertLDAError(semantic.SemanticError, self.check, cls=Array,
-			program='tableau entier[(**)]')
+				program='tableau entier[(**)]')
 	
 	def test_1d_constant_intrange(self):
 		self.check(cls=Array, program='tableau entier[0..5]')
@@ -42,9 +42,9 @@ class TestArraySemantics(LDATestCase):
 
 	def test_non_intrange(self):
 		self.assertLDAError(semantic.SemanticError, self.check, cls=Array,
-			program='tableau entier[(**)1]')
+				program='tableau entier[(**)1]')
 		self.assertLDAError(semantic.SemanticError, self.check, cls=Array,
-			program='tableau entier[(**)"coucou"]')
+				program='tableau entier[(**)"coucou"]')
 		self.assertLDAError(semantic.SemanticError, self.check, cls=Array,
-			program="tableau entier[(**)'c']")
+				program="tableau entier[(**)'c']")
 	
