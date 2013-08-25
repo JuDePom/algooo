@@ -11,21 +11,33 @@ import sys
 
 ap = argparse.ArgumentParser(
 	description="Compilateur de LDA (langage de description d'algorithme)")
-ap.add_argument('path', metavar='LDA', help="chemin vers un fichier LDA")
-ap.add_argument('--format', '-f', default='js', help="format de sortie")
-ap.add_argument('--output-file', '-o', help="fichier de sortie. \
-		Si omis, le résultat sera émis sur stdout.")
+
+ap.add_argument('path',
+		metavar='LDA',
+		help="chemin vers un fichier LDA")
+
+ap.add_argument('--format', '-f',
+		default='js',
+		help="format de sortie")
+
+ap.add_argument('--output-file', '-o',
+		help="""fichier de sortie.
+		Si omis, le résultat sera émis sur stdout.""")
+
 ap.add_argument('--no-output', '-n', action='store_true',
-		help="vérifie uniquement la cohérence syntaxique et sémantique \
-		sans générer de code")
+		help="""vérifie uniquement la cohérence syntaxique et sémantique
+		sans générer de code""")
+
+ap.add_argument('--case-insensitive', action='store_true',
+		help="""Ignorer la casse dans les identificateurs et les mot-clés""")
 
 args = ap.parse_args()
 
-parser = lda.parser.Parser(args.path)
+parser = lda.parser.Parser(args, path=args.path)
 
 try:
 	module = parser.analyze_module()
-except lda.errors.syntax.SyntaxError:
+except lda.errors.syntax.SyntaxError as ex:
 	print(parser.relevant_syntax_error, file=sys.stderr)
 	sys.exit(1)
 
