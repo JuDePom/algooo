@@ -173,8 +173,10 @@ class Parser:
 
 	def analyze_module(self):
 		functions = []
-		composites = []
 		algorithms = []
+		lexicon = None
+		with BacktrackFailure(self):
+			lexicon = self.analyze_lexicon()
 		while not self.eof():
 			with BacktrackFailure(self):
 				functions.append(self.analyze_function())
@@ -182,13 +184,8 @@ class Parser:
 			with BacktrackFailure(self):
 				algorithms.append(self.analyze_algorithm())
 				continue
-			with BacktrackFailure(self):
-				composites.append(self.analyze_composite_type())
-				continue
-			raise syntax.ExpectedItem(self.pos, "une fonction, un algorithme, "
-					"ou une définition de type composite")
-		return module.Module(variables=None, composites=composites,
-				functions=functions, algorithms=algorithms)
+			raise syntax.ExpectedItem(self.pos, "une fonction ou un algorithme")
+		return module.Module(lexicon, functions, algorithms)
 
 	def analyze_algorithm(self):
 		pos = self.pos

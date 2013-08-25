@@ -8,7 +8,7 @@ class TestLexiconSemantics(LDATestCase):
 			program='algorithme lexique début (**)a <- 3 fin')
 
 	def test_composite_in_module_scope(self):
-		self.check(cls=Module, program='Moule = <>')
+		self.check(cls=Module, program='lexique Moule = <>')
 
 	def test_variable_uses_type_descriptor_with_module_scope(self):
 		self.check(cls=Module, program='''\
@@ -58,7 +58,8 @@ class TestLexiconSemantics(LDATestCase):
 
 	def test_function_and_global_composite_name_clash(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Module,
-			program='fonction f() lexique début fin     (**)f = <>')
+				program='''lexique f = <>
+				fonction (**)f() lexique début fin''')
 
 	def test_function_tries_using_function_name_as_return_type_alias(self):
 		self.assertLDAError(semantic.SemanticError, self.check, cls=Module, program='''\
@@ -67,8 +68,9 @@ class TestLexiconSemantics(LDATestCase):
 
 	def test_composite_tries_using_function_name_as_member_type_alias(self):
 		self.assertLDAError(semantic.SemanticError, self.check, cls=Module, program='''\
-				fonction f() lexique début fin
-				Moule = <a: (**)f>''')
+				lexique
+					Moule = <a: (**)f>
+				fonction f() lexique début fin''')
 
 	def test_variable_tries_using_function_name_as_type_alias(self):
 		self.assertLDAError(semantic.SemanticError, self.check, cls=Module, program='''\

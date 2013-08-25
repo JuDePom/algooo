@@ -24,6 +24,7 @@ class TestFormalParameterSemantics(LDATestCase):
 
 	def test_formal_parameter_uses_external_type_descriptor(self):
 		self.check(cls=Module, program='''\
-				Moule = <>
+				lexique
+					Moule = <>
 				fonction f(m: Moule) lexique m: Moule début fin''')
 

@@ -5,7 +5,9 @@ from .errors import semantic
 from .statements import StatementBlock
 
 class Module(typedesc.Lexicon):
-	def __init__(self, variables, composites, functions, algorithms):
+	def __init__(self, lexicon, functions, algorithms):
+		variables  = lexicon.variables  if lexicon else None
+		composites = lexicon.composites if lexicon else None
 		super().__init__(variables, composites, functions)
 		self.algorithms = algorithms
 
