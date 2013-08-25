@@ -2,13 +2,17 @@ import unittest
 from lda import parser, module, expression, typedesc, statements
 from lda import errors
 
+class DefaultOptions:
+	case_insensitive = False
+
 class LDATestCase(unittest.TestCase):
 	"""
 	LDA program testing facility
 	"""
 
 	def setUp(self):
-		self.parser = parser.Parser()
+		options = DefaultOptions()
+		self.parser = parser.Parser(options)
 
 		self.parsing_functions = {
 				module.Module:               self.parser.analyze_module,
@@ -76,7 +80,8 @@ class LDATestCase(unittest.TestCase):
 		marker_pos = kwargs['program'].find(error_marker)
 		self.assertGreaterEqual(marker_pos, 0, "can't find error_marker")
 		self.assertEqual(error.pos.char, marker_pos + len(error_marker),
-				"exception wasn't raised at expected position")
+				"exception wasn't raised at expected position (raised at {})"
+				.format(error.pos))
 
 	def check(self, context=None, **kwargs):
 		"""

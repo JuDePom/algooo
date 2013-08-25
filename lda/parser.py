@@ -77,23 +77,30 @@ class Parser:
 	These functions may raise an exception if a syntax error was found.
 	'''
 
-	def __init__(self, path=None, buf=""):
+	def __init__(self, options, path=None):
+		self.options = options
 		if path is not None:
 			self.path = path
 			with open(path, 'rt', encoding='utf8') as input_file:
 				self.set_buf(input_file.read())
-		else:
-			self.path = "<direct>"
-			self.set_buf(buf)
 
 	def reset_pos(self):
 		self.pos = position.Position(self.path)
 
 	def set_buf(self, value):
+		self.path = "<direct>"
 		self.syntax_errors = []
-		self.buf = value
+		# raw_buf: only used to parse strings and characters
+		self.raw_buf = value
+		# buf: for everything else.
+		# This allows the parser to ignore the case if needed.
+		if self.options.case_insensitive:
+			self.buf = value.lower()
+		else:
+			self.buf = value
 		self.buflen = len(self.buf)
 		self.reset_pos()
+		# skip initial whitespace
 		self.advance()
 
 	def append_syntax_error(self, new_error):
@@ -210,7 +217,8 @@ class Parser:
 			with BacktrackFailure(self):
 				algorithms.append(self.analyze_algorithm())
 				continue
-			raise syntax.ExpectedItem(self.pos, "une fonction ou un algorithme")
+			with RelevantFailureLogger(self):
+				raise syntax.ExpectedItem(self.pos, "une fonction ou un algorithme")
 		return module.Module(lexicon, functions, algorithms)
 
 	def analyze_algorithm(self):
@@ -502,7 +510,9 @@ class Parser:
 				raise syntax.SyntaxError(arg_pos, "argument vide")
 		return expression.Varargs(pos, arg_list)
 
-	def consume_regex(self, compiled_regex, advance=True):
+	def consume_regex(self, compiled_regex, advance=True, buf=None):
+		if buf is None:
+			buf = self.buf
 		match = compiled_regex.match(self.buf, self.pos.char)
 		try:
 			string = match.group(0)
@@ -524,12 +534,12 @@ class Parser:
 	
 	def analyze_literal_string(self):
 		pos = self.pos
-		match = self.consume_regex(re_string)
+		match = self.consume_regex(re_string, buf=self.raw_buf)
 		return expression.LiteralString(pos, match[1:-1])
 
 	def analyze_literal_character(self):
 		pos = self.pos
-		match = self.consume_regex(re_character)
+		match = self.consume_regex(re_character, buf=self.raw_buf)
 		return expression.LiteralCharacter(pos, match[1:-1])
 
 	def analyze_literal_boolean(self):
