@@ -6,54 +6,54 @@ from . import expression
 from .errors import semantic
 
 class Statement(position.SourceThing):
-        pass
+		pass
 
 class StatementBlock(position.SourceThing):
-        def __init__(self, pos, body):
-                super().__init__(pos)
-                self.body = body
+	def __init__(self, pos, body):
+		super().__init__(pos)
+		self.body = body
 
-        def __iter__(self):
-                for statement in self.body:
-                        yield statement
+	def __iter__(self):
+		for statement in self.body:
+			yield statement
 
-        def put_node(self, cluster):
-                prev_outer_node = None
-                first_outer_node = None
-                rank_chain = []
-                for i, statement in enumerate(self):
-                        ncluster = dot.Cluster("", cluster)
-                        node = statement.put_node(ncluster)
-                        outer_node = dot.Node("statement "+str(i), cluster)
-                        outer_node.children.append(node)
-                        if prev_outer_node is not None:
-                                prev_outer_node.children.append(outer_node)
-                        else:
-                                first_outer_node = outer_node
-                        prev_outer_node = outer_node
-                        rank_chain.append(outer_node)
-                cluster.rank_chains.append(rank_chain)
-                return first_outer_node
+	def put_node(self, cluster):
+		prev_outer_node = None
+		first_outer_node = None
+		rank_chain = []
+		for i, statement in enumerate(self):
+			ncluster = dot.Cluster("", cluster)
+			node = statement.put_node(ncluster)
+			outer_node = dot.Node("statement "+str(i), cluster)
+			outer_node.children.append(node)
+			if prev_outer_node is not None:
+				prev_outer_node.children.append(outer_node)
+			else:
+				first_outer_node = outer_node
+			prev_outer_node = outer_node
+			rank_chain.append(outer_node)
+		cluster.rank_chains.append(rank_chain)
+		return first_outer_node
 
-        def lda_format(self, indent=0):
-                indent_string = indent*'\t'
-                st_formats = (st.lda_format(indent+1) for st in self.body)
-                result = ("\n"+indent_string).join(st_formats)
-                if result != "":
-                        result = indent_string + result
-                return result
+	def lda_format(self, indent=0):
+		indent_string = indent*'\t'
+		st_formats = (st.lda_format(indent+1) for st in self.body)
+		result = ("\n"+indent_string).join(st_formats)
+		if result != "":
+				result = indent_string + result
+		return result
 
-        def check(self, context):
-                for statement in self:
-                        statement.check(context)
+	def check(self, context):
+		for statement in self:
+			statement.check(context)
 
 class IfThenElse(Statement):
-	def __init__(self, pos, condition, then_block, else_block=None, elif_block=None):
+	def __init__(self, pos, condition, then_block, elif_blocks, else_block=None ):
 		super().__init__(pos)
 		self.condition = condition
 		self.then_block = then_block
 		self.else_block = else_block
-		self.elif_block = elif_block
+		self.elif_blocks = elif_blocks
 
 	def check(self, context):
 		condition_type = self.condition.check(context).resolved_type
@@ -61,10 +61,20 @@ class IfThenElse(Statement):
 			raise semantic.SpecificTypeExpected(self.condition.pos, "la condition",
 					expected=typedesc.Boolean, given=condition_type)
 		self.then_block.check(context)
+		
+		for elif_block in self.elif_blocks:
+			condition = elif_block[0]
+			condition_type = condition.check(context).resolved_type
+			if condition_type is not typedesc.Boolean:
+				raise semantic.SpecificTypeExpected(self.condition.pos, "la condition",
+						expected=typedesc.Boolean, given=condition_type)
+			elif_block = elif_block[1]
+			elif_block.check(context)	
+			
 		if self.else_block is not None:
 			self.else_block.check(context)
-		if self.elif_block is not None:
-			self.elif_block.check(context)
+
+
 
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)
@@ -84,45 +94,18 @@ class IfThenElse(Statement):
 				indent = indent_string,
 				condition = self.condition.lda_format(),
 				then_block = self.then_block.lda_format(indent+1))
-		if self.elif_block is not None:
-			result += self.elif_block.lda_format(indent)
+		for elif_b in self.elif_blocks:
+			result += "{indent}{kw.ELIF} {condition} {kw.THEN}\n{elif_block}\n".format(
+				kw = kw,
+				indent = indent_string,
+				condition = elif_b[0].lda_format(),
+				elif_block = elif_b[1].lda_format(indent+1))
 		if self.else_block is not None:
 			result += "{indent}{kw.ELSE}\n{else_block}\n".format(
 					kw = kw,
 					indent = indent_string,
 					else_block = self.else_block.lda_format(indent+1))
 		result += "{indent}{kw.END_IF}".format(indent=indent_string, kw=kw)
-		return result
-		
-class Elif(Statement):
-	def __init__(self, pos, condition, elif_block, next_elif_block=None):
-		super().__init__(pos)
-		self.condition = condition
-		self.elif_block = elif_block
-		self.next_elif_block = next_elif_block
-
-	def check(self, context):
-		condition_type = self.condition.check(context).resolved_type
-		if condition_type is not typedesc.Boolean:
-			raise semantic.SpecificTypeExpected(self.condition.pos, "la condition",
-					expected=typedesc.Boolean, given=condition_type)
-		self.elif_block.check(context)
-		if self.next_elif_block is not None:
-			self.next_elif_block.check(context)
-
-	def put_node(self, cluster):
-		#todo or not todo
-		pass
-
-	def lda_format(self, indent=0):
-		indent_string = indent * '\t'
-		result = "{indent}{kw.ELIF} {condition} {kw.THEN}\n{elif_block}\n".format(
-				kw = kw,
-				indent = indent_string,
-				condition = self.condition.lda_format(),
-				elif_block = self.elif_block.lda_format(indent+1))
-		if self.next_elif_block is not None:
-			result += self.next_elif_block.lda_format(indent)
 		return result
 
 class For(Statement):

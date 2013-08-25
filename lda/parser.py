@@ -346,27 +346,20 @@ class Parser:
 		self.consume_keyword(kw.THEN)
 		then_block, emk = self.analyze_statement_block(kw.ELIF, kw.ELSE, kw.END_IF)
 		# elif_block
-		elif_block = None
+		elif_blocks = []
 		if emk is kw.ELIF:
-			elif_block, emk = self.analyze_elif()
+			while emk is kw.ELIF:
+				with CriticalItem(self, "condition"):
+					condition = self.analyze_expression()
+				self.consume_keyword(kw.THEN)
+				elif_block, emk = self.analyze_statement_block(kw.ELIF, kw.ELSE, kw.END_IF)
+				elif_blocks.append((condition, elif_block))
 		# else block
 		else_block = None
-		
-		print(emk)
 		if emk is kw.ELSE:
 			else_block, _ = self.analyze_statement_block(kw.END_IF)
-		return statements.IfThenElse(pos, condition, then_block, else_block, elif_block)
-		
-	def analyze_elif(self):
-		pos = self.pos
-		with CriticalItem(self, "condition"):
-			condition = self.analyze_expression()
-		self.consume_keyword(kw.THEN)
-		elif_block, emk = self.analyze_statement_block(kw.ELIF, kw.ELSE, kw.END_IF)	
-		next_elif_block = None
-		if emk is kw.ELIF:
-			next_elif_block, emk = self.analyze_elif()
-		return statements.Elif(pos, condition, elif_block, next_elif_block), emk 
+		return statements.IfThenElse(pos, condition, then_block, elif_blocks, else_block)
+
 		
 	def analyze_for(self):
 		pos = self.pos
