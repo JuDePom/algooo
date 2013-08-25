@@ -149,15 +149,41 @@ class Parser:
 	def eof(self):
 		return self.pos.char >= self.buflen
 
+	def traverse_synonym_chain(self, syn):
+		for gw in syn.give_way:
+			found = self.traverse_synonym_chain(gw)
+			if found is not None:
+				return found
+		if self.buf.startswith(syn.word, self.pos.char):
+			return syn
+
 	def consume_keyword(self, keyword, soft=False):
-		found_string = keyword.find(self.buf, self.pos.char)
-		if found_string is None:
-			if not soft:
-				raise syntax.ExpectedKeyword(self.pos, keyword)
+		cached_alpha = None
+		for syn in keyword.synonyms:
+			if syn.gluable:
+				found = self.traverse_synonym_chain(syn)
+				if found is None:
+					continue
+				elif found == syn:
+					# found this synonym
+					self.advance(len(syn.word))
+					return True
+				else:
+					# gave way to another keyword
+					break
 			else:
-				return False
-		self.advance(len(found_string))
-		return True
+				if cached_alpha is None:
+					try:
+						cached_alpha = self.consume_regex(re_identifier, advance=False)
+					except syntax.ExpectedItem:
+						continue
+				if cached_alpha == syn.word:
+					self.advance(len(syn.word))
+					return True
+		if soft:
+			return False
+		else:
+			raise syntax.ExpectedKeyword(self.pos, keyword)
 
 	def consume_keyword_choice(self, *choices):
 		for keyword in choices:
@@ -304,13 +330,13 @@ class Parser:
 		return typedesc.Lexicon(variables, composites)
 
 	def analyze_identifier(self, identifier_class=typedesc.Identifier):
-		match = re_identifier.match(self.buf, self.pos.char)
-		if match is None:
-			raise syntax.IllegalIdentifier(self.pos)
-		name = match.group(0)
-		if name in kw.meta.all_keywords:
-			raise syntax.ReservedWord(self.pos, name)
 		pos = self.pos
+		try:
+			name = self.consume_regex(re_identifier, advance=False)
+		except syntax.ExpectedItem:
+			raise syntax.IllegalIdentifier(self.pos)
+		if name in kw.reserved:
+			raise syntax.ReservedWord(self.pos, name)
 		self.advance(len(name))
 		return identifier_class(pos, name)
 
@@ -476,11 +502,12 @@ class Parser:
 				raise syntax.SyntaxError(arg_pos, "argument vide")
 		return expression.Varargs(pos, arg_list)
 
-	def consume_regex(self, compiled_regexp):
-		match = compiled_regexp.match(self.buf, self.pos.char)
+	def consume_regex(self, compiled_regex, advance=True):
+		match = compiled_regex.match(self.buf, self.pos.char)
 		try:
 			string = match.group(0)
-			self.advance(len(string))
+			if advance:
+				self.advance(len(string))
 			return string
 		except AttributeError:
 			raise syntax.ExpectedItem(self.pos, "regex non matchée")
