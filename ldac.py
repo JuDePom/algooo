@@ -54,7 +54,10 @@ if args.format == 'dot':
 	from lda import dot
 	output = lda.dot.format(module)
 elif args.format == 'lda':
-	output = module.lda_format()
+	from lda import ldaexporter
+	exp = lda.ldaexporter.LDAExporter()
+	module.lda(exp)
+	output = str(exp)
 elif args.format == 'js':
 	output = module.js_format()
 else:

@@ -27,8 +27,8 @@ class UnaryOp(Expression):
 		op_node.shape = "circle"
 		return op_node
 		
-	def lda_format(self, indent=0):
-		return indent*'\t' + self.rhs
+	def lda(self, exp):
+		exp.put(self.keyword_def, " ", self.rhs)
 
 	def check(self, context):
 		raise NotImplementedError
@@ -59,18 +59,12 @@ class BinaryOp(Expression):
 		op_node.shape = "circle"
 		return op_node
 
-	def lda_format(self, indent=0):
+	def lda(self, exp):
+		exp.put(self.lhs)
 		if self.encompass_varargs_till is None:
-			after_lhs = " {} ".format(self.keyword_def)
-			after_rhs = ""
+			exp.put(" ", self.keyword_def, " ", self.rhs)
 		else:
-			after_lhs = str(self.keyword_def)
-			after_rhs = str(self.encompass_varargs_till)
-		return "{lhs}{after_lhs}{rhs}{after_rhs}".format(
-				lhs = self.lhs.lda_format(),
-				rhs = self.rhs.lda_format(),
-				after_lhs = after_lhs,
-				after_rhs = after_rhs)
+			exp.put(self.keyword_def, self.rhs, self.encompass_varargs_till)
 
 	def check(self, context):
 		raise NotImplementedError
@@ -93,6 +87,9 @@ class UnaryNumberOp(UnaryOp):
 					"ne peut être appliqué qu'à un nombre entier ou réel")
 		self.resolved_type = rtype
 		return self
+
+	def lda(self, exp):
+		exp.put(self.keyword_def, self.rhs)
 
 class BinaryChameleonOp(BinaryOp):
 	"""
@@ -242,6 +239,9 @@ class MemberSelect(BinaryOp):
 		# use composite context exclusively for RHS
 		self.resolved_type = self.rhs.check(composite.context).resolved_type
 		return self
+
+	def lda(self, exp):
+		exp.put(self.lhs, self.keyword_def, self.rhs)
 
 class Power(BinaryChameleonOp):
 	"""

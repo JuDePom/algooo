@@ -35,8 +35,8 @@ class Keyword:
 	def __repr__(self):
 		return self.default_spelling
 
-	def lda_format(self, indent=0):
-		return self.default_spelling
+	def lda(self, exp):
+		exp.put(self.default_spelling)
 
 ALGORITHM      = Keyword("algorithme")
 FUNCTION       = Keyword("fonction")

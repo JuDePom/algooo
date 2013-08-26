@@ -17,6 +17,9 @@ class StatementBlock(position.SourceThing):
 		for statement in self.body:
 			yield statement
 
+	def __bool__(self):
+		return bool(self.body)
+
 	def put_node(self, cluster):
 		prev_outer_node = None
 		first_outer_node = None
@@ -35,13 +38,8 @@ class StatementBlock(position.SourceThing):
 		cluster.rank_chains.append(rank_chain)
 		return first_outer_node
 
-	def lda_format(self, indent=0):
-		indent_string = indent*'\t'
-		st_formats = (st.lda_format(indent+1) for st in self.body)
-		result = ("\n"+indent_string).join(st_formats)
-		if result != "":
-				result = indent_string + result
-		return result
+	def lda(self, exp):
+		exp.join(self.body, exp.newline)
 
 	def check(self, context):
 		for statement in self:
@@ -90,25 +88,16 @@ class If(Statement):
 			children.append(else_node)
 		return dot.Node("si", cluster, *children)
 
-	def lda_format(self, indent=0):
-		indent_string = indent * '\t'
-		result = ""
+	def lda(self, exp):
 		intro = kw.IF
 		for conditional in self.conditionals:
-			result += "{indent}{intro} {condition} {kw.THEN}\n{block}\n".format(
-					kw        = kw,
-					intro     = intro,
-					indent    = indent_string,
-					condition = conditional.condition.lda_format(),
-					block     = conditional.block.lda_format(indent+1))
+			exp.putline(intro, " ", conditional.condition, " ", kw.THEN)
+			exp.indented(exp.putline, conditional.block)
 			intro = kw.ELIF
-		if self.else_block is not None:
-			result += "{indent}{kw.ELSE}\n{else_block}\n".format(
-					kw = kw,
-					indent = indent_string,
-					else_block = self.else_block.lda_format(indent+1))
-		result += "{indent}{kw.END_IF}".format(indent=indent_string, kw=kw)
-		return result
+		if self.else_block:
+			exp.putline(kw.ELSE)
+			exp.indented(exp.putline, self.else_block)
+		exp.put(kw.END_IF)
 
 class For(Statement):
 	_COMPONENT_NAMES = [
@@ -123,7 +112,7 @@ class For(Statement):
 		self.initial = initial
 		self.final = final
 		self.block = block
-	
+
 	def check(self, context):
 		components = [self.counter, self.initial, self.final]
 		for component, name in zip(components, For._COMPONENT_NAMES):
@@ -146,17 +135,12 @@ class For(Statement):
 		return dot.Node("pour", cluster, counter_node, initial_node,
 				final_node, block_node)
 
-	def lda_format(self, indent=0):
-		return ("{indent}{kw.FOR} {counter} {kw.FROM} {initial} "
-				"{kw.TO} {final} {kw.DO}\n"
-				"{block}\n"
-				"{indent}{kw.END_FOR}").format(
-						kw = kw,
-						indent = indent*'\t',
-						counter = self.counter.lda_format(),
-						initial = self.initial.lda_format(),
-						final = self.final.lda_format(),
-						block = self.block.lda_format(indent + 1))
+	def lda(self, exp):
+		exp.putline(kw.FOR, " ", self.counter, " ", kw.FROM, " ", self.initial,
+				" ", kw.TO, " ", self.final, " ", kw.DO)
+		if self.block:
+			exp.indented(exp.putline, self.block)
+		exp.put(kw.END_FOR)
 
 class While(Conditional):
 	def put_node(self, cluster):
@@ -165,12 +149,9 @@ class While(Conditional):
 		block_node = self.block.put_node(block_cluster)
 		return dot.Node("tantque", cluster, cond_node, block_node)
 
-	def lda_format(self, indent=0):
-		return ("{indent}{kw.WHILE} {condition} {kw.DO}\n"
-				"{block}\n"
-				"{indent}{kw.END_WHILE}").format(
-						kw = kw,
-						indent = indent*'\t',
-						condition = self.condition.lda_format(),
-						block = self.block.lda_format(indent + 1))
+	def lda(self, exp):
+		exp.putline(kw.WHILE, " ", self.condition, " ", kw.DO)
+		if self.block:
+			exp.indented(exp.putline, self.block)
+		exp.put(kw.END_WHILE)
 

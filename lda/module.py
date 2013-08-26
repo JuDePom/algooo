@@ -4,15 +4,16 @@ from . import dot
 from .errors import semantic
 from .statements import StatementBlock
 
-class Module(typedesc.Lexicon):
+class Module:
 	def __init__(self, lexicon, functions, algorithms):
-		variables  = lexicon.variables  if lexicon else None
-		composites = lexicon.composites if lexicon else None
-		super().__init__(variables, composites, functions)
+		variables  = None if lexicon is None else lexicon.variables
+		composites = None if lexicon is None else lexicon.composites
+		self.lexicon = typedesc.Lexicon(variables, composites, functions)
+		self.functions = functions
 		self.algorithms = algorithms
 
 	def check(self, context=None):
-		subcontext = super().check(context)
+		subcontext = self.lexicon.check(context)
 		if len(self.algorithms) > 1:
 			for a in self.algorithms[1:]:
 				# TODO log these errors
@@ -28,47 +29,54 @@ class Module(typedesc.Lexicon):
 		if self.algorithms:
 			self.algorithms[0].put_node(supercluster)
 
-	def lda_format(self, indent=0):
-		result = '\n\n'.join(function.lda_format() for function in self.functions)
+	def lda(self, exp):
+		if self.lexicon:
+			exp.putline(self.lexicon)
+			exp.newline(2)
+		for function in self.functions:
+			exp.putline(function)
+			exp.newline(2)
 		if self.algorithms:
-			if result != "":
-				result += '\n\n'
-			result += self.algorithms[0].lda_format()
-		return result
+			exp.putline(self.algorithms[0])
 
 	def js_format(self):
 		raise Exception("Faire du JavaScript c'est notre but "
 			"mais on n'y est pas encore... choisis un autre format de sortie.")
 
-class Algorithm(StatementBlock):
+class Algorithm:
 	def __init__(self, pos, lexicon, body):
-		super().__init__(pos, body)
+		self.pos = pos
 		self.lexicon = lexicon
+		self.body = body
 
 	def put_node(self, cluster):
 		algorithm_cluster = dot.Cluster("algorithme", cluster)
-		return super().put_node(algorithm_cluster)
+		return self.body.put_node(algorithm_cluster)
 
-	def lda_format(self, indent=0):
-		return "{kw.ALGORITHM}\n{lexicon}\n{kw.BEGIN}\n{body}\n{kw.END}".format(
-				kw = kw,
-				lexicon = self.lexicon.lda_format(indent+1),
-				body = self.body.lda_format(indent+1))
+	def lda(self, exp):
+		exp.putline(kw.ALGORITHM)
+		if self.lexicon:
+			exp.putline(self.lexicon)
+		exp.putline(kw.BEGIN)
+		if self.body:
+			exp.indented(exp.putline, self.body)
+		exp.put(kw.END)
 
 	def check(self, context):
 		if self.lexicon is None:
 			subcontext = context
 		else:
 			subcontext = self.lexicon.check(context)
-		StatementBlock.check(self, subcontext)
+		self.body.check(subcontext)
 
-class Function(StatementBlock):
+class Function:
 	def __init__(self, pos, ident, fp_list, return_type, lexicon, body):
-		super().__init__(pos, body)
+		self.pos = pos
 		self.ident = ident
 		self.fp_list = fp_list
-		self.lexicon = lexicon
 		self.return_type = return_type
+		self.lexicon = lexicon
+		self.body = body
 
 	def check_signature(self, context):
 		subcontext = context.copy()
@@ -100,36 +108,23 @@ class Function(StatementBlock):
 			except KeyError:
 				raise semantic.FormalParameterMissingInLexicon(fp.ident)
 		# check statements
-		StatementBlock.check(self, subcontext)
+		self.body.check(subcontext)
 
 	def put_node(self, cluster):
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
-		return super().put_node(function_cluster)
+		return self.body.put_node(function_cluster)
 
-	def lda_format(self, indent=0):
-		# formal parameters
-		params = ", ".join(param.lda_format() for param in self.fp_list)
-		# return type
-		if self.return_type is typedesc.Void:
-			return_type = ""
-		else:
-			return_type = ": {}".format(self.return_type.lda_format())
-		# lexicon
-		if self.lexicon is None:
-			lexicon = ""
-		else:
-			lexicon = self.lexicon.lda_format(indent+1) + "\n"
-		# body
-		body = self.body.lda_format(indent+1)
-		if body != "":
-			body += "\n"
-		return ("{kw.FUNCTION} {ident}({params}){return_type}\n"
-				"{lexicon}"
-				"{kw.BEGIN}\n{body}{kw.END}").format(
-						kw = kw,
-						ident = self.ident.lda_format(),
-						params = params,
-						return_type = return_type,
-						lexicon = lexicon,
-						body = body)
+	def lda(self, exp):
+		exp.put(kw.FUNCTION, " ", self.ident, kw.LPAREN)
+		exp.join(self.fp_list, exp.put, ", ")
+		exp.put(kw.RPAREN)
+		if self.return_type is not typedesc.Void:
+			exp.put(kw.COLON, " ", self.return_type)
+		exp.newline()
+		if self.lexicon:
+			exp.putline(self.lexicon)
+		exp.putline(kw.BEGIN)
+		if self.body:
+			exp.indented(exp.putline, self.body)
+		exp.put(kw.END)
 

@@ -48,8 +48,8 @@ class Scalar(TypeDescriptor):
 	def check(self, context):
 		return self
 
-	def lda_format(self, indent=0):
-		return str(self.keyword)
+	def lda(self, exp):
+		exp.put(str(self.keyword))
 
 def _dual_scalar_compatibility(weak, strong):
 	def weak_equivalent(self, other):
@@ -97,8 +97,8 @@ class Array(TypeDescriptor):
 			self.low  = self.expression.lhs
 			self.high = self.expression.rhs
 
-		def lda_format(self):
-			return self.expression.lda_format()
+		def lda(self, exp):
+			exp.put(self.expression)
 
 	class DynamicDimension:
 		def __init__(self, pos):
@@ -110,8 +110,8 @@ class Array(TypeDescriptor):
 		def check(self):
 			pass
 
-		def lda_format(self):
-			return "?"
+		def lda(self):
+			exp.put(kw.QUESTION_MARK)
 
 	def __init__(self, element_type, dimensions):
 		super().__init__()
@@ -134,11 +134,10 @@ class Array(TypeDescriptor):
 		self.resolved_element_type = self.element_type.check(context).resolved_type
 		return self
 
-	def lda_format(self):
-		return "{kw.ARRAY} {element_type}[{dimensions}]".format(
-				kw = kw,
-				element_type = self.element_type.lda_format(),
-				dimensions = ", ".join(dim.lda_format() for dim in self.dimensions))
+	def lda(self, exp):
+		exp.put(kw.ARRAY, " ", self.element_type, kw.LSBRACK)
+		exp.join(self.dimensions, exp.put, ", ")
+		exp.put(kw.RSBRACK)
 
 	def equivalent(self, other):
 		if not isinstance(other, Array):
@@ -180,9 +179,10 @@ class CompositeType(TypeDescriptor):
 			except AttributeError:
 				pass
 
-	def lda_format(self, indent=0):
-		result = ", ".join(param.lda_format() for param in self.field_list)
-		return "<{}>".format(result)
+	def lda(self, exp):
+		exp.put(self.ident, " ", kw.EQ, " ", kw.LT)
+		exp.join(self.field_list, exp.put, ", ")
+		exp.put(kw.GT)
 
 class Identifier:
 	def __init__(self, pos, name):
@@ -198,8 +198,8 @@ class Identifier:
 	def __ne__(self, other):
 		return self.name != other.name
 
-	def lda_format(self, indent=0):
-		return self.name
+	def lda(self, exp):
+		exp.put(self.name)
 
 	def check(self, context):
 		try:
@@ -234,9 +234,8 @@ class Field:
 		self.resolved_type = self.type_descriptor.check(context).resolved_type
 		return self
 
-	def lda_format(self, indent=0):
-		return "{} : {}".format(self.ident.name,
-				self.type_descriptor.lda_format())
+	def lda(self, exp):
+		exp.put(self.ident, kw.COLON, " ", self.type_descriptor)
 
 class Lexicon:
 	def __init__(self, variables=None, composites=None, functions=None):
@@ -248,7 +247,7 @@ class Lexicon:
 		self.functions  = functions  if functions  is not None else []
 		self.all_items = self.variables + self.composites + self.functions
 		self.symbol_dict = {item.ident.name: item for item in self.all_items}
-	
+
 	def check(self, supercontext=None):
 		# initialize supercontext if needed
 		if supercontext is None:
@@ -280,20 +279,12 @@ class Lexicon:
 			composite.detect_loops(composite)
 		return subcontext
 
-	def lda_format(self, indent=0):
-		composites = "\n".join("\t{} = {}".format(c.ident.name, c.lda_format())
-				for c in sorted(self.composites, key=lambda c: c.ident.name))
-		variables = "\n".join("\t" + v.lda_format()
-				for v in sorted(self.variables, key=lambda v: v.ident.name))
-		if variables == "" and composites == "":
-			return ""
-		elif variables == "":
-			declarations = composites
-		elif composites == "":
-			declarations = variables
-		else:
-			declarations = '\n'.join([composites, variables])
-		return "{kw.LEXICON}\n{declarations}".format(
-				kw = kw,
-				declarations = declarations)
+	def __bool__(self):
+		return bool(self.composites) or bool(self.variables)
+
+	def lda(self, exp):
+		if not self:
+			return
+		exp.putline(kw.LEXICON)
+		exp.indented(exp.join, self.composites + self.variables, exp.newline)
 

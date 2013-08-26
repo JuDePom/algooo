@@ -1,23 +1,19 @@
 from tests.ldatestcase import LDATestCase
-from lda import module, expression, statements, typedesc, operators
+from lda import module, expression, statements, typedesc, operators, ldaexporter
 import lda.keywords as kw
 
 class test_lda_output(LDATestCase):
 	def _assert_export(self, cls, program):
 		stmt = self.analyze(cls, program)
-		self.assertEqual(stmt.lda_format(), program)
-
-	def test_scalar_types(self):
-		self.assertEqual(typedesc.Integer.lda_format(), kw.INT.default_spelling)
-		self.assertEqual(typedesc.Real.lda_format(), kw.REAL.default_spelling)
-		self.assertEqual(typedesc.String.lda_format(), kw.STRING.default_spelling)
-		self.assertEqual(typedesc.Boolean.lda_format(), kw.BOOL.default_spelling)
+		exp = ldaexporter.LDAExporter()
+		stmt.lda(exp)
+		self.assertEqual(str(exp), program)
 
 	def test_lexicon(self):
 		program = (
 				"{kw.LEXICON}\n"
-				"\tMoule = <prix : {kw.INT}, nom : {kw.STRING}>\n"
-				"\ttab : tableau Moule[0 .. i, 0 .. j]").format(kw=kw)
+				"\tMoule = <prix: {kw.INT}, nom: {kw.STRING}>\n"
+				"\ttab: tableau Moule[0 .. i, 0 .. j]").format(kw=kw)
 		self._assert_export(typedesc.Lexicon, program)
 
 	def test_literals(self):
@@ -76,8 +72,8 @@ class test_lda_output(LDATestCase):
 		program = (
 				"{kw.ALGORITHM}\n"
 				"{kw.LEXICON}\n"
-				"\ta : {kw.INT}\n"
-				"\tb : {kw.INT}\n"
+				"\ta: {kw.INT}\n"
+				"\tb: {kw.INT}\n"
 				"{kw.BEGIN}\n"
 				"\ta {kw.ASSIGN} b\n"
 				"{kw.END}").format(kw=kw)
@@ -85,12 +81,49 @@ class test_lda_output(LDATestCase):
 
 	def test_function(self):
 		program = (
-				"{kw.FUNCTION} lolilol(param1 : {kw.INT}, param2 : {kw.INT}): {kw.INT}\n"
+				"{kw.FUNCTION} lolilol(param1: {kw.INT}, param2: {kw.INT}): {kw.INT}\n"
 				"{kw.LEXICON}\n"
-				"\ta : {kw.INT}\n"
-				"\tb : {kw.INT}\n"
+				"\ta: {kw.INT}\n"
+				"\tb: {kw.INT}\n"
 				"{kw.BEGIN}\n"
 				"\ta {kw.ASSIGN} b\n"
 				"{kw.END}").format(kw=kw)
 		self._assert_export(module.Function, program)
+
+	def test_empty_function(self):
+		program = "{kw.FUNCTION} vide()\n{kw.BEGIN}\n{kw.END}".format(kw=kw)
+		self._assert_export(module.Function, program)
+
+	def test_empty_while(self):
+		program = "{kw.WHILE} {kw.TRUE} {kw.DO}\n{kw.END_WHILE}".format(kw=kw)
+		self._assert_export(statements.While, program)
+
+	def test_empty_for(self):
+		program = "{kw.FOR} i {kw.FROM} 0 {kw.TO} 10 {kw.DO}\n{kw.END_FOR}".format(kw=kw)
+		self._assert_export(statements.For, program)
+
+	def test_complex_indentation(self):
+		program = (
+				"{kw.LEXICON}\n"
+				"\tDate = <j: entier, m: entier, a: entier>\n"
+				"\n"
+				"\n"
+				"{kw.ALGORITHM}\n"
+				"{kw.LEXICON}\n"
+				"\td: Date\n"
+				"\te: entier\n"
+				"{kw.BEGIN}\n"
+				"\t{kw.IF} {kw.FALSE} {kw.THEN}\n"
+				"\t\te {kw.ASSIGN} 3\n"
+				"\t\t{kw.WHILE} e {kw.LT} 10 {kw.DO}\n"
+				"\t\t\te {kw.ASSIGN} e + 1\n"
+				"\t\t{kw.END_WHILE}\n"
+				"\t{kw.ELIF} {kw.TRUE} {kw.THEN}\n"
+				"\t\te {kw.ASSIGN} 12\n"
+				"\t{kw.ELSE}\n"
+				"\t\te {kw.ASSIGN} -1\n"
+				"\t{kw.END_IF}\n"
+				"\td.j {kw.ASSIGN} e\n"
+				"{kw.END}\n").format(kw=kw)
+		self._assert_export(module.Module, program)
 

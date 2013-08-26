@@ -15,6 +15,9 @@ class Varargs(Expression):
 		super().__init__(pos)
 		self.arg_list = arg_list
 
+	def __getitem__(self, index):
+		return self.arg_list[index]
+
 	def __iter__(self):
 		for arg in self.arg_list:
 			yield arg
@@ -40,9 +43,9 @@ class Varargs(Expression):
 		cluster.rank_chains.append(arg_nodes)
 		return arg_nodes[0]
 
-	def lda_format(self, indent=0):
-		return ", ".join(param.lda_format() for param in self.arg_list)
-		
+	def lda(self, exp):
+		exp.join(self.arg_list, exp.put, ", ")
+
 	def check(self, context):
 		self.resolved_type = [arg.check(context) for arg in self]
 		return self
@@ -64,20 +67,20 @@ class Literal(Expression):
 class LiteralInteger(Literal):
 	resolved_type = typedesc.Integer
 
-	def lda_format(self, indent=0):
-		return str(self.value)
+	def lda(self, exp):
+		exp.put(str(self.value))
 
 class LiteralReal(Literal):
 	resolved_type = typedesc.Real
 
-	def lda_format(self, indent=0):
-		return str(self.value)
+	def lda(self, exp):
+		exp.put(str(self.value))
 
 class LiteralString(Literal):
 	resolved_type = typedesc.String
 
-	def lda_format(self, indent=0):
-		return '"{}"'.format(self.value)
+	def lda(self, exp):
+		exp.put(kw.QUOTE2, self.value, kw.QUOTE2)
 
 class LiteralCharacter(Literal):
 	resolved_type = typedesc.Character
@@ -86,12 +89,12 @@ class LiteralCharacter(Literal):
 		super().__init__(pos, value)
 		assert len(value) == 1
 
-	def lda_format(self, indent=0):
-		return "'{}'".format(self.value)
+	def lda(self, exp):
+		exp.put(kw.QUOTE1, self.value, kw.QUOTE1)
 
 class LiteralBoolean(Literal):
 	resolved_type = typedesc.Boolean
 
-	def lda_format(self, indent=0):
-		return kw.TRUE.default_spelling if self.value else kw.FALSE.default_spelling
+	def lda(self, exp):
+		exp.put(kw.TRUE if self.value else kw.FALSE)
 
