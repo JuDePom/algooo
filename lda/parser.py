@@ -199,7 +199,7 @@ class Parser:
 			lexicon = self.analyze_lexicon()
 		# statement block
 		self.consume_keyword(kw.BEGIN)
-		body, _ = self.analyze_statement_block(kw.END)
+		body, _, _ = self.analyze_statement_block(kw.END)
 		return module.Algorithm(pos, lexicon, body)
 
 	def analyze_function(self):
@@ -229,7 +229,7 @@ class Parser:
 			lexicon = self.analyze_lexicon()
 		# statement block
 		self.consume_keyword(kw.BEGIN)
-		body, _ = self.analyze_statement_block(kw.END)
+		body, _, _ = self.analyze_statement_block(kw.END)
 		return module.Function(pos, ident, params, return_type, lexicon, body)
 
 	def analyze_scalar_type(self):
@@ -318,6 +318,13 @@ class Parser:
 		return identifier_class(pos, name)
 
 	def analyze_statement_block(self, *end_marker_keywords):
+		"""
+		Build a statement block until an end marker keyword is found.
+		Return a tuple containing:
+		- the statement block
+		- the encountered end marker
+		- the end marker's position
+		"""
 		pos = self.pos
 		block = []
 		while True:
@@ -326,8 +333,9 @@ class Parser:
 				block.append(unit)
 				continue
 			break
+		marker_pos = self.pos
 		marker = self.consume_keyword_choice(*end_marker_keywords)
-		return statements.StatementBlock(pos, block), marker
+		return statements.StatementBlock(pos, block), marker, marker_pos
 
 	def analyze_statement(self):
 		return self.analyze_multiple("une instruction",
@@ -339,28 +347,24 @@ class Parser:
 	def analyze_if(self):
 		pos = self.pos
 		self.consume_keyword(kw.IF)
-		# condition
-		with CriticalItem(self, "condition"):
-			condition = self.analyze_expression()
-		# then block
-		self.consume_keyword(kw.THEN)
-		then_block, emk = self.analyze_statement_block(kw.ELIF, kw.ELSE, kw.END_IF)
-		# elif_block
-		elif_blocks = []
-		if emk is kw.ELIF:
-			while emk is kw.ELIF:
-				with CriticalItem(self, "condition"):
-					condition = self.analyze_expression()
-				self.consume_keyword(kw.THEN)
-				elif_block, emk = self.analyze_statement_block(kw.ELIF, kw.ELSE, kw.END_IF)
-				elif_blocks.append((condition, elif_block))
+		conditionals = []
+		emk = None
+		while emk in (None, kw.ELIF):
+			# condition
+			with CriticalItem(self, "condition"):
+				condition = self.analyze_expression()
+			# then block
+			self.consume_keyword(kw.THEN)
+			then_block, emk, nextpos = self.analyze_statement_block(kw.ELIF, kw.ELSE, kw.END_IF)
+			conditionals.append(statements.Conditional(pos, condition, then_block))
+			pos = nextpos
 		# else block
-		else_block = None
 		if emk is kw.ELSE:
-			else_block, _ = self.analyze_statement_block(kw.END_IF)
-		return statements.IfThenElse(pos, condition, then_block, elif_blocks, else_block)
+			else_block, _, _ = self.analyze_statement_block(kw.END_IF)
+		else:
+			else_block = None
+		return statements.If(conditionals, else_block)
 
-		
 	def analyze_for(self):
 		pos = self.pos
 		self.consume_keyword(kw.FOR)
@@ -377,7 +381,7 @@ class Parser:
 			final = self.analyze_expression()
 		# statement block
 		self.consume_keyword(kw.DO)
-		block, _ = self.analyze_statement_block(kw.END_FOR)
+		block, _, _ = self.analyze_statement_block(kw.END_FOR)
 		return statements.For(pos, counter, initial, final, block)
 
 	def analyze_while(self):
@@ -388,7 +392,7 @@ class Parser:
 			condition = self.analyze_expression()
 		# statement block
 		self.consume_keyword(kw.DO)
-		block, _ = self.analyze_statement_block(kw.END_WHILE)
+		block, _, _ = self.analyze_statement_block(kw.END_WHILE)
 		return statements.While(pos, condition, block)
 
 	def analyze_expression(self):

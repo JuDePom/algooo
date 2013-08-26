@@ -47,34 +47,37 @@ class StatementBlock(position.SourceThing):
 		for statement in self:
 			statement.check(context)
 
-class IfThenElse(Statement):
-	def __init__(self, pos, condition, then_block, elif_blocks, else_block=None ):
+class Conditional(Statement):
+	"""
+	Statement containing a condition and a statement block. The statement
+	block is only executed if the condition is verified.
+	"""
+
+	def __init__(self, pos, condition, block):
 		super().__init__(pos)
-		self.condition = condition
-		self.then_block = then_block
-		self.else_block = else_block
-		self.elif_blocks = elif_blocks
+		self.condition  = condition
+		self.block = block
 
 	def check(self, context):
 		condition_type = self.condition.check(context).resolved_type
 		if condition_type is not typedesc.Boolean:
-			raise semantic.SpecificTypeExpected(self.condition.pos, "la condition",
+			raise semantic.SpecificTypeExpected(self.condition.pos,
+					"la condition",
 					expected=typedesc.Boolean, given=condition_type)
-		self.then_block.check(context)
-		
-		for elif_block in self.elif_blocks:
-			condition = elif_block[0]
-			condition_type = condition.check(context).resolved_type
-			if condition_type is not typedesc.Boolean:
-				raise semantic.SpecificTypeExpected(self.condition.pos, "la condition",
-						expected=typedesc.Boolean, given=condition_type)
-			elif_block = elif_block[1]
-			elif_block.check(context)	
-			
+		self.block.check(context)
+		return self
+
+class If(Statement):
+	def __init__(self, conditionals, else_block=None):
+		super().__init__(conditionals[0].pos)
+		self.conditionals = conditionals
+		self.else_block = else_block
+
+	def check(self, context):
+		for clause in self.conditionals:
+			clause.check(context)
 		if self.else_block is not None:
 			self.else_block.check(context)
-
-
 
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)
@@ -89,17 +92,16 @@ class IfThenElse(Statement):
 
 	def lda_format(self, indent=0):
 		indent_string = indent * '\t'
-		result = "{indent}{kw.IF} {condition} {kw.THEN}\n{then_block}\n".format(
-				kw = kw,
-				indent = indent_string,
-				condition = self.condition.lda_format(),
-				then_block = self.then_block.lda_format(indent+1))
-		for elif_b in self.elif_blocks:
-			result += "{indent}{kw.ELIF} {condition} {kw.THEN}\n{elif_block}\n".format(
-				kw = kw,
-				indent = indent_string,
-				condition = elif_b[0].lda_format(),
-				elif_block = elif_b[1].lda_format(indent+1))
+		result = ""
+		intro = kw.IF
+		for conditional in self.conditionals:
+			result += "{indent}{intro} {condition} {kw.THEN}\n{block}\n".format(
+					kw        = kw,
+					intro     = intro,
+					indent    = indent_string,
+					condition = conditional.condition.lda_format(),
+					block     = conditional.block.lda_format(indent+1))
+			intro = kw.ELIF
 		if self.else_block is not None:
 			result += "{indent}{kw.ELSE}\n{else_block}\n".format(
 					kw = kw,
@@ -156,21 +158,7 @@ class For(Statement):
 						final = self.final.lda_format(),
 						block = self.block.lda_format(indent + 1))
 
-class While(Statement):
-	def __init__(self, pos, condition, block):
-		super().__init__(pos)
-		self.condition = condition
-		self.block = block	
-
-	def check(self, context):
-		condition_type = self.condition.check(context).resolved_type
-		if condition_type is not typedesc.Boolean:
-			raise semantic.SpecificTypeExpected(self.condition.pos,
-					"la condition de la boucle",
-					expected=typedesc.Boolean, given=condition_type)
-		self.block.check(context)
-		return self
-
+class While(Conditional):
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)
 		block_cluster = dot.Cluster("faire", cluster)
