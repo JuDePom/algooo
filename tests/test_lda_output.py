@@ -1,4 +1,4 @@
-import unittest
+from tests.ldatestcase import LDATestCase
 from lda import module, expression, statements, typedesc, operators
 import lda.keywords as kw
 
@@ -12,7 +12,11 @@ def _bogus_block(name_a, name_b):
 	assignment = operators.Assignment(None, _id(name_a), _id(name_b))
 	return statements.StatementBlock(None, [assignment])
 
-class test_lda_output(unittest.TestCase):
+class test_lda_output(LDATestCase):
+	def _assert_export(self, cls, program):
+		stmt = self.analyze(cls, program)
+		self.assertEqual(stmt.lda_format(), program)
+
 	def test_scalar_types(self):
 		self.assertEqual(typedesc.Integer.lda_format(), kw.INT.default_spelling)
 		self.assertEqual(typedesc.Real.lda_format(), kw.REAL.default_spelling)
@@ -42,7 +46,7 @@ class test_lda_output(unittest.TestCase):
 		self.assertEqual(expression.LiteralString(None, "I am a string").lda_format(), "\"I am a string\"")
 		self.assertEqual(expression.LiteralBoolean(None, True).lda_format(), kw.TRUE.default_spelling)
 		self.assertEqual(expression.LiteralBoolean(None, False).lda_format(), kw.FALSE.default_spelling)	
-	
+
 	def test_varargs(self):
 		expected = "a : {0.INT}, b : {0.STRING}".format(kw)
 		field1 = typedesc.Field(_id("a"),typedesc.Integer)
@@ -50,24 +54,34 @@ class test_lda_output(unittest.TestCase):
 		varargs = expression.Varargs(None, [field1, field2])
 		self.assertEqual(varargs.lda_format(), expected)
 
-	def test_if_then(self):
-		expected_if_then = (
+	def test_if(self):
+		program = (
 				"{0.IF} a {0.LE} b {0.THEN}\n"
 				"\ta {0.ASSIGN} b\n"
 				"{0.END_IF}").format(kw)
-		expected_if_then_else = (
+		self._assert_export(statements.If, program)
+
+	def test_if_else(self):
+		program = (
 				"{0.IF} a {0.LE} b {0.THEN}\n"
 				"\ta {0.ASSIGN} b\n"
 				"{0.ELSE}\n"
 				"\tb {0.ASSIGN} a\n"
 				"{0.END_IF}").format(kw)
-		condition = operators.LessOrEqual(None, _id("a"), _id("b"))
-		then_block = _bogus_block("a", "b")
-		else_block = _bogus_block("b", "a")
-		if_then = statements.IfThenElse(None, condition, then_block)
-		if_then_else = statements.IfThenElse(None, condition, then_block, else_block)
-		self.assertEqual(if_then.lda_format(), expected_if_then)
-		self.assertEqual(if_then_else.lda_format(), expected_if_then_else)
+		self._assert_export(statements.If, program)
+
+	def test_if_elif_else(self):
+		program = (
+				"{kw.IF} a {kw.LE} b {kw.THEN}\n"
+				"\ta {kw.ASSIGN} b\n"
+				"{kw.ELIF} b {kw.LE} c {kw.THEN}\n"
+				"\tb {kw.ASSIGN} c\n"
+				"{kw.ELIF} c {kw.LE} d {kw.THEN}\n"
+				"\tc {kw.ASSIGN} d\n"
+				"{kw.ELSE}\n"
+				"\tb {kw.ASSIGN} a\n"
+				"{kw.END_IF}").format(kw=kw)
+		self._assert_export(statements.If, program)
 
 	def test_for(self):
 		expected = (
