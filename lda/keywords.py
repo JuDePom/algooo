@@ -56,6 +56,7 @@ END_WHILE      = Keyword("ftantque", "ftant")
 
 IF             = Keyword("si")
 THEN           = Keyword("alors")
+ELIF           = Keyword("snsi")
 ELSE           = Keyword("sinon")
 END_IF         = Keyword("fsi")
 

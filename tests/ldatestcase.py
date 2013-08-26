@@ -24,7 +24,7 @@ class LDATestCase(unittest.TestCase):
 				typedesc.CompositeType:      self.parser.analyze_composite_type,
 				statements.While:            self.parser.analyze_while,
 				statements.For:              self.parser.analyze_for,
-				statements.IfThenElse:       self.parser.analyze_if,
+				statements.If:               self.parser.analyze_if,
 		}
 
 	def analyze(self, cls, program, **kwargs):
