@@ -30,7 +30,7 @@ class UnaryOp(Expression):
 	def lda(self, exp):
 		exp.put(self.keyword_def, " ", self.rhs)
 
-	def check(self, context):
+	def check(self, context, logger):
 		raise NotImplementedError
 
 class BinaryOp(Expression):
@@ -66,7 +66,7 @@ class BinaryOp(Expression):
 		else:
 			exp.put(self.keyword_def, self.rhs, self.encompass_varargs_till)
 
-	def check(self, context):
+	def check(self, context, logger):
 		raise NotImplementedError
 
 #######################################################################
@@ -79,13 +79,15 @@ class UnaryNumberOp(UnaryOp):
 	"""
 	Unary operator that can only be used with a number type.
 	"""
-	def check(self, context):
-		rtype = self.rhs.check(context).resolved_type
+	def check(self, context, logger):
+		rtype = self.rhs.check(context, logger).resolved_type
 		if rtype not in (typedesc.Integer, typedesc.Real):
 			# TODO peut-être que SpecificTypeExpected est plus adapté ici ?
-			raise semantic.SemanticError(self.pos, "cet opérateur unaire "
-					"ne peut être appliqué qu'à un nombre entier ou réel")
-		self.resolved_type = rtype
+			logger.log(semantic.SemanticError(self.pos, "cet opérateur unaire "
+					"ne peut être appliqué qu'à un nombre entier ou réel"))
+			self.resolved_type = typedesc.ErroneousType
+		else:
+			self.resolved_type = rtype
 		return self
 
 	def lda(self, exp):
@@ -96,14 +98,16 @@ class BinaryChameleonOp(BinaryOp):
 	Binary operator taking operands of equivalent types. The type of the operator
 	is determined by the strongest type among the operands.
 	"""
-	def check(self, context):
-		ltype = self.lhs.check(context).resolved_type
-		rtype = self.rhs.check(context).resolved_type
+	def check(self, context, logger):
+		ltype = self.lhs.check(context, logger).resolved_type
+		rtype = self.rhs.check(context, logger).resolved_type
 		strongtype = ltype.equivalent(rtype)
 		if strongtype is None:
-			raise semantic.TypeMismatch(self.pos, "les types des opérandes doivent "
-					"être équivalents", ltype, rtype)
-		self.resolved_type = strongtype
+			logger.log(semantic.TypeMismatch(self.pos, "les types des opérandes "
+					"doivent être équivalents", ltype, rtype))
+			self.resolved_type = typedesc.ErroneousType
+		else:
+			self.resolved_type = strongtype
 		return self
 
 class BinaryComparisonOp(BinaryOp):
@@ -112,13 +116,13 @@ class BinaryComparisonOp(BinaryOp):
 	"""
 	resolved_type = typedesc.Boolean
 
-	def check(self, context):
-		ltype = self.lhs.check(context).resolved_type
-		rtype = self.rhs.check(context).resolved_type
+	def check(self, context, logger):
+		ltype = self.lhs.check(context, logger).resolved_type
+		rtype = self.rhs.check(context, logger).resolved_type
 		strongtype = ltype.equivalent(rtype)
 		if strongtype is None:
-			raise semantic.TypeMismatch(self.pos, "les types des opérandes doivent "
-					"être équivalents", ltype, rtype)
+			logger.log(semantic.TypeMismatch(self.pos, "les types des opérandes "
+					"doivent être équivalents", ltype, rtype))
 		return self
 
 class BinaryLogicalOp(BinaryOp):
@@ -127,12 +131,12 @@ class BinaryLogicalOp(BinaryOp):
 	"""
 	resolved_type = typedesc.Boolean
 
-	def check(self, context):
+	def check(self, context, logger):
 		for side in (self.lhs, self.rhs):
-			sidetype = side.check(context).resolved_type
+			sidetype = side.check(context, logger).resolved_type
 			if sidetype is not typedesc.Boolean:
-				raise semantic.SpecificTypeExpected(side.pos, "cet opérande",
-						expected=typedesc.Boolean, given=sidetype)
+				logger.log(semantic.SpecificTypeExpected(side.pos, "cet opérande",
+						expected=typedesc.Boolean, given=sidetype))
 		return self
 
 #######################################################################
@@ -169,22 +173,29 @@ class ArraySubscript(BinaryOp):
 	keyword_def = kw.LSBRACK
 	encompass_varargs_till = kw.RSBRACK
 
-	def check(self, context):
-		array_type = self.lhs.check(context).resolved_type
+	def check(self, context, logger):
+		# guilty until proven innocent
+		self.resolved_type = typedesc.ErroneousType
+		# are we trying to subscript an array?
+		array_type = self.lhs.check(context, logger).resolved_type
 		if not isinstance(array_type, typedesc.Array):
-			raise semantic.NonSubscriptable(self.pos)
+			logger.log(semantic.NonSubscriptable(self.pos))
+			return self
 		# check dimension count
 		ldims = len(array_type.dimensions)
 		rdims = len(self.rhs)
 		if ldims != rdims:
-			raise semantic.DimensionCountMismatch(self.pos, given=rdims, expected=ldims)
+			logger.log(semantic.DimensionCountMismatch(
+				self.pos, given=rdims, expected=ldims))
+			return self
 		# check index varargs
-		indices = self.rhs.check(context)
+		indices = self.rhs.check(context, logger)
 		for index, item in zip(indices, self.rhs):
 			if index.resolved_type is not typedesc.Integer:
-				raise semantic.SpecificTypeExpected(item.pos,
+				logger.log(semantic.SpecificTypeExpected(item.pos,
 						"cet indice de tableau",
-						expected=typedesc.Integer, given=index.resolved_type)
+						expected=typedesc.Integer, given=index.resolved_type))
+				return self
 		self.resolved_type = array.resolved_element_type
 		return self
 
@@ -201,22 +212,28 @@ class FunctionCall(BinaryOp):
 	keyword_def = kw.LPAREN
 	encompass_varargs_till = kw.RPAREN
 
-	def check(self, context):
-		function = self.lhs.check(context)
+	def check(self, context, logger):
+		# guilty until proven innocent
+		self.resolved_type = typedesc.ErroneousType
+		# are we trying to call a function?
+		function = self.lhs.check(context, logger)
 		if not isinstance(function, module.Function):
-			raise semantic.NonCallable(self.pos)
+			logger.log(semantic.NonCallable(self.pos))
+			return self
 		# check parameter count
 		expected_argc = len(function.fp_list)
 		given_argc = len(self.rhs)
 		if expected_argc != given_argc:
-			raise semantic.ParameterCountMismatch(self.pos,
-					given=given_argc, expected=expected_argc)
+			logger.log(semantic.ParameterCountMismatch(self.pos,
+					given=given_argc, expected=expected_argc))
+			return self
 		# check parameter types
 		for effective_param, formal_type in zip(self.rhs, function.resolved_parameter_types):
-			effective_type = effective_param.check(context).resolved_type
+			effective_type = effective_param.check(context, logger).resolved_type
 			if not formal_type.compatible(effective_type):
-				raise semantic.SpecificTypeExpected(effective_param.pos,
-						"ce paramètre effectif", formal_type, effective_type)
+				logger.log(semantic.SpecificTypeExpected(effective_param.pos,
+						"ce paramètre effectif", formal_type, effective_type))
+				return self
 		self.resolved_type = function.resolved_return_type
 		return self
 
@@ -231,13 +248,15 @@ class MemberSelect(BinaryOp):
 
 	keyword_def = kw.DOT
 
-	def check(self, context):
+	def check(self, context, logger):
 		# LHS is supposed to refer to a TypeAlias, which refers to a composite
-		composite = self.lhs.check(context).resolved_type
+		composite = self.lhs.check(context, logger).resolved_type
 		if not isinstance(composite, typedesc.CompositeType):
-			raise semantic.NonComposite(self.pos, composite)
-		# use composite context exclusively for RHS
-		self.resolved_type = self.rhs.check(composite.context).resolved_type
+			logger.log(semantic.NonComposite(self.pos, composite))
+			self.resolved_type = typedesc.ErroneousType
+		else:
+			# use composite context exclusively for RHS
+			self.resolved_type = self.rhs.check(composite.context, logger).resolved_type
 		return self
 
 	def lda(self, exp):
@@ -273,13 +292,13 @@ class IntegerRange(BinaryOp):
 	keyword_def = kw.DOTDOT
 	resolved_type = typedesc.Range
 
-	def check(self, context):
+	def check(self, context, logger):
 		for operand in (self.lhs, self.rhs):
-			operand_type = operand.check(context).resolved_type
+			operand_type = operand.check(context, logger).resolved_type
 			if operand_type is not typedesc.Integer:
-				raise semantic.SpecificTypeExpected(operand.pos,
+				logger.log(semantic.SpecificTypeExpected(operand.pos,
 						"une borne d'intervalle",
-						expected=typedesc.Integer, given=operand_type)
+						expected=typedesc.Integer, given=operand_type))
 		return self
 
 class LessThan(BinaryComparisonOp):
@@ -312,13 +331,13 @@ class Assignment(BinaryOp):
 	# an assignment cannot be part of another expression, therefore it has no type
 	resolved_type = None
 
-	def check(self, context):
-		ltype = self.lhs.check(context).resolved_type
-		rtype = self.rhs.check(context).resolved_type
+	def check(self, context, logger):
+		ltype = self.lhs.check(context, logger).resolved_type
+		rtype = self.rhs.check(context, logger).resolved_type
 		if not ltype.compatible(rtype):
-			raise semantic.TypeMismatch(self.rhs.pos, "le type de l'opérande de "
+			logger.log(semantic.TypeMismatch(self.rhs.pos, "le type de l'opérande de "
 					"droite doit être compatible avec le type de l'opérande de gauche",
-					ltype, rtype)
+					ltype, rtype))
 		return self
 
 #######################################################################

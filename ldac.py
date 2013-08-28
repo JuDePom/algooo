@@ -43,9 +43,15 @@ except lda.errors.syntax.SyntaxError as ex:
 
 print (" * Syntaxe : OK.")
 
-module.check()
+logger = lda.errors.log.SemanticErrorLogger()
+module.check({}, logger)
 
-print (" * Sémantique : OK.")
+if logger:
+	print (" *** ERREURS DE SÉMANTIQUE", file=sys.stderr)
+	for e in logger.errors:
+		print(e, file=sys.stderr)
+else:
+	print (" * Sémantique : OK.")
 
 if args.no_output:
 	sys.exit(0)

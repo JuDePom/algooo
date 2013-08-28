@@ -41,9 +41,9 @@ class StatementBlock(position.SourceThing):
 	def lda(self, exp):
 		exp.join(self.body, exp.newline)
 
-	def check(self, context):
+	def check(self, context, logger):
 		for statement in self:
-			statement.check(context)
+			statement.check(context, logger)
 
 class Conditional(Statement):
 	"""
@@ -56,13 +56,12 @@ class Conditional(Statement):
 		self.condition  = condition
 		self.block = block
 
-	def check(self, context):
-		condition_type = self.condition.check(context).resolved_type
+	def check(self, context, logger):
+		condition_type = self.condition.check(context, logger).resolved_type
 		if condition_type is not typedesc.Boolean:
-			raise semantic.SpecificTypeExpected(self.condition.pos,
-					"la condition",
-					expected=typedesc.Boolean, given=condition_type)
-		self.block.check(context)
+			logger.log(semantic.SpecificTypeExpected(self.condition.pos,
+					"la condition", expected=typedesc.Boolean, given=condition_type))
+		self.block.check(context, logger)
 		return self
 
 class If(Statement):
@@ -71,11 +70,11 @@ class If(Statement):
 		self.conditionals = conditionals
 		self.else_block = else_block
 
-	def check(self, context):
+	def check(self, context, logger):
 		for clause in self.conditionals:
-			clause.check(context)
+			clause.check(context, logger)
 		if self.else_block is not None:
-			self.else_block.check(context)
+			self.else_block.check(context, logger)
 
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)
@@ -113,17 +112,17 @@ class For(Statement):
 		self.final = final
 		self.block = block
 
-	def check(self, context):
+	def check(self, context, logger):
 		components = [self.counter, self.initial, self.final]
 		for component, name in zip(components, For._COMPONENT_NAMES):
-			component_type = component.check(context).resolved_type
+			component_type = component.check(context, logger).resolved_type
 			if component_type is not typedesc.Integer:
-				raise semantic.SpecificTypeExpected(component.pos, name,
-						expected=typedesc.Integer, given=component_type)
+				logger.log(semantic.SpecificTypeExpected(component.pos, name,
+						expected=typedesc.Integer, given=component_type))
 		if isinstance(self.counter, expression.Literal):
-			raise semantic.SemanticError(self.counter.pos,
-					"le compteur ne peut pas être constant")
-		self.block.check(context)
+			logger.log(semantic.SemanticError(self.counter.pos,
+					"le compteur ne peut pas être constant"))
+		self.block.check(context, logger)
 		return self
 
 	def put_node(self, cluster):

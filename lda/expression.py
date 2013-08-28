@@ -46,8 +46,8 @@ class Varargs(Expression):
 	def lda(self, exp):
 		exp.join(self.arg_list, exp.put, ", ")
 
-	def check(self, context):
-		self.resolved_type = [arg.check(context) for arg in self]
+	def check(self, context, logger):
+		self.resolved_type = [arg.check(context, logger) for arg in self]
 		return self
 
 class Literal(Expression):
@@ -61,7 +61,7 @@ class Literal(Expression):
 	def put_node(self, cluster):
 		return dot.Node(str(self), cluster)
 
-	def check(self, context):
+	def check(self, context, logger):
 		return self
 
 class LiteralInteger(Literal):

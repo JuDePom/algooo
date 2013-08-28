@@ -12,15 +12,14 @@ class Module:
 		self.functions = functions
 		self.algorithms = algorithms
 
-	def check(self, context=None):
-		subcontext = self.lexicon.check(context)
+	def check(self, context, logger):
+		subcontext = self.lexicon.check(context, logger)
 		if len(self.algorithms) > 1:
 			for a in self.algorithms[1:]:
-				# TODO log these errors
-				raise semantic.SemanticError(a.pos,
-						"il ne peut y avoir qu'un seul algorithme par module")
+				logger.log(semantic.SemanticError(a.pos,
+						"il ne peut y avoir qu'un seul algorithme par module"))
 		elif len(self.algorithms) == 1:
-			self.algorithms[0].check(subcontext)
+			self.algorithms[0].check(subcontext, logger)
 
 	def put_node(self, cluster):
 		supercluster = dot.Cluster("module", cluster)
@@ -62,12 +61,12 @@ class Algorithm:
 			exp.indented(exp.putline, self.body)
 		exp.put(kw.END)
 
-	def check(self, context):
+	def check(self, context, logger):
 		if self.lexicon is None:
 			subcontext = context
 		else:
-			subcontext = self.lexicon.check(context)
-		self.body.check(subcontext)
+			subcontext = self.lexicon.check(context, logger)
+		self.body.check(subcontext, logger)
 
 class Function:
 	def __init__(self, pos, ident, fp_list, return_type, lexicon, body):
@@ -78,23 +77,24 @@ class Function:
 		self.lexicon = lexicon
 		self.body = body
 
-	def check_signature(self, context):
+	def check_signature(self, context, logger):
 		subcontext = context.copy()
 		for fp in self.fp_list:
 			subcontext[fp.ident.name] = fp
-		self.resolved_return_type = self.return_type.check(subcontext)
+		self.resolved_return_type = self.return_type.check(subcontext, logger)
 		self.resolved_parameter_types = []
 		for fp in self.fp_list:
-			self.resolved_parameter_types.append(fp.type_descriptor.check(subcontext).resolved_type)
+			fp_type = fp.type_descriptor.check(subcontext, logger).resolved_type
+			self.resolved_parameter_types.append(fp_type)
 
-	def check(self, context):
+	def check(self, context, logger):
 		# check lexicon
 		if self.lexicon is None:
 			subcontext = context
 		else:
-			subcontext = self.lexicon.check(context)
+			subcontext = self.lexicon.check(context, logger)
 		# hunt duplicates among formal parameters
-		typedesc._hunt_duplicates(self.fp_list)
+		typedesc._hunt_duplicates(self.fp_list, logger)
 		# ensure each formal parameter matches its declaration in the lexicon
 		for fp in self.fp_list:
 			try:
@@ -102,13 +102,13 @@ class Function:
 				fp_lexicon = self.lexicon.symbol_dict[fp.ident.name]
 				fp_lexicon_type = fp_lexicon.type_descriptor
 				if fp_type != fp_lexicon_type:
-					raise semantic.TypeMismatch(fp_lexicon.ident.pos, "le type de ce paramètre "
-						"formel doit rester le même dans l'en-tête de la fonction et dans "
-						"le lexique de la fonction", fp_lexicon_type, fp_type)
+					logger.log(semantic.TypeMismatch(fp_lexicon.ident.pos, "le type de ce "
+						"paramètre formel doit rester le même dans l'en-tête de la fonction "
+						"et dans le lexique de la fonction", fp_lexicon_type, fp_type))
 			except KeyError:
-				raise semantic.FormalParameterMissingInLexicon(fp.ident)
+				logger.log(semantic.FormalParameterMissingInLexicon(fp.ident))
 		# check statements
-		self.body.check(subcontext)
+		self.body.check(subcontext, logger)
 
 	def put_node(self, cluster):
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)

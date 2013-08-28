@@ -94,5 +94,5 @@ class LDATestCase(unittest.TestCase):
 		"""
 		if context is None:
 			context = {}
-		return self.analyze(**kwargs).check(context)
+		return self.analyze(**kwargs).check(context, errors.log.SemanticErrorRaiser())
 

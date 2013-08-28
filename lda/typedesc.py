@@ -1,14 +1,14 @@
 from . import keywords as kw
-from .errors import semantic
+from .errors import semantic, log
 from types import MethodType
 
-def _hunt_duplicates(item_list):
+def _hunt_duplicates(item_list, logger):
 	seen = {}
 	for item in item_list:
 		name = item.ident.name
 		try:
 			pioneer = seen[name]
-			raise semantic.DuplicateDeclaration(item.ident, pioneer.ident)
+			logger.log(semantic.DuplicateDeclaration(item.ident, pioneer.ident))
 		except KeyError:
 			seen[name] = item
 
@@ -34,6 +34,12 @@ class ErroneousType(TypeDescriptor):
 		super().__init__()
 		self.name = name
 
+	def __eq__(self, other):
+		return False
+
+	def equivalent(self, other):
+		return
+
 class Scalar(TypeDescriptor):
 	def __init__(self, keyword):
 		super().__init__()
@@ -45,7 +51,7 @@ class Scalar(TypeDescriptor):
 	def __eq__(self, other):
 		return self is other
 
-	def check(self, context):
+	def check(self, context, logger):
 		return self
 
 	def lda(self, exp):
@@ -83,17 +89,19 @@ class Array(TypeDescriptor):
 			return self is other or (isinstance(other, Array.StaticDimension) and \
 					self.expression == other.expression)#self.low == other.low and self.high == other.high)
 
-		def check(self):
+		def check(self, context, logger):
+			# Don't let the expression look up variables.
+			# It has to be evaluable at compile time.
 			try:
-				self.expression.check({})
+				self.expression.check({}, log.SemanticErrorRaiser())
 			except semantic.MissingDeclaration as e:
-				raise semantic.SemanticError(e.pos,
+				logger.log(semantic.SemanticError(e.pos,
 						"une borne de tableau statique doit être construite à partir "
-						"d'une expression constante")
+						"d'une expression constante"))
 			if self.expression.resolved_type is not Range:
-				raise semantic.SemanticError(self.expression.pos,
+				logger.log(semantic.SemanticError(self.expression.pos,
 						"les bornes d'un tableau statique doivent être données "
-						"sous forme d'intervalle d'entiers littéraux")
+						"sous forme d'intervalle d'entiers littéraux"))
 			self.low  = self.expression.lhs
 			self.high = self.expression.rhs
 
@@ -107,7 +115,7 @@ class Array(TypeDescriptor):
 		def __eq__(self, other):
 			return isinstance(other, Array.DynamicDimension)
 
-		def check(self):
+		def check(self, context, logger):
 			pass
 
 		def lda(self):
@@ -125,13 +133,13 @@ class Array(TypeDescriptor):
 			return False
 		return self.dimensions == other.dimensions
 
-	def check(self, context):
+	def check(self, context, logger):
 		if len(self.dimensions) == 0:
-			raise semantic.SemanticError(self.dimensions.pos,
-					"un tableau doit avoir au moins une dimension")
+			logger.log(semantic.SemanticError(self.dimensions.pos,
+					"un tableau doit avoir au moins une dimension"))
 		for dim in self.dimensions:
-			dim.check()
-		self.resolved_element_type = self.element_type.check(context).resolved_type
+			dim.check(context, logger)
+		self.resolved_element_type = self.element_type.check(context, logger).resolved_type
 		return self
 
 	def lda(self, exp):
@@ -162,20 +170,20 @@ class CompositeType(TypeDescriptor):
 			return False
 		return self.ident == other.ident and self.field_list == other.field_list
 
-	def check(self, supercontext):
+	def check(self, supercontext, logger):
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
-		_hunt_duplicates(self.field_list)
+		_hunt_duplicates(self.field_list, logger)
 		self.context = {field.ident.name: field for field in self.field_list}
 		for field in self.field_list:
-			field.check(supercontext)
+			field.check(supercontext, logger)
 		return self
 
-	def detect_loops(self, composite):
+	def detect_loops(self, composite, logger):
 		for field in self.field_list:
 			if field.resolved_type is composite:
-				raise semantic.RecursiveDeclaration(field.ident.pos)
+				logger.log(semantic.RecursiveDeclaration(field.ident.pos))
 			try:
-				field.resolved_type.detect_loops(composite)
+				field.resolved_type.detect_loops(composite, logger)
 			except AttributeError:
 				pass
 
@@ -201,24 +209,24 @@ class Identifier:
 	def lda(self, exp):
 		exp.put(self.name)
 
-	def check(self, context):
+	def check(self, context, logger):
 		try:
 			return context[self.name]
 		except KeyError:
-			raise semantic.MissingDeclaration(self)
+			logger.log(semantic.MissingDeclaration(self))
 
 class TypeAlias(Identifier):
-	def check(self, context):
+	def check(self, context, logger):
 		try:
 			symbol = context[self.name]
 		except KeyError:
-			# TODO return ErroneousType ?
-			raise semantic.UnresolvableTypeAlias(self)
+			logger.log(semantic.UnresolvableTypeAlias(self))
 		if isinstance(symbol, CompositeType):
 			return symbol
 		else:
-			raise semantic.SpecificTypeExpected(self.pos,
-					"cet alias", CompositeType, type(symbol))
+			logger.log(semantic.SpecificTypeExpected(self.pos,
+					"cet alias", CompositeType, type(symbol)))
+		return ErroneousType
 
 class Field:
 	def __init__(self, ident, type_descriptor):
@@ -230,8 +238,8 @@ class Field:
 			return True
 		return self.ident == other.ident and self.type_descriptor == other.type_descriptor
 
-	def check(self, context):
-		self.resolved_type = self.type_descriptor.check(context).resolved_type
+	def check(self, context, logger):
+		self.resolved_type = self.type_descriptor.check(context, logger).resolved_type
 		return self
 
 	def lda(self, exp):
@@ -245,15 +253,17 @@ class Lexicon:
 		self.variables  = variables  if variables  is not None else []
 		self.composites = composites if composites is not None else []
 		self.functions  = functions  if functions  is not None else []
-		self.all_items = self.variables + self.composites + self.functions
+		self.all_items = sorted(self.variables + self.composites + self.functions,
+				key = lambda item: item.ident.pos)
 		self.symbol_dict = {item.ident.name: item for item in self.all_items}
 
-	def check(self, supercontext=None):
+	def check(self, supercontext, logger):
 		# initialize supercontext if needed
 		if supercontext is None:
 			supercontext = {}
-		# hunt duplicates
-		_hunt_duplicates(sorted(self.all_items, key = lambda item: item.ident.pos))
+		# Hunt duplicates. Note that all_items is sorted by declaration
+		# position, which is important to report errors correctly.
+		_hunt_duplicates(self.all_items, logger)
 		# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
 		# fill subcontext with the contents of the lexicon so that items can
 		# refer to other items in the lexicon
@@ -263,20 +273,20 @@ class Lexicon:
 		subcontext.update({v.ident.name: v for v in self.variables})
 		# refine composite subcontexts
 		for composite in self.composites:
-			composite.check(subcontext)
+			composite.check(subcontext, logger)
 		# resolve function signatures before function bodies,  so that the
 		# functions can call functions defined within this lexicon
 		for function in self.functions:
-			function.check_signature(subcontext)
+			function.check_signature(subcontext, logger)
 		# Function pass 2: bodies.
 		for function in self.functions:
-			function.check(subcontext)
+			function.check(subcontext, logger)
 		# resolve variable types
 		for variable in self.variables:
-			variable.check(subcontext)
+			variable.check(subcontext, logger)
 		# detect infinite recursion in composites
 		for composite in self.composites:
-			composite.detect_loops(composite)
+			composite.detect_loops(composite, logger)
 		return subcontext
 
 	def __bool__(self):
