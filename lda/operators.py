@@ -330,7 +330,7 @@ class Assignment(BinaryOp):
 	keyword_def = kw.ASSIGN
 	right_ass = True
 	# an assignment cannot be part of another expression, therefore it has no type
-	resolved_type = None
+	resolved_type = typebase.AssignmentType
 
 	def check(self, context, logger):
 		ltype = self.lhs.check(context, logger).resolved_type

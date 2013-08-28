@@ -23,4 +23,5 @@ class ErroneousTypeClass(TypeDescriptor):
 
 # TODO: ugly
 ErroneousType = ErroneousTypeClass()
+AssignmentType = ErroneousTypeClass()
 
