@@ -49,7 +49,9 @@ module.check({}, logger)
 if logger:
 	print (" *** ERREURS DE SÉMANTIQUE", file=sys.stderr)
 	for e in logger.errors:
-		print(e, file=sys.stderr)
+		if e.relevant:
+			print(e, file=sys.stderr)
+	sys.exit(1)
 else:
 	print (" * Sémantique : OK.")
 

@@ -97,16 +97,17 @@ class Function:
 		typedesc._hunt_duplicates(self.fp_list, logger)
 		# ensure each formal parameter matches its declaration in the lexicon
 		for fp in self.fp_list:
+			fp_type = fp.type_descriptor
 			try:
-				fp_type = fp.type_descriptor
 				fp_lexicon = self.lexicon.symbol_dict[fp.ident.name]
-				fp_lexicon_type = fp_lexicon.type_descriptor
-				if fp_type != fp_lexicon_type:
-					logger.log(semantic.TypeMismatch(fp_lexicon.ident.pos, "le type de ce "
-						"paramètre formel doit rester le même dans l'en-tête de la fonction "
-						"et dans le lexique de la fonction", fp_lexicon_type, fp_type))
-			except KeyError:
+			except (AttributeError, KeyError):
 				logger.log(semantic.FormalParameterMissingInLexicon(fp.ident))
+				continue
+			fp_lexicon_type = fp_lexicon.type_descriptor
+			if fp_type != fp_lexicon_type:
+				logger.log(semantic.TypeMismatch(fp_lexicon.ident.pos, "le type de ce "
+					"paramètre formel doit rester le même dans l'en-tête de la fonction "
+					"et dans le lexique de la fonction", fp_lexicon_type, fp_type))
 		# check statements
 		self.body.check(subcontext, logger)
 

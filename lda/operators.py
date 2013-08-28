@@ -2,6 +2,7 @@ from . import keywords as kw
 from .expression import Expression
 from .errors import semantic
 from . import typedesc
+from . import typebase
 from . import module
 from . import dot
 
@@ -177,12 +178,12 @@ class ArraySubscript(BinaryOp):
 		# guilty until proven innocent
 		self.resolved_type = typedesc.ErroneousType
 		# are we trying to subscript an array?
-		array_type = self.lhs.check(context, logger).resolved_type
-		if not isinstance(array_type, typedesc.Array):
-			logger.log(semantic.NonSubscriptable(self.pos))
+		array = self.lhs.check(context, logger).resolved_type
+		if not isinstance(array, typedesc.Array):
+			logger.log(semantic.NonSubscriptable(self.pos, array))
 			return self
 		# check dimension count
-		ldims = len(array_type.dimensions)
+		ldims = len(array.dimensions)
 		rdims = len(self.rhs)
 		if ldims != rdims:
 			logger.log(semantic.DimensionCountMismatch(
@@ -218,7 +219,7 @@ class FunctionCall(BinaryOp):
 		# are we trying to call a function?
 		function = self.lhs.check(context, logger)
 		if not isinstance(function, module.Function):
-			logger.log(semantic.NonCallable(self.pos))
+			logger.log(semantic.NonCallable(self.pos, function.resolved_type))
 			return self
 		# check parameter count
 		expected_argc = len(function.fp_list)

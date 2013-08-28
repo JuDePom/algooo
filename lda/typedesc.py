@@ -1,5 +1,6 @@
 from . import keywords as kw
 from .errors import semantic, log
+from .typebase import TypeDescriptor, ErroneousType
 from types import MethodType
 
 def _hunt_duplicates(item_list, logger):
@@ -11,34 +12,6 @@ def _hunt_duplicates(item_list, logger):
 			logger.log(semantic.DuplicateDeclaration(item.ident, pioneer.ident))
 		except KeyError:
 			seen[name] = item
-
-class TypeDescriptor:
-	def __init__(self):
-		self.resolved_type = self
-
-	def __eq__(self, other):
-		raise NotImplementedError
-
-	def __ne__(self, other):
-		return not self.__eq__(other)
-
-	def equivalent(self, other):
-		if self.__eq__(other):
-			return self
-
-	def compatible(self, other):
-		return self.__eq__(other.equivalent(self))
-
-class ErroneousType(TypeDescriptor):
-	def __init__(self, name):
-		super().__init__()
-		self.name = name
-
-	def __eq__(self, other):
-		return False
-
-	def equivalent(self, other):
-		return
 
 class Scalar(TypeDescriptor):
 	def __init__(self, keyword):
@@ -211,9 +184,11 @@ class Identifier:
 
 	def check(self, context, logger):
 		try:
+			# TODO est-ce qu'on devrait rajouter ErroneousType dans le contexte, histoire de ne pas répéter la même erreur 5000 fois ?
 			return context[self.name]
 		except KeyError:
 			logger.log(semantic.MissingDeclaration(self))
+			return ErroneousType
 
 class TypeAlias(Identifier):
 	def check(self, context, logger):
