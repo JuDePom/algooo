@@ -7,6 +7,10 @@ class TestFormalParameterSemantics(LDATestCase):
 		self.assertLDAError(semantic.FormalParameterMissingInLexicon, self.check,
 				cls=Function, program='fonction f((**)a: entier) lexique début fin')
 
+	def test_formal_parameter_absent_from_missing_lexicon(self):
+		self.assertLDAError(semantic.FormalParameterMissingInLexicon, self.check,
+				cls=Function, program='fonction f((**)a: entier) début fin')
+
 	def test_scalar_formal_parameter_present_in_lexicon(self):
 		self.check(cls=Function,
 				program='fonction f(a: entier) lexique a: entier début fin')
