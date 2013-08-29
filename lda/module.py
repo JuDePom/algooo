@@ -152,9 +152,9 @@ class Function:
 		exp.put(kw.END)
 		
 	def js(self, exp):
-		exp.put("function", " ", self.ident, "(")
+		exp.put("function", " ", self.ident, " ( ")
 		exp.join(self.fp_list, exp.put, ", ")
-		exp.put(")")
+		exp.put(" )")
 		exp.newline()
 		if self.lexicon:
 			exp.putline(self.lexicon)

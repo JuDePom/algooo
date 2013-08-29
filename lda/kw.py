@@ -1,5 +1,3 @@
-import re
-
 """
 Keyword lexicon.
 
@@ -13,6 +11,8 @@ keyword, we also allow the unaccented 'debut'.
 
 The first entry in each synonym list is the preferred spelling.
 """
+
+import re
 
 all_keywords = []
 reserved = []

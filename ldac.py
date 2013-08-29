@@ -43,7 +43,7 @@ except lda.errors.syntax.SyntaxError as ex:
 
 print (" * Syntaxe : OK.")
 
-logger = lda.errors.log.SemanticErrorLogger()
+logger = lda.errors.handler.Logger()
 module.check({}, logger)
 
 if logger:

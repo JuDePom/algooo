@@ -315,27 +315,51 @@ class IntegerRange(BinaryOp):
 
 class LessThan(BinaryComparisonOp):
 	keyword_def = kw.LT
+	
+	def js(self, exp):
+		exp.put( self.lhs, " < ", self.rhs)
 
 class GreaterThan(BinaryComparisonOp):
 	keyword_def = kw.GT
+	
+	def js(self, exp):
+		exp.put( self.lhs, " > ", self.rhs)
 
 class LessOrEqual(BinaryComparisonOp):
 	keyword_def = kw.LE
+	
+	def js(self, exp):
+		exp.put( self.lhs, " <= ", self.rhs)
 
 class GreaterOrEqual(BinaryComparisonOp):
 	keyword_def = kw.GE
+	
+	def js(self, exp):
+		exp.put( self.lhs, " >= ", self.rhs)
 
 class Equal(BinaryComparisonOp):
 	keyword_def = kw.EQ
+	
+	def js(self, exp):
+		exp.put( self.lhs, " == ", self.rhs)
 
 class NotEqual(BinaryComparisonOp):
 	keyword_def = kw.NE
 
+	def js(self, exp):
+		exp.put( self.lhs, " != ", self.rhs)
+		
 class LogicalAnd(BinaryLogicalOp):
 	keyword_def = kw.AND
+	
+	def js(self, exp):
+		exp.put( self.lhs, " && ", self.rhs)
 
 class LogicalOr(BinaryLogicalOp):
 	keyword_def = kw.OR
+	
+	def js(self, exp):
+		exp.put( self.lhs, " || ", self.rhs)
 
 class Assignment(BinaryOp):
 	keyword_def = kw.ASSIGN
@@ -352,6 +376,9 @@ class Assignment(BinaryOp):
 			logger.log(semantic.TypeMismatch(self.rhs.pos, "le type de l'opérande de "
 					"droite doit être compatible avec le type de l'opérande de gauche",
 					ltype, rtype))
+
+	def js(self, exp):
+		exp.put( self.lhs, " = ", self.rhs)
 
 #######################################################################
 #

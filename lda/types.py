@@ -263,7 +263,7 @@ class Array(TypeDescriptor):
 		def check(self, context, logger):
 			pass
 
-		def lda(self):
+		def lda(self, exp):
 			exp.put(kw.QUESTION_MARK)
 
 	def __init__(self, pos, element_type, dimensions):

@@ -41,8 +41,8 @@ class RelevantFailureLogger:
 	The most relevant syntax error is that which was raised at the furthest
 	point in the input source code.
 
-	By default, it lets the syntax error propagate (through the handler method
-	syntax_error()), but this can be overridden.
+	By default, this context manager lets the syntax error propagate through
+	the method syntax_error(), but this behavior can be overridden.
 	"""
 
 	def __init__(self, parser):

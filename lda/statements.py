@@ -36,7 +36,7 @@ class StatementBlock:
 
 	def lda(self, exp):
 		exp.join(self.body, exp.newline)
-		
+
 	def js(self, exp):
 		exp.join(self.body, exp.newline)
 
@@ -95,11 +95,11 @@ class If:
 		exp.put(kw.END_IF)
 
 	def js(self, exp):
-		intro = "if"
+		intro = "if ( "
 		for conditional in self.conditionals:
-			exp.putline(intro, " ", conditional.condition, " {")
+			exp.putline(intro, conditional.condition, " ) {")
 			exp.indented(exp.putline, conditional.block)
-			intro = "} else if"
+			intro = "}else if ( "
 		if self.else_block:
 			exp.putline("}else {")
 			exp.indented(exp.putline, self.else_block)
@@ -164,9 +164,9 @@ class While(Conditional):
 		if self.block:
 			exp.indented(exp.putline, self.block)
 		exp.put(kw.END_WHILE)
-	
+
 	def js(self, exp):
-		exp.putline("while", " (", self.condition, ")")
+		exp.putline("while", " ( ", self.condition, " )")
 		if self.block:
 			exp.indented(exp.putline, self.block)
 
