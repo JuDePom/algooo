@@ -37,6 +37,9 @@ class Keyword:
 
 	def lda(self, exp):
 		exp.put(self.default_spelling)
+		
+	def js(self, exp):
+		exp.put(self.default_spelling)
 
 ALGORITHM      = Keyword("algorithme")
 FUNCTION       = Keyword("fonction")

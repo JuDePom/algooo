@@ -51,6 +51,7 @@ class Scalar(TypeDescriptor):
 	def lda(self, exp):
 		exp.put(str(self.keyword))
 
+
 def _dual_scalar_compatibility(weak, strong):
 	def weak_equivalent(self, other):
 		if other in (weak, strong):
@@ -200,6 +201,9 @@ class Identifier:
 
 	def lda(self, exp):
 		exp.put(self.name)
+		
+	def js(self, exp):
+		exp.put(self.name)
 
 	def check(self, context):
 		try:
@@ -236,6 +240,9 @@ class Field:
 
 	def lda(self, exp):
 		exp.put(self.ident, kw.COLON, " ", self.type_descriptor)
+		
+	def js(self, exp):
+		exp.put("var", " ", self.ident)
 
 class Lexicon:
 	def __init__(self, variables=None, composites=None, functions=None):
@@ -286,5 +293,10 @@ class Lexicon:
 		if not self:
 			return
 		exp.putline(kw.LEXICON)
+		exp.indented(exp.join, self.composites + self.variables, exp.newline)
+		
+	def js(self, exp):
+		if not self:
+			return
 		exp.indented(exp.join, self.composites + self.variables, exp.newline)
 

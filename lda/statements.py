@@ -40,6 +40,9 @@ class StatementBlock(position.SourceThing):
 
 	def lda(self, exp):
 		exp.join(self.body, exp.newline)
+		
+	def js(self, exp):
+		exp.join(self.body, exp.newline)
 
 	def check(self, context):
 		for statement in self:
@@ -98,7 +101,18 @@ class If(Statement):
 			exp.putline(kw.ELSE)
 			exp.indented(exp.putline, self.else_block)
 		exp.put(kw.END_IF)
-
+		
+	def js(self, exp):
+		intro = "if"
+		for conditional in self.conditionals:
+			exp.putline(intro, " ", conditional.condition, " {")
+			exp.indented(exp.putline, conditional.block)
+			intro = "} else if"
+		if self.else_block:
+			exp.putline("}else {")
+			exp.indented(exp.putline, self.else_block)
+		exp.put("}")
+		
 class For(Statement):
 	_COMPONENT_NAMES = [
 			"le compteur de la boucle",
@@ -141,6 +155,13 @@ class For(Statement):
 		if self.block:
 			exp.indented(exp.putline, self.block)
 		exp.put(kw.END_FOR)
+		
+	def js(self, exp):
+		exp.putline("for", " (", self.counter, "=", self.initial,
+				"; ", self.counter, "===", self.final, ";", self.counter, "++){")
+		if self.block:
+			exp.indented(exp.putline, self.block)
+		exp.put("{")
 
 class While(Conditional):
 	def put_node(self, cluster):
@@ -154,4 +175,8 @@ class While(Conditional):
 		if self.block:
 			exp.indented(exp.putline, self.block)
 		exp.put(kw.END_WHILE)
-
+	
+	def js(self, exp):
+		exp.putline("while", " (", self.condition, ")")
+		if self.block:
+			exp.indented(exp.putline, self.block)

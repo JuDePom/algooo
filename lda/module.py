@@ -39,9 +39,15 @@ class Module:
 		if self.algorithms:
 			exp.putline(self.algorithms[0])
 
-	def js_format(self):
-		raise Exception("Faire du JavaScript c'est notre but "
-			"mais on n'y est pas encore... choisis un autre format de sortie.")
+	def js(self, exp):
+		if self.lexicon:
+			exp.putline(self.lexicon)
+			exp.newline(2)
+		for function in self.functions:
+			exp.putline(function)
+			exp.newline(2)
+		if self.algorithms:
+			exp.putline(self.algorithms[0])
 
 class Algorithm:
 	def __init__(self, pos, lexicon, body):
@@ -61,7 +67,15 @@ class Algorithm:
 		if self.body:
 			exp.indented(exp.putline, self.body)
 		exp.put(kw.END)
-
+		
+	def js(self, exp):
+		exp.putline("function Main() {")
+		if self.lexicon:
+			exp.putline(self.lexicon)
+		if self.body:
+			exp.indented(exp.putline, self.body)
+		exp.putline("}")
+		
 	def check(self, context):
 		if self.lexicon is None:
 			subcontext = context
@@ -127,4 +141,14 @@ class Function:
 		if self.body:
 			exp.indented(exp.putline, self.body)
 		exp.put(kw.END)
+		
+	def js(self, exp):
+		exp.put("function", " ", self.ident, "(")
+		exp.join(self.fp_list, exp.put, ", ")
+		exp.put(")")
+		exp.newline()
+		if self.lexicon:
+			exp.putline(self.lexicon)
+		if self.body:
+			exp.indented(exp.putline, self.body)
 

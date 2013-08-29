@@ -29,6 +29,9 @@ class UnaryOp(Expression):
 		
 	def lda(self, exp):
 		exp.put(self.keyword_def, " ", self.rhs)
+		
+	def js(self, exp):
+		exp.put(self.keyword_def, " ", self.rhs)
 
 	def check(self, context):
 		raise NotImplementedError
@@ -65,6 +68,13 @@ class BinaryOp(Expression):
 			exp.put(" ", self.keyword_def, " ", self.rhs)
 		else:
 			exp.put(self.keyword_def, self.rhs, self.encompass_varargs_till)
+	
+	def js(self, exp):
+		exp.put(self.lhs)
+		if self.encompass_varargs_till is None:
+			exp.put(" ", self.keyword_def, " ", self.rhs)
+		else:
+			exp.put(self.keyword_def, self.rhs, self.encompass_varargs_till)
 
 	def check(self, context):
 		raise NotImplementedError
@@ -89,6 +99,9 @@ class UnaryNumberOp(UnaryOp):
 		return self
 
 	def lda(self, exp):
+		exp.put(self.keyword_def, self.rhs)
+	
+	def js(self, exp):
 		exp.put(self.keyword_def, self.rhs)
 
 class BinaryChameleonOp(BinaryOp):
@@ -241,6 +254,9 @@ class MemberSelect(BinaryOp):
 		return self
 
 	def lda(self, exp):
+		exp.put(self.lhs, self.keyword_def, self.rhs)
+	
+	def js(self, exp):
 		exp.put(self.lhs, self.keyword_def, self.rhs)
 
 class Power(BinaryChameleonOp):
