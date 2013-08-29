@@ -1,6 +1,5 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
-from lda.typedesc import CompositeType
 from lda.module import Module
 
 class TestMemberSelectSemantics(LDATestCase):

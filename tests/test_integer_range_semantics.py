@@ -1,7 +1,7 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 from lda.operators import IntegerRange
-from lda.typedesc import Lexicon
+from lda.symbols import Lexicon
 
 class TestIntegerRangeSemantics(LDATestCase):
 	def test_fully_constant(self):

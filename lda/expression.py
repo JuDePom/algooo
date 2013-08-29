@@ -1,7 +1,7 @@
 from . import position
-from . import typedesc
-from . import keywords as kw
+from . import kw
 from . import dot
+from . import types
 
 class Expression(position.SourceThing):
 	def __eq__(self, other):
@@ -65,25 +65,25 @@ class Literal(Expression):
 		return self
 
 class LiteralInteger(Literal):
-	resolved_type = typedesc.Integer
+	resolved_type = types.INTEGER
 
 	def lda(self, exp):
 		exp.put(str(self.value))
 
 class LiteralReal(Literal):
-	resolved_type = typedesc.Real
+	resolved_type = types.REAL
 
 	def lda(self, exp):
 		exp.put(str(self.value))
 
 class LiteralString(Literal):
-	resolved_type = typedesc.String
+	resolved_type = types.STRING
 
 	def lda(self, exp):
 		exp.put(kw.QUOTE2, self.value, kw.QUOTE2)
 
 class LiteralCharacter(Literal):
-	resolved_type = typedesc.Character
+	resolved_type = types.CHARACTER
 
 	def __init__(self, pos, value):
 		super().__init__(pos, value)
@@ -93,7 +93,7 @@ class LiteralCharacter(Literal):
 		exp.put(kw.QUOTE1, self.value, kw.QUOTE1)
 
 class LiteralBoolean(Literal):
-	resolved_type = typedesc.Boolean
+	resolved_type = types.BOOLEAN
 
 	def lda(self, exp):
 		exp.put(kw.TRUE if self.value else kw.FALSE)

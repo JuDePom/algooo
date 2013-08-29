@@ -1,8 +1,8 @@
-from . import keywords as kw
+from . import kw
 from . import position
-from . import typedesc
 from . import dot
 from . import expression
+from . import types
 from .errors import semantic
 
 class Statement(position.SourceThing):
@@ -58,9 +58,9 @@ class Conditional(Statement):
 
 	def check(self, context, logger):
 		condition_type = self.condition.check(context, logger).resolved_type
-		if condition_type is not typedesc.Boolean:
+		if condition_type is not types.BOOLEAN:
 			logger.log(semantic.SpecificTypeExpected(self.condition.pos,
-					"la condition", expected=typedesc.Boolean, given=condition_type))
+					"la condition", expected=types.BOOLEAN, given=condition_type))
 		self.block.check(context, logger)
 		return self
 
@@ -116,9 +116,9 @@ class For(Statement):
 		components = [self.counter, self.initial, self.final]
 		for component, name in zip(components, For._COMPONENT_NAMES):
 			component_type = component.check(context, logger).resolved_type
-			if component_type is not typedesc.Integer:
+			if component_type is not types.INTEGER:
 				logger.log(semantic.SpecificTypeExpected(component.pos, name,
-						expected=typedesc.Integer, given=component_type))
+						expected=types.INTEGER, given=component_type))
 		if isinstance(self.counter, expression.Literal):
 			logger.log(semantic.SemanticError(self.counter.pos,
 					"le compteur ne peut pas être constant"))

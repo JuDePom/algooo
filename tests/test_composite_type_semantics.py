@@ -1,11 +1,11 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
-from lda.typedesc import CompositeType
+from lda.types import Composite
 from lda.module import Module
 
 class TestCompositeTypeSemantics(LDATestCase):
 	def test_duplicate_fields_in_composite(self):
-		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=CompositeType,
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Composite,
 				program='Moule = <a:entier, (**)a:chaîne>')
 
 	def test_composite_complex_cross_references(self):

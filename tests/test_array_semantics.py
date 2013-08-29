@@ -1,7 +1,7 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 from lda.module import Module, Algorithm, Function
-from lda.typedesc import Array, Lexicon
+from lda.types import Array
 
 class TestArraySemantics(LDATestCase):
 	def test_0d(self):

@@ -1,11 +1,12 @@
 import re
-from . import keywords as kw
+from . import kw
 from . import module
 from . import position
 from . import expression
 from . import operators
 from . import statements
-from . import typedesc
+from . import symbols
+from . import types
 from .errors import syntax
 
 re_identifier = re.compile(r'''
@@ -253,7 +254,7 @@ class Parser:
 			with CriticalItem(self, "type de retour de la fonction"):
 				return_type = self.analyze_type_descriptor()
 		else:
-			return_type = typedesc.Void
+			return_type = types.VOID
 		# lexicon
 		lexicon = None
 		with BacktrackFailure(self):
@@ -264,15 +265,15 @@ class Parser:
 		return module.Function(pos, ident, params, return_type, lexicon, body)
 
 	def analyze_scalar_type(self):
-		scalars = {
-				kw.INT    : typedesc.Integer,
-				kw.REAL   : typedesc.Real,
-				kw.BOOL   : typedesc.Boolean,
-				kw.CHAR   : typedesc.Character,
-				kw.STRING : typedesc.String,
+		scalar_dict = {
+				kw.INT    : types.INTEGER,
+				kw.REAL   : types.REAL,
+				kw.BOOL   : types.BOOLEAN,
+				kw.CHAR   : types.CHARACTER,
+				kw.STRING : types.STRING,
 		}
-		scalar_kw = self.consume_keyword_choice(*scalars.keys())
-		return scalars[scalar_kw]
+		scalar_kw = self.consume_keyword_choice(*scalar_dict.keys())
+		return scalar_dict[scalar_kw]
 
 	def analyze_array(self):
 		self.consume_keyword(kw.ARRAY)
@@ -281,7 +282,7 @@ class Parser:
 		# TODO: strictly literal integer range, not full-blown expression; also can parse "?"
 		dimensions = self.analyze_varargs(self.analyze_array_dimension)
 		self.consume_keyword(kw.RSBRACK)
-		return typedesc.Array(element_type, dimensions)
+		return types.Array(element_type, dimensions)
 
 	def analyze_array_dimension(self):
 		return self.analyze_multiple("une dimension de tableau statique ou dynamique",
@@ -289,15 +290,15 @@ class Parser:
 				self.analyze_dynamic_array_dimension)
 
 	def analyze_static_array_dimension(self):
-		return typedesc.Array.StaticDimension(self.analyze_expression())
+		return types.Array.StaticDimension(self.analyze_expression())
 
 	def analyze_dynamic_array_dimension(self):
 		pos = self.pos
 		self.consume_keyword(kw.QUESTION_MARK)
-		return typedesc.Array.DynamicDimension(pos)
+		return types.Array.DynamicDimension(pos)
 
 	def analyze_type_alias(self):
-		return self.analyze_identifier(typedesc.TypeAlias)
+		return self.analyze_identifier(symbols.TypeAlias)
 
 	def analyze_type_descriptor(self):
 		with BacktrackFailure(self):
@@ -313,15 +314,15 @@ class Parser:
 		ident = self.analyze_identifier()
 		self.consume_keyword(kw.COLON)
 		type_descriptor = self.analyze_type_descriptor()
-		return typedesc.Field(ident, type_descriptor)
+		return symbols.Field(ident, type_descriptor)
 
-	def analyze_composite_type(self):
+	def analyze_composite(self):
 		ident = self.analyze_identifier()
 		self.consume_keyword(kw.EQ)
 		self.consume_keyword(kw.LT)
 		field_list = self.analyze_varargs(self.analyze_field)
 		self.consume_keyword(kw.GT)
-		return typedesc.CompositeType(ident, field_list)
+		return types.Composite(ident, field_list)
 
 	def analyze_lexicon(self):
 		self.consume_keyword(kw.LEXICON)
@@ -332,12 +333,12 @@ class Parser:
 				variables.append(self.analyze_field())
 				continue
 			with BacktrackFailure(self):
-				composites.append(self.analyze_composite_type())
+				composites.append(self.analyze_composite())
 				continue
 			break
-		return typedesc.Lexicon(variables, composites)
+		return symbols.Lexicon(variables, composites)
 
-	def analyze_identifier(self, identifier_class=typedesc.Identifier):
+	def analyze_identifier(self, identifier_class=symbols.Identifier):
 		pos = self.pos
 		try:
 			name = self.consume_regex(re_identifier, advance=False)

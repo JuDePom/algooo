@@ -1,6 +1,6 @@
 from tests.ldatestcase import LDATestCase
-from lda import module, expression, statements, typedesc, operators, ldaexporter
-import lda.keywords as kw
+from lda import kw, module, expression, statements, operators, ldaexporter
+from lda.symbols import Lexicon
 
 class test_lda_output(LDATestCase):
 	def _assert_export(self, cls, program):
@@ -14,7 +14,7 @@ class test_lda_output(LDATestCase):
 				"{kw.LEXICON}\n"
 				"\tMoule = <prix: {kw.INT}, nom: {kw.STRING}>\n"
 				"\ttab: tableau Moule[0 .. i, 0 .. j]").format(kw=kw)
-		self._assert_export(typedesc.Lexicon, program)
+		self._assert_export(Lexicon, program)
 
 	def test_literals(self):
 		self._assert_export(expression.LiteralInteger, "1")

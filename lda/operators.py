@@ -1,10 +1,9 @@
-from . import keywords as kw
 from .expression import Expression
 from .errors import semantic
-from . import typedesc
-from . import typebase
+from . import types
 from . import module
 from . import dot
+from . import kw
 
 #######################################################################
 #
@@ -82,11 +81,11 @@ class UnaryNumberOp(UnaryOp):
 	"""
 	def check(self, context, logger):
 		rtype = self.rhs.check(context, logger).resolved_type
-		if rtype not in (typedesc.Integer, typedesc.Real):
+		if rtype not in (types.INTEGER, types.REAL):
 			# TODO peut-être que SpecificTypeExpected est plus adapté ici ?
 			logger.log(semantic.SemanticError(self.pos, "cet opérateur unaire "
 					"ne peut être appliqué qu'à un nombre entier ou réel"))
-			self.resolved_type = typedesc.ErroneousType
+			self.resolved_type = types.ERRONEOUS
 		else:
 			self.resolved_type = rtype
 		return self
@@ -106,7 +105,7 @@ class BinaryChameleonOp(BinaryOp):
 		if strongtype is None:
 			logger.log(semantic.TypeMismatch(self.pos, "les types des opérandes "
 					"doivent être équivalents", ltype, rtype))
-			self.resolved_type = typedesc.ErroneousType
+			self.resolved_type = types.ERRONEOUS
 		else:
 			self.resolved_type = strongtype
 		return self
@@ -115,7 +114,7 @@ class BinaryComparisonOp(BinaryOp):
 	"""
 	Binary operator of boolean type, taking operands of equivalent types.
 	"""
-	resolved_type = typedesc.Boolean
+	resolved_type = types.BOOLEAN
 
 	def check(self, context, logger):
 		ltype = self.lhs.check(context, logger).resolved_type
@@ -130,14 +129,14 @@ class BinaryLogicalOp(BinaryOp):
 	"""
 	Binary operator of boolean type, taking operands of boolean types.
 	"""
-	resolved_type = typedesc.Boolean
+	resolved_type = types.BOOLEAN
 
 	def check(self, context, logger):
 		for side in (self.lhs, self.rhs):
 			sidetype = side.check(context, logger).resolved_type
-			if sidetype is not typedesc.Boolean:
+			if sidetype is not types.BOOLEAN:
 				logger.log(semantic.SpecificTypeExpected(side.pos, "cet opérande",
-						expected=typedesc.Boolean, given=sidetype))
+						expected=types.BOOLEAN, given=sidetype))
 		return self
 
 #######################################################################
@@ -176,10 +175,10 @@ class ArraySubscript(BinaryOp):
 
 	def check(self, context, logger):
 		# guilty until proven innocent
-		self.resolved_type = typedesc.ErroneousType
+		self.resolved_type = types.ERRONEOUS
 		# are we trying to subscript an array?
 		array = self.lhs.check(context, logger).resolved_type
-		if not isinstance(array, typedesc.Array):
+		if not isinstance(array, types.Array):
 			logger.log(semantic.NonSubscriptable(self.pos, array))
 			return self
 		# check dimension count
@@ -192,10 +191,10 @@ class ArraySubscript(BinaryOp):
 		# check index varargs
 		indices = self.rhs.check(context, logger)
 		for index, item in zip(indices, self.rhs):
-			if index.resolved_type is not typedesc.Integer:
+			if index.resolved_type is not types.INTEGER:
 				logger.log(semantic.SpecificTypeExpected(item.pos,
 						"cet indice de tableau",
-						expected=typedesc.Integer, given=index.resolved_type))
+						expected=types.INTEGER, given=index.resolved_type))
 				return self
 		self.resolved_type = array.resolved_element_type
 		return self
@@ -215,7 +214,7 @@ class FunctionCall(BinaryOp):
 
 	def check(self, context, logger):
 		# guilty until proven innocent
-		self.resolved_type = typedesc.ErroneousType
+		self.resolved_type = types.ERRONEOUS
 		# are we trying to call a function?
 		function = self.lhs.check(context, logger)
 		if not isinstance(function, module.Function):
@@ -252,9 +251,9 @@ class MemberSelect(BinaryOp):
 	def check(self, context, logger):
 		# LHS is supposed to refer to a TypeAlias, which refers to a composite
 		composite = self.lhs.check(context, logger).resolved_type
-		if not isinstance(composite, typedesc.CompositeType):
+		if not isinstance(composite, types.Composite):
 			logger.log(semantic.NonComposite(self.pos, composite))
-			self.resolved_type = typedesc.ErroneousType
+			self.resolved_type = types.ERRONEOUS
 		else:
 			# use composite context exclusively for RHS
 			self.resolved_type = self.rhs.check(composite.context, logger).resolved_type
@@ -291,15 +290,15 @@ class Subtraction(BinaryChameleonOp):
 
 class IntegerRange(BinaryOp):
 	keyword_def = kw.DOTDOT
-	resolved_type = typedesc.Range
+	resolved_type = types.RANGE
 
 	def check(self, context, logger):
 		for operand in (self.lhs, self.rhs):
 			operand_type = operand.check(context, logger).resolved_type
-			if operand_type is not typedesc.Integer:
+			if operand_type is not types.INTEGER:
 				logger.log(semantic.SpecificTypeExpected(operand.pos,
 						"une borne d'intervalle",
-						expected=typedesc.Integer, given=operand_type))
+						expected=types.INTEGER, given=operand_type))
 		return self
 
 class LessThan(BinaryComparisonOp):
@@ -330,7 +329,7 @@ class Assignment(BinaryOp):
 	keyword_def = kw.ASSIGN
 	right_ass = True
 	# an assignment cannot be part of another expression, therefore it has no type
-	resolved_type = typebase.AssignmentType
+	resolved_type = types.ASSIGNMENT
 
 	def check(self, context, logger):
 		ltype = self.lhs.check(context, logger).resolved_type

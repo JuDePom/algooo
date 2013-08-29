@@ -1,7 +1,7 @@
 from tests.ldatestcase import LDATestCase
 from lda import expression
 from lda import operators
-from lda import typedesc
+from lda.symbols import Identifier
 from lda.errors import syntax
 
 class TestExpressionSyntax(LDATestCase):
@@ -51,8 +51,8 @@ class TestExpressionSyntax(LDATestCase):
 	
 	def test_identifiers_within_range(self):
 		rangeop = self.analyze(operators.IntegerRange, 'a..b')
-		self.assertIsInstance(rangeop.lhs, typedesc.Identifier)
-		self.assertIsInstance(rangeop.rhs, typedesc.Identifier)
+		self.assertIsInstance(rangeop.lhs, Identifier)
+		self.assertIsInstance(rangeop.rhs, Identifier)
 		self.assertEqual(rangeop.lhs.name, 'a')
 		self.assertEqual(rangeop.rhs.name, 'b')
 

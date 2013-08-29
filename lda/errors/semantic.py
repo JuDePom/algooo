@@ -2,8 +2,6 @@
 Semantic errors that can be raised during the semantic analysis phase.
 """
 
-from lda.typebase import ErroneousType
-
 class SemanticError(Exception):
 	"""
 	Raised when the semantic analysis on a given element fails.
@@ -55,9 +53,12 @@ class TypeError(SemanticError):
 	def __init__(self, pos, message, *incriminated):
 		super().__init__(pos, message)
 		for i in incriminated:
-			if i is ErroneousType:
-				self.relevant = False
-				break
+			try:
+				if not i.relevant:
+					self.relevant = False
+					break
+			except AttributeError:
+				pass
 
 class TypeMismatch(TypeError):
 	"""

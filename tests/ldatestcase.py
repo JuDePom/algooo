@@ -1,6 +1,6 @@
 import unittest
-from lda import parser, module, expression, typedesc, statements
-from lda import errors
+from lda import parser, module, expression, types, symbols, statements
+from lda.errors import syntax, semantic, log
 
 class DefaultOptions:
 	case_insensitive = False
@@ -19,9 +19,9 @@ class LDATestCase(unittest.TestCase):
 				module.Function:             self.parser.analyze_function,
 				module.Algorithm:            self.parser.analyze_algorithm,
 				expression.Varargs:          self.parser.analyze_varargs,
-				typedesc.Array:              self.parser.analyze_array,
-				typedesc.Lexicon:            self.parser.analyze_lexicon,
-				typedesc.CompositeType:      self.parser.analyze_composite_type,
+				types.Array:                 self.parser.analyze_array,
+				types.Composite:             self.parser.analyze_composite,
+				symbols.Lexicon:             self.parser.analyze_lexicon,
 				statements.While:            self.parser.analyze_while,
 				statements.For:              self.parser.analyze_for,
 				statements.If:               self.parser.analyze_if,
@@ -53,7 +53,7 @@ class LDATestCase(unittest.TestCase):
 		try:
 			with parser.RelevantFailureLogger(self.parser):
 				thing = analyze_func(**kwargs)
-		except errors.syntax.SyntaxError:
+		except syntax.SyntaxError:
 			# TODO get rid of this kludge ASAP (e.g. by decorating all
 			# parser methods so that they raise relevant_syntax_error)
 			raise self.parser.relevant_syntax_error
@@ -94,5 +94,5 @@ class LDATestCase(unittest.TestCase):
 		"""
 		if context is None:
 			context = {}
-		return self.analyze(**kwargs).check(context, errors.log.SemanticErrorRaiser())
+		return self.analyze(**kwargs).check(context, log.SemanticErrorRaiser())
 

@@ -1,7 +1,7 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import syntax
 from lda.module import Algorithm, Function
-from lda.typedesc import Array, Lexicon
+from lda.types import Array
 
 class TestArraySyntax(LDATestCase):
 	def test_incomplete_intrange(self):

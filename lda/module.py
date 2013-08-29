@@ -1,6 +1,7 @@
-from . import keywords as kw
-from . import typedesc
+from . import kw
 from . import dot
+from . import symbols
+from . import types
 from .errors import semantic
 from .statements import StatementBlock
 
@@ -8,7 +9,7 @@ class Module:
 	def __init__(self, lexicon, functions, algorithms):
 		variables  = None if lexicon is None else lexicon.variables
 		composites = None if lexicon is None else lexicon.composites
-		self.lexicon = typedesc.Lexicon(variables, composites, functions)
+		self.lexicon = symbols.Lexicon(variables, composites, functions)
 		self.functions = functions
 		self.algorithms = algorithms
 
@@ -94,7 +95,7 @@ class Function:
 		else:
 			subcontext = self.lexicon.check(context, logger)
 		# hunt duplicates among formal parameters
-		typedesc._hunt_duplicates(self.fp_list, logger)
+		symbols.hunt_duplicates(self.fp_list, logger)
 		# ensure each formal parameter matches its declaration in the lexicon
 		for fp in self.fp_list:
 			fp_type = fp.type_descriptor
@@ -119,7 +120,7 @@ class Function:
 		exp.put(kw.FUNCTION, " ", self.ident, kw.LPAREN)
 		exp.join(self.fp_list, exp.put, ", ")
 		exp.put(kw.RPAREN)
-		if self.return_type is not typedesc.Void:
+		if self.return_type is not types.VOID:
 			exp.put(kw.COLON, " ", self.return_type)
 		exp.newline()
 		if self.lexicon:
