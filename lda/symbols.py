@@ -29,6 +29,9 @@ class Identifier:
 	def lda(self, exp):
 		exp.put(self.name)
 
+	def js(self, exp):
+		exp.put(self.name)
+
 	def check(self, context, logger):
 		try:
 			# TODO est-ce qu'on devrait rajouter ErroneousType dans le contexte, histoire de ne pas répéter la même erreur 5000 fois ?
@@ -66,6 +69,9 @@ class Field:
 
 	def lda(self, exp):
 		exp.put(self.ident, kw.COLON, " ", self.type_descriptor)
+
+	def js(self, exp):
+		exp.put("var ", self.ident)
 
 class Lexicon:
 	def __init__(self, variables=None, composites=None, functions=None):
@@ -118,5 +124,10 @@ class Lexicon:
 		if not self:
 			return
 		exp.putline(kw.LEXICON)
+		exp.indented(exp.join, self.composites + self.variables, exp.newline)
+
+	def js(self, exp):
+		if not self:
+			return
 		exp.indented(exp.join, self.composites + self.variables, exp.newline)
 

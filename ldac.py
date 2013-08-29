@@ -67,7 +67,10 @@ elif args.format == 'lda':
 	module.lda(exp)
 	output = str(exp)
 elif args.format == 'js':
-	output = module.js_format()
+	from lda import jsexporter
+	exp = lda.jsexporter.JSExporter()
+	module.js(exp)
+	output = str(exp)
 else:
 	raise Exception("Format de sortie inconnu : " + args.format)
 
