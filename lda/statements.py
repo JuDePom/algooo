@@ -60,12 +60,9 @@ class Conditional(Statement):
 		self.block = block
 
 	def check(self, context, logger):
-		condition_type = self.condition.check(context, logger).resolved_type
-		if condition_type is not types.BOOLEAN:
-			logger.log(semantic.SpecificTypeExpected(self.condition.pos,
-					"la condition", expected=types.BOOLEAN, given=condition_type))
+		self.condition.check(context, logger)
+		types.enforce("la condition", types.BOOLEAN, self.condition, logger)
 		self.block.check(context, logger)
-		return self
 
 class If(Statement):
 	def __init__(self, conditionals, else_block=None):
@@ -128,16 +125,13 @@ class For(Statement):
 
 	def check(self, context, logger):
 		components = [self.counter, self.initial, self.final]
-		for component, name in zip(components, For._COMPONENT_NAMES):
-			component_type = component.check(context, logger).resolved_type
-			if component_type is not types.INTEGER:
-				logger.log(semantic.SpecificTypeExpected(component.pos, name,
-						expected=types.INTEGER, given=component_type))
+		for comp, name in zip(components, For._COMPONENT_NAMES):
+			comp.check(context, logger)
+			types.enforce(name, types.INTEGER, comp, logger)
 		if isinstance(self.counter, expression.Literal):
 			logger.log(semantic.SemanticError(self.counter.pos,
 					"le compteur ne peut pas être constant"))
 		self.block.check(context, logger)
-		return self
 
 	def put_node(self, cluster):
 		counter_node = self.counter.put_node(cluster)
@@ -179,3 +173,4 @@ class While(Conditional):
 		exp.putline("while", " (", self.condition, ")")
 		if self.block:
 			exp.indented(exp.putline, self.block)
+

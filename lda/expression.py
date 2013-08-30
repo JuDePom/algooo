@@ -47,8 +47,8 @@ class Varargs(Expression):
 		exp.join(self.arg_list, exp.put, ", ")
 
 	def check(self, context, logger):
-		self.resolved_type = [arg.check(context, logger) for arg in self]
-		return self
+		for arg in self:
+			arg.check(context, logger)
 
 class Literal(Expression):
 	def __init__(self, pos, value):
@@ -62,7 +62,7 @@ class Literal(Expression):
 		return dot.Node(str(self), cluster)
 
 	def check(self, context, logger):
-		return self
+		pass
 
 class LiteralInteger(Literal):
 	resolved_type = types.INTEGER

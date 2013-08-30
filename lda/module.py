@@ -96,13 +96,13 @@ class Function:
 		subcontext = context.copy()
 		for fp in self.fp_list:
 			subcontext[fp.ident.name] = fp
-		self.resolved_return_type = self.return_type.check(subcontext, logger)
-		self.resolved_parameter_types = []
+		self.return_type.check(subcontext, logger)
 		for fp in self.fp_list:
-			fp_type = fp.type_descriptor.check(subcontext, logger).resolved_type
-			self.resolved_parameter_types.append(fp_type)
+			fp.check(subcontext, logger)
 
 	def check(self, context, logger):
+		# TODO hackish...
+		self.resolved_type = self
 		# check lexicon
 		if self.lexicon is None:
 			subcontext = context
@@ -112,17 +112,16 @@ class Function:
 		symbols.hunt_duplicates(self.fp_list, logger)
 		# ensure each formal parameter matches its declaration in the lexicon
 		for fp in self.fp_list:
-			fp_type = fp.type_descriptor
 			try:
 				fp_lexicon = self.lexicon.symbol_dict[fp.ident.name]
 			except (AttributeError, KeyError):
 				logger.log(semantic.FormalParameterMissingInLexicon(fp.ident))
 				continue
-			fp_lexicon_type = fp_lexicon.type_descriptor
-			if fp_type != fp_lexicon_type:
+			if fp != fp_lexicon:
 				logger.log(semantic.TypeMismatch(fp_lexicon.ident.pos, "le type de ce "
 					"paramètre formel doit rester le même dans l'en-tête de la fonction "
-					"et dans le lexique de la fonction", fp_lexicon_type, fp_type))
+					"et dans le lexique de la fonction",
+					fp_lexicon.type_descriptor, fp.type_descriptor))
 		# check statements
 		self.body.check(subcontext, logger)
 

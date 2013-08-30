@@ -2,6 +2,41 @@ from .errors import semantic, handler
 from . import kw
 from types import MethodType
 
+def _enforce(name, expected_type, typed_object, logger, cmpfunc):
+	if cmpfunc(typed_object.resolved_type):
+		return True
+	else:
+		logger.log(semantic.SpecificTypeExpected(
+			typed_object.pos,
+			name,
+			expected = expected_type,
+			given = typed_object.resolved_type))
+		return False
+
+def enforce(name, expected_type, typed_object, logger):
+	"""
+	Ensure the expected type is *equal* to an object's resolved_type.
+	Log a SpecificTypeExpected exception if the type does not conform.
+	:param expected_type: type the object's resolved type must be equal to
+	:param typed_object: object whose resolved_type member will be tested against
+			expected_type
+	:param logger: semantic error logger
+	"""
+	return _enforce(name, expected_type, typed_object, logger,
+			expected_type.__eq__)
+
+def enforce_compatible(name, expected_type, typed_object, logger):
+	"""
+	Ensure the expected type is *compatible with* an object's resolved_type.
+	Log a SpecificTypeExpected exception if the type does not conform.
+	:param expected_type: type the object's resolved type must be equal to
+	:param typed_object: object whose resolved_type member will be tested against
+			expected_type
+	:param logger: semantic error logger
+	"""
+	return _enforce(name, expected_type, typed_object, logger,
+			expected_type.compatible)
+
 #######################################################################
 #
 # BASE TYPE CLASSES
@@ -57,7 +92,7 @@ class Scalar(TypeDescriptor):
 		return self is other
 
 	def check(self, context, logger):
-		return self
+		pass
 
 	def lda(self, exp):
 		exp.put(str(self.keyword))
@@ -149,8 +184,7 @@ class Array(TypeDescriptor):
 					"un tableau doit avoir au moins une dimension"))
 		for dim in self.dimensions:
 			dim.check(context, logger)
-		self.resolved_element_type = self.element_type.check(context, logger).resolved_type
-		return self
+		self.element_type.check(context, logger)
 
 	def lda(self, exp):
 		exp.put(kw.ARRAY, " ", self.element_type, kw.LSBRACK)
@@ -195,7 +229,6 @@ class Composite(TypeDescriptor):
 		self.context = {field.ident.name: field for field in self.field_list}
 		for field in self.field_list:
 			field.check(supercontext, logger)
-		return self
 
 	def detect_loops(self, composite, logger):
 		for field in self.field_list:
