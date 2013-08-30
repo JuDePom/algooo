@@ -1,5 +1,4 @@
-from .errors import semantic
-from .errors.log import SemanticErrorRaiser
+from .errors import semantic, handler
 from . import kw
 from types import MethodType
 
@@ -104,7 +103,7 @@ class Array(TypeDescriptor):
 			# Don't let the expression look up variables.
 			# It has to be evaluable at compile time.
 			try:
-				self.expression.check({}, SemanticErrorRaiser())
+				self.expression.check({}, handler.Raiser())
 			except semantic.MissingDeclaration as e:
 				logger.log(semantic.SemanticError(e.pos,
 						"une borne de tableau statique doit être construite à partir "

@@ -1,6 +1,7 @@
 from tests.ldatestcase import LDATestCase
-from lda.errors import semantic
+from lda.errors import semantic, handler
 from lda.module import Module, Algorithm
+from lda import types
 
 class TestLexiconSemantics(LDATestCase):
 	def test_variable_absent_from_lexicon(self):
@@ -23,8 +24,10 @@ class TestLexiconSemantics(LDATestCase):
 				fonction f(): Moule lexique début fin''')
 
 	def test_undefined_type_alias(self):
-		self.assertLDAError(semantic.MissingDeclaration, self.check, cls=Algorithm,
+		alg = self.analyze(Algorithm,
 				program='algorithme lexique m: (**)TypeMysterieux début fin')
+		alg.check({}, handler.DummyHandler())
+		self.assertIs(types.ERRONEOUS, alg.lexicon.symbol_dict['m'].resolved_type)
 
 	def test_variable_declared_twice(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Algorithm,

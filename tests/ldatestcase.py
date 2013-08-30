@@ -1,6 +1,6 @@
 import unittest
 from lda import parser, module, expression, types, symbols, statements
-from lda.errors import syntax, semantic, log
+from lda.errors import syntax, semantic, handler
 
 class DefaultOptions:
 	case_insensitive = False
@@ -68,31 +68,30 @@ class LDATestCase(unittest.TestCase):
 
 		:param error_class  : An instance of this class is expected to be raised
 			as an exception during the syntax analysis of the program.
-		:param analysis_name: Analysis name passed to LDATestCase.analyze.
-		:param program      : String containing the program itself.
 		:param error_marker : Substring marking the spot where the syntax error
 			is supposed to be raised.
-		:param
+		:param kwargs       : Arguments to pass to the analysis function.
 		"""
+		result = None
 		with self.assertRaises(error_class) as cm:
-			analyzer(**kwargs)
+			result = analyzer(**kwargs)
 		error = cm.exception
 		marker_pos = kwargs['program'].find(error_marker)
 		self.assertGreaterEqual(marker_pos, 0, "can't find error_marker")
 		self.assertEqual(error.pos.char, marker_pos + len(error_marker),
 				"exception wasn't raised at expected position (raised at {})"
 				.format(error.pos))
+		return result
 
 	def check(self, context=None, **kwargs):
 		"""
 		Perform syntactic and semantic analysis of a program.
 
-		:param analysis_name: Analysis name passed to LDATestCase.analyze.
-		:param program: String containing the program itself.
 		:param context: Symbol table used by the semantic analysis. If ommitted,
 			an empty table will be used.
+		:param kwargs : Arguments to pass to the analysis function.
 		"""
 		if context is None:
 			context = {}
-		return self.analyze(**kwargs).check(context, log.SemanticErrorRaiser())
+		return self.analyze(**kwargs).check(context, handler.Raiser())
 

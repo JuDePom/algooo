@@ -1,4 +1,4 @@
-class SemanticErrorLogger:
+class Logger:
 	def __init__(self):
 		self.errors = []
 
@@ -8,7 +8,11 @@ class SemanticErrorLogger:
 	def log(self, error):
 		self.errors.append(error)
 
-class SemanticErrorRaiser:
+class Raiser:
 	def log(self, error):
 		raise error
+
+class DummyHandler:
+	def log(self, error):
+		pass
 
