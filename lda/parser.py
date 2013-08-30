@@ -506,11 +506,11 @@ class Parser:
 		return lhs, bo1
 
 	def analyze_rhs(self, op):
-		if op.encompass_varargs_till is None:
+		if not isinstance(op, operators.BinaryEncompassingOp):
 			rhs = self.analyze_primary_expression()
 		else:
 			rhs = self.analyze_arglist(self.analyze_expression)
-			self.consume_keyword(op.encompass_varargs_till)
+			self.consume_keyword(op.closing)
 		return rhs
 
 	def analyze_primary_expression(self):

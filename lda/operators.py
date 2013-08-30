@@ -38,7 +38,6 @@ class UnaryOp(Expression):
 
 class BinaryOp(Expression):
 	right_ass = False
-	encompass_varargs_till = None
 
 	def __init__(self, pos, lhs=None, rhs=None):
 		super().__init__(pos)
@@ -63,18 +62,11 @@ class BinaryOp(Expression):
 		return op_node
 
 	def lda(self, exp):
-		exp.put(self.lhs)
-		if self.encompass_varargs_till is None:
-			exp.put(" ", self.keyword_def, " ", self.rhs)
-		else:
-			exp.put(self.keyword_def, self.rhs, self.encompass_varargs_till)
+		exp.put(self.lhs, " ", self.keyword_def, " ", self.rhs)
 	
 	def js(self, exp):
-		exp.put(self.lhs)
-		if self.encompass_varargs_till is None:
-			exp.put(" ", self.keyword_def, " ", self.rhs)
-		else:
-			exp.put(self.keyword_def, self.rhs, self.encompass_varargs_till)
+		# TODO this is obviously very wrong
+		exp.put(self.lhs, " ", self.keyword_def, " ", self.rhs)
 
 	def check(self, context, logger):
 		raise NotImplementedError
@@ -150,6 +142,23 @@ class BinaryLogicalOp(BinaryOp):
 			side.check(context, logger)
 			types.enforce("cet opérande", types.BOOLEAN, side, logger)
 
+class BinaryEncompassingOp(BinaryOp):
+	"""
+	Binary operator whose righthand operand is a list of comma-separated
+	arguments. The last argument is followed by a closing keyword, therefore
+	subclasses *must* define the `closing` member.
+	"""
+
+	closing = None # must be defined by subclasses!
+
+	def lda(self, exp):
+		exp.put(self.lhs, self.keyword_def, self.rhs, self.closing)
+
+	def js(self, exp):
+		# TODO this is obviously very wrong
+		exp.put(self.lhs, self.keyword_def, self.rhs, self.closing)
+
+
 #######################################################################
 #
 # UNARY OPERATORS
@@ -171,7 +180,7 @@ class LogicalNot(UnaryOp):
 #
 #######################################################################
 
-class ArraySubscript(BinaryOp):
+class ArraySubscript(BinaryEncompassingOp):
 	"""
 	Array subscript operator.
 
@@ -181,7 +190,7 @@ class ArraySubscript(BinaryOp):
 	"""
 
 	keyword_def = kw.LSBRACK
-	encompass_varargs_till = kw.RSBRACK
+	closing = kw.RSBRACK
 
 	def check(self, context, logger):
 		# guilty until proven innocent
@@ -205,7 +214,7 @@ class ArraySubscript(BinaryOp):
 			types.enforce("cet indice de tableau", types.INTEGER, index, logger)
 		self.resolved_type = array.element_type.resolved_type
 
-class FunctionCall(BinaryOp):
+class FunctionCall(BinaryEncompassingOp):
 	"""
 	Function call operator.
 
@@ -215,7 +224,7 @@ class FunctionCall(BinaryOp):
 	"""
 
 	keyword_def = kw.LPAREN
-	encompass_varargs_till = kw.RPAREN
+	closing = kw.RPAREN
 
 	def check(self, context, logger):
 		# guilty until proven innocent
