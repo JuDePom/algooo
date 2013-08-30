@@ -107,7 +107,7 @@ class TestExpressionSyntax(LDATestCase):
 	def test_array_subscript(self):
 		def test(s, indices):
 			subscript = self.analyze(operators.ArraySubscript, s)
-			self.assertIsInstance(subscript.rhs, expression.Varargs)
+			self.assertIsInstance(subscript.rhs, list)
 			self.assertEqual(len(subscript.rhs), len(indices))
 			for rhs_int, reference in zip(subscript.rhs, indices):
 				self.assertIsInstance(rhs_int, expression.LiteralInteger)

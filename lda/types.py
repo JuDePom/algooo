@@ -266,8 +266,9 @@ class Array(TypeDescriptor):
 		def lda(self):
 			exp.put(kw.QUESTION_MARK)
 
-	def __init__(self, element_type, dimensions):
+	def __init__(self, pos, element_type, dimensions):
 		super().__init__()
+		self.pos = pos
 		self.element_type = element_type
 		self.dimensions = dimensions
 
@@ -280,7 +281,7 @@ class Array(TypeDescriptor):
 
 	def check(self, context, logger):
 		if len(self.dimensions) == 0:
-			logger.log(semantic.SemanticError(self.dimensions.pos,
+			logger.log(semantic.SemanticError(self.pos,
 					"un tableau doit avoir au moins une dimension"))
 		for dim in self.dimensions:
 			dim.check(context, logger)

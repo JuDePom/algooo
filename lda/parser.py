@@ -281,7 +281,7 @@ class Parser:
 			params = []
 		else:
 			# non-empty parameter list
-			params = self.analyze_varargs(self.analyze_field, formal=True)
+			params = self.analyze_arglist(self.analyze_field, formal=True)
 			self.consume_keyword(kw.RPAREN)
 		# optional colon before return type (if omitted, no return type)
 		if self.consume_keyword(kw.COLON, soft=True):
@@ -312,11 +312,11 @@ class Parser:
 	def analyze_array(self):
 		self.consume_keyword(kw.ARRAY)
 		element_type = self.analyze_non_array_type_descriptor()
+		lsbrack_pos = self.pos
 		self.consume_keyword(kw.LSBRACK)
-		# TODO: strictly literal integer range, not full-blown expression; also can parse "?"
-		dimensions = self.analyze_varargs(self.analyze_array_dimension)
+		dimensions = self.analyze_arglist(self.analyze_array_dimension)
 		self.consume_keyword(kw.RSBRACK)
-		return types.Array(element_type, dimensions)
+		return types.Array(lsbrack_pos, element_type, dimensions)
 
 	def analyze_array_dimension(self):
 		return self.analyze_multiple("une dimension de tableau statique ou dynamique",
@@ -361,7 +361,7 @@ class Parser:
 		ident = self.analyze_identifier()
 		self.consume_keyword(kw.EQ)
 		self.consume_keyword(kw.LT)
-		field_list = self.analyze_varargs(self.analyze_field)
+		field_list = self.analyze_arglist(self.analyze_field)
 		self.consume_keyword(kw.GT)
 		return types.Composite(ident, field_list)
 
@@ -509,7 +509,7 @@ class Parser:
 		if op.encompass_varargs_till is None:
 			rhs = self.analyze_primary_expression()
 		else:
-			rhs = self.analyze_varargs(self.analyze_expression)
+			rhs = self.analyze_arglist(self.analyze_expression)
 			self.consume_keyword(op.encompass_varargs_till)
 		return rhs
 
@@ -550,7 +550,7 @@ class Parser:
 				return op_class(pos)
 		raise syntax.ExpectedItem(self.pos, "un opérateur")
 
-	def analyze_varargs(self, analyze_arg, **kwargs):
+	def analyze_arglist(self, analyze_arg, **kwargs):
 		pos = self.pos
 		arg_list = []
 		has_next = True
@@ -563,7 +563,7 @@ class Parser:
 			has_next = self.consume_keyword(kw.COMMA, soft=True)
 			if has_next and arg is None:
 				raise syntax.SyntaxError(arg_pos, "argument vide")
-		return expression.Varargs(pos, arg_list)
+		return arg_list
 
 	def consume_regex(self, compiled_regex, advance=True, buf=None):
 		if buf is None:

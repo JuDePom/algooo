@@ -1,16 +1,12 @@
 from . import kw
-from . import position
 from . import dot
 from . import expression
 from . import types
 from .errors import semantic
 
-class Statement(position.SourceThing):
-		pass
-
-class StatementBlock(position.SourceThing):
+class StatementBlock:
 	def __init__(self, pos, body):
-		super().__init__(pos)
+		self.pos = pos
 		self.body = body
 
 	def __iter__(self):
@@ -48,14 +44,14 @@ class StatementBlock(position.SourceThing):
 		for statement in self:
 			statement.check(context, logger)
 
-class Conditional(Statement):
+class Conditional:
 	"""
 	Statement containing a condition and a statement block. The statement
 	block is only executed if the condition is verified.
 	"""
 
 	def __init__(self, pos, condition, block):
-		super().__init__(pos)
+		self.pos = pos
 		self.condition  = condition
 		self.block = block
 
@@ -64,9 +60,9 @@ class Conditional(Statement):
 		types.enforce("la condition", types.BOOLEAN, self.condition, logger)
 		self.block.check(context, logger)
 
-class If(Statement):
+class If:
 	def __init__(self, conditionals, else_block=None):
-		super().__init__(conditionals[0].pos)
+		self.pos = conditionals[0].pos
 		self.conditionals = conditionals
 		self.else_block = else_block
 
@@ -97,7 +93,7 @@ class If(Statement):
 			exp.putline(kw.ELSE)
 			exp.indented(exp.putline, self.else_block)
 		exp.put(kw.END_IF)
-		
+
 	def js(self, exp):
 		intro = "if"
 		for conditional in self.conditionals:
@@ -109,7 +105,7 @@ class If(Statement):
 			exp.indented(exp.putline, self.else_block)
 		exp.put("}")
 		
-class For(Statement):
+class For:
 	_COMPONENT_NAMES = [
 			"le compteur de la boucle",
 			"la valeur initiale du compteur",
@@ -117,7 +113,7 @@ class For(Statement):
 	]
 
 	def __init__(self, pos, counter, initial, final, block):
-		super().__init__(pos)
+		self.pos = pos
 		self.counter = counter
 		self.initial = initial
 		self.final = final
@@ -148,7 +144,7 @@ class For(Statement):
 		if self.block:
 			exp.indented(exp.putline, self.block)
 		exp.put(kw.END_FOR)
-		
+
 	def js(self, exp):
 		exp.putline("for", " (", self.counter, "=", self.initial,
 				"; ", self.counter, "===", self.final, ";", self.counter, "++){")

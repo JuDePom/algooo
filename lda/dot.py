@@ -59,6 +59,21 @@ class Cluster:
 			cascade.extend(sc.node_cascade())
 		return cascade
 
+def put_arglist_node(arglist, cluster):
+	def make_arg_node(i, item):
+		arg_node = Node("arg"+str(i), cluster)
+		rhs_node = item.put_node(rhs_cluster)
+		arg_node.children.append(rhs_node)
+		return arg_node
+	if not arglist:
+		return Node("\u2205", cluster)
+	rhs_cluster = Cluster("", cluster)
+	arg_nodes = [ make_arg_node(i, item) for i, item in enumerate(arglist) ]
+	for previous, current in zip(arg_nodes, arg_nodes[1:]):
+		previous.children.append(current)
+	cluster.rank_chains.append(arg_nodes)
+	return arg_nodes[0]
+
 def format(module):
 	master = Cluster("")
 	module.put_node(master)

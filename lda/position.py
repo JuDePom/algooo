@@ -41,10 +41,3 @@ class Position(tuple):
 	def terse(self):
 		return "{}:{}".format(self.line, self.column)
 
-class SourceThing:
-	'''
-	Anything that can represented in a source file.
-	'''
-	def __init__(self, pos):
-		self.pos = pos
-

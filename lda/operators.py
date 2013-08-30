@@ -199,9 +199,9 @@ class ArraySubscript(BinaryOp):
 			logger.log(semantic.DimensionCountMismatch(
 				self.pos, given=rdims, expected=ldims))
 			return
-		# check index varargs
-		self.rhs.check(context, logger)
+		# check indices in arglist
 		for index in self.rhs:
+			index.check(context, logger)
 			types.enforce("cet indice de tableau", types.INTEGER, index, logger)
 		self.resolved_type = array.element_type.resolved_type
 

@@ -111,7 +111,7 @@ class CountMismatch(SemanticError):
 	"""
 	Raised when the number of items given does not match that which is expected.
 
-	Typically used with Varargs.
+	Typically used with arglists.
 	"""
 	def __init__(self, pos, expected, given):
 		message = "{self_wants} {x} {things}, mais {only}{y} {were_given}".format(

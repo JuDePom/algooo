@@ -18,7 +18,7 @@ class LDATestCase(unittest.TestCase):
 				module.Module:               self.parser.analyze_module,
 				module.Function:             self.parser.analyze_function,
 				module.Algorithm:            self.parser.analyze_algorithm,
-				expression.Varargs:          self.parser.analyze_varargs,
+				list:                        self.parser.analyze_arglist,
 				types.Array:                 self.parser.analyze_array,
 				types.Composite:             self.parser.analyze_composite,
 				symbols.Lexicon:             self.parser.analyze_lexicon,

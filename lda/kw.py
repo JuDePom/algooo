@@ -101,7 +101,6 @@ LE             = Keyword("\u2264", "<=")
 GE             = Keyword("\u2265", ">=")
 EQ             = Keyword("=")
 NE             = Keyword("\u2260", "!=")
-TRIPLE_STAR    = Keyword("***")
 
 # Even though we're not using the comment keywords to actually skip the
 # comments, these keywords still need to exist in order to ensure correct
