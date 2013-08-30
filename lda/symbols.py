@@ -3,6 +3,10 @@ from .types import ERRONEOUS, Composite, Inout
 from .errors import semantic
 
 def hunt_duplicates(item_list, logger):
+	"""
+	Log DuplicateDeclaration for any item using a name already used by another
+	item in the list.
+	"""
 	seen = {}
 	for item in item_list:
 		name = item.ident.name
@@ -13,6 +17,10 @@ def hunt_duplicates(item_list, logger):
 			seen[name] = item
 
 class Identifier:
+	"""
+	Name that refers to a symbol in the symbol table.
+	"""
+
 	def __init__(self, pos, name):
 		self.pos = pos
 		self.name = name
@@ -41,6 +49,10 @@ class Identifier:
 			logger.log(semantic.MissingDeclaration(self))
 
 class TypeAlias(Identifier):
+	"""
+	Identifier that can only refer to a Composite.
+	"""
+
 	def check(self, context, logger):
 		# guilty until proven innocent
 		self.resolved_type = ERRONEOUS
@@ -56,6 +68,12 @@ class TypeAlias(Identifier):
 					"cet alias", Composite, type(symbol)))
 
 class Field:
+	"""
+	Variable declaration. Has an identifier, a type_descriptor and a formal flag
+	(i.e. formal parameter).
+	Semantically, only formal variables may have the Inout type.
+	"""
+
 	def __init__(self, ident, type_descriptor, formal=False):
 		self.ident = ident
 		self.type_descriptor = type_descriptor
@@ -64,7 +82,8 @@ class Field:
 	def __eq__(self, other):
 		if self is other:
 			return True
-		return self.ident == other.ident and self.type_descriptor == other.type_descriptor
+		return self.ident == other.ident and \
+				self.type_descriptor == other.type_descriptor
 
 	def check(self, context, logger):
 		if not self.formal and isinstance(self.type_descriptor, Inout):
@@ -80,6 +99,18 @@ class Field:
 		exp.put("var ", self.ident)
 
 class Lexicon:
+	"""
+	Collection of symbols (variable declarations, composite definitions, and
+	function definitions).
+
+	A lexicon is attached to an entity (typically a module, a function or an
+	algorithm) and it contains symbols specific to that entity.
+
+	Lexicons are different from plain symbol tables in that symbol tables are
+	"passive". Lexicons, on the other hand, handle the semantic analysis of the
+	symbols they contain (via the check() method).
+	"""
+
 	def __init__(self, variables=None, composites=None, functions=None):
 		assert(variables  is None or type(variables)  is list)
 		assert(composites is None or type(composites) is list)
@@ -127,6 +158,10 @@ class Lexicon:
 		return subcontext
 
 	def __bool__(self):
+		"""
+		Return False if the Lexicon does not contain any composites or variables.
+		Please note that functions are not accounted for by __bool__!
+		"""
 		return bool(self.composites) or bool(self.variables)
 
 	def lda(self, exp):

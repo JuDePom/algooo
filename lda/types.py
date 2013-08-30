@@ -2,6 +2,12 @@ from .errors import semantic, handler
 from . import kw
 from types import MethodType
 
+#######################################################################
+#
+# UTILITY FUNCTIONS
+#
+#######################################################################
+
 def _enforce(name, expected_type, typed_object, logger, cmpfunc):
 	if cmpfunc(typed_object.resolved_type):
 		return True
@@ -16,7 +22,7 @@ def _enforce(name, expected_type, typed_object, logger, cmpfunc):
 def enforce(name, expected_type, typed_object, logger):
 	"""
 	Ensure the expected type is *equal* to an object's resolved_type.
-	Log a SpecificTypeExpected exception if the type does not conform.
+	Log SpecificTypeExpected if the type does not conform.
 	:param expected_type: type the object's resolved type must be equal to
 	:param typed_object: object whose resolved_type member will be tested against
 			expected_type
@@ -28,7 +34,7 @@ def enforce(name, expected_type, typed_object, logger):
 def enforce_compatible(name, expected_type, typed_object, logger):
 	"""
 	Ensure the expected type is *compatible with* an object's resolved_type.
-	Log a SpecificTypeExpected exception if the type does not conform.
+	Log SpecificTypeExpected if the type does not conform.
 	:param expected_type: type the object's resolved type must be equal to
 	:param typed_object: object whose resolved_type member will be tested against
 			expected_type
@@ -39,11 +45,18 @@ def enforce_compatible(name, expected_type, typed_object, logger):
 
 #######################################################################
 #
-# BASE TYPE CLASSES
+# BASE TYPE DESCRIPTOR CLASS
 #
 #######################################################################
 
 class TypeDescriptor:
+	"""
+	Base class for all type descriptors.
+
+	Type descriptors may need to be refined through semantic analysis (via the
+	check() method) to be complete.
+	"""
+
 	def __init__(self):
 		self.resolved_type = self
 
@@ -54,15 +67,43 @@ class TypeDescriptor:
 		return not self.__eq__(other)
 
 	def equivalent(self, other):
+		"""
+		If both types are equivalent, return the 'strongest' type among them;
+		else return None. The strongest type will dictate the type of e.g.
+		arithmetic expressions.
+
+		Note: any non-blackhole type is equivalent to itself.
+		"""
 		if self.__eq__(other):
 			return self
 
 	def compatible(self, other):
+		"""
+		Return True if both types are equivalent and this type is the strongest
+		of both.
+		"""
 		return self.__eq__(other.equivalent(self))
 
+
+#######################################################################
+#
+# BLACK HOLE TYPES
+#
+#######################################################################
+
 class BlackHole(TypeDescriptor):
+	"""
+	Special type that is not equal, equivalent, or compatible with any type
+	(not even other BlackHole types).
+
+	BlackHole types cannot be defined directly in the compiled source code.
+	They typically occur when the type of an item cannot be resolved, or when
+	an expression doesn't have a type.
+	"""
+
 	def __eq__(self, other):
 		return False
+
 
 ERRONEOUS = BlackHole()
 ERRONEOUS.relevant = False
@@ -77,6 +118,14 @@ ASSIGNMENT = BlackHole()
 #######################################################################
 
 class Scalar(TypeDescriptor):
+	"""
+	Scalar type.
+
+	Scalar types are meant to be compared using Python's 'is' operator. As
+	such, the Scalar class is not meant to be instantiated (besides the
+	pre-defined Scalar instances in this module: INTEGER, REAL, etc.).
+	"""
+
 	def __init__(self, keyword, name=None):
 		super().__init__()
 		self.keyword = keyword
@@ -126,30 +175,34 @@ _dual_scalar_compatibility(weak=CHARACTER, strong=STRING)
 #######################################################################
 
 class Inout(TypeDescriptor):
-	def __init__(self, inner):
+	"""
+	Inout wrapper around a core type.
+	"""
+
+	def __init__(self, core):
 		super().__init__()
-		self.inner = inner
+		self.core = core
 
 	def __repr__(self):
-		return "inout {}".format(self.inner)
+		return "inout {}".format(self.core)
 
 	def __eq__(self, other):
-		return isinstance(other, Inout) and self.inner.__eq__(other.inner)
+		return isinstance(other, Inout) and self.core.__eq__(other.core)
 
 	def check(self, context, logger):
-		self.inner.check(context, logger)
+		self.core.check(context, logger)
 
 	def equivalent(self, other):
 		if isinstance(other, Inout):
-			return self.inner.equivalent(other.inner)
+			return self.core.equivalent(other.core)
 		else:
-			return self.inner.equivalent(other)
+			return self.core.equivalent(other)
 
 	def compatible(self, other):
 		if isinstance(other, Inout):
-			return self.inner.compatible(other.inner)
+			return self.core.compatible(other.core)
 		else:
-			return self.inner.compatible(other)
+			return self.core.compatible(other)
 
 
 #######################################################################
@@ -159,13 +212,23 @@ class Inout(TypeDescriptor):
 #######################################################################
 
 class Array(TypeDescriptor):
+	"""
+	Array type declaration. The array must contain at least one dimension. Each
+	dimension can be static or dynamic.
+	"""
+
 	class StaticDimension:
+		"""
+		Created from a constant integer range that must be evaluable at compile
+		time.
+		"""
+
 		def __init__(self, expression):
 			self.expression = expression
 
 		def __eq__(self, other):
 			return self is other or (isinstance(other, Array.StaticDimension) and \
-					self.expression == other.expression)#self.low == other.low and self.high == other.high)
+					self.expression == other.expression)
 
 		def check(self, context, logger):
 			# Don't let the expression look up variables.
@@ -187,6 +250,10 @@ class Array(TypeDescriptor):
 			exp.put(self.expression)
 
 	class DynamicDimension:
+		"""
+		Created from the '?' keyword.
+		"""
+
 		def __init__(self, pos):
 			self.pos = pos
 
@@ -242,6 +309,11 @@ class Array(TypeDescriptor):
 #######################################################################
 
 class Composite(TypeDescriptor):
+	"""
+	Composite type declaration. Contains an identifier (the name of the
+	composite type) and a list of member fields.
+	"""
+
 	def __init__(self, ident, field_list):
 		super().__init__()
 		self.ident = ident
@@ -255,6 +327,12 @@ class Composite(TypeDescriptor):
 		return self.ident == other.ident and self.field_list == other.field_list
 
 	def check(self, supercontext, logger):
+		"""
+		Creates self.context: a mini-symbol table associating field name
+		strings the fields themselves.
+
+		Also hunts down duplicate field names.
+		"""
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
 		# TODO very ugly import
 		from lda.symbols import hunt_duplicates
@@ -264,6 +342,14 @@ class Composite(TypeDescriptor):
 			field.check(supercontext, logger)
 
 	def detect_loops(self, composite, logger):
+		"""
+		Log RecursiveDeclaration for every infinite recursion among field type
+		descriptors.
+
+		An infinite recursion occurs when a field's type descriptor (or one of
+		its children, grandchildren...) refers to the composite type passed to
+		this method.
+		"""
 		for field in self.field_list:
 			if field.resolved_type is composite:
 				logger.log(semantic.RecursiveDeclaration(field.ident.pos))

@@ -35,6 +35,16 @@ re_string = re.compile(r'".*?"') # TODO- escaping
 re_character = re.compile(r"'.'") # TODO- escaping
 
 class RelevantFailureLogger:
+	"""
+	Parser context manager that keeps track of the most relevant syntax error.
+
+	The most relevant syntax error is that which was raised at the furthest
+	point in the input source code.
+
+	By default, it lets the syntax error propagate (through the handler method
+	syntax_error()), but this can be overridden.
+	"""
+
 	def __init__(self, parser):
 		self.parser = parser
 	
@@ -54,12 +64,28 @@ class RelevantFailureLogger:
 		return False
 
 class BacktrackFailure(RelevantFailureLogger):
+	"""
+	Parser context manager that backtracks on syntax errors. It also keeps
+	track of the most relevant syntax error (see RelevantFailureLogger).
+
+	If a syntax error is found, the parser's position is reverted to the
+	position at which the context was entered.
+
+	Note: This context manager does NOT let syntax errors propagate!
+	"""
+
 	def syntax_error(self, exc_value):
 		self.parser.pos = self.pos
 		# Don't let the exception propagate
 		return True
 
 class CriticalItem(RelevantFailureLogger):
+	"""
+	Parser context manager that raises an ExpectedItem exception on syntax
+	errors. It also keeps track of the most relevant syntax error, but NOT of
+	the ExpectedItem exception it raises itself.
+	"""
+
 	def __init__(self, parser, expected_item_name=None):
 		super().__init__(parser)
 		self.expected_item_name = expected_item_name
@@ -68,15 +94,18 @@ class CriticalItem(RelevantFailureLogger):
 		raise syntax.ExpectedItem(self.pos, self.expected_item_name)
 
 class Parser:
-	'''
+	"""
 	LDA parser. Builds up an AST from LDA source code.
 
 	The "analyze_" functions check for the presence of a specific item at the
 	current position in the buffer. If the item was found, the current position
-	in the buffer is moved past the end of the item, and True is returned.
-	Otherwise, the current position is left untouched, and None is returned.
-	These functions may raise an exception if a syntax error was found.
-	'''
+	in the buffer is moved past the end of the item, and the item is returned.
+	Otherwise, a SyntaxError exception is raised and the current position is
+	left where the parser managed to make inroads.
+
+	Not all SyntaxError exceptions are necessarily fatal; hence the use of the
+	BacktrackFailure context manager to fail gracefully.
+	"""
 
 	def __init__(self, options, path=None):
 		self.options = options
@@ -115,13 +144,13 @@ class Parser:
 		return self.syntax_errors[-1]
 
 	def advance(self, chars=0):
-		'''
+		"""
 		Advance current position in the buffer so that the cursor points on something
 		significant (i.e. no whitespace, no comments)
 
 		This function must be called at the very beginning of a source file, and
 		after every operation that permanently consumes bytes from the buffer.
-		'''
+		"""
 		bpos = self.pos.char
 		line = self.pos.line
 		column = self.pos.column
@@ -157,9 +186,14 @@ class Parser:
 	def eof(self):
 		return self.pos.char >= self.buflen
 
-	def traverse_synonym_chain(self, syn):
+	def traverse_synonym_priority_chain(self, syn):
+		"""
+		Return keyword synonym with highest priority over syn at the current
+		position in the buffer, or return syn if syn must not give way to any
+		synonym at the current position.
+		"""
 		for gw in syn.give_way:
-			found = self.traverse_synonym_chain(gw)
+			found = self.traverse_synonym_priority_chain(gw)
 			if found is not None:
 				return found
 		if self.buf.startswith(syn.word, self.pos.char):
@@ -169,7 +203,7 @@ class Parser:
 		cached_alpha = None
 		for syn in keyword.synonyms:
 			if syn.gluable:
-				found = self.traverse_synonym_chain(syn)
+				found = self.traverse_synonym_priority_chain(syn)
 				if found is None:
 					continue
 				elif found == syn:

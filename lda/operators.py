@@ -176,9 +176,8 @@ class ArraySubscript(BinaryOp):
 	Array subscript operator.
 
 	Encompassing.
-	LHS resolves to array variable.
-	RHS is a Varargs object containing the indices, which should resolve to
-	integers.
+	LHS is an array variable identifier.
+	RHS is an arglist of indices, which should resolve to integers.
 	"""
 
 	keyword_def = kw.LSBRACK
@@ -211,9 +210,8 @@ class FunctionCall(BinaryOp):
 	Function call operator.
 
 	Encompassing.
-	LHS resolves to function identifier.
-	RHS resolves to Varargs object containing the function's effective
-	parameters.
+	LHS is a function identifier.
+	RHS is an arglist of effective parameters.
 	"""
 
 	keyword_def = kw.LPAREN
