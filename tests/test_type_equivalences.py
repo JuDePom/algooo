@@ -2,7 +2,7 @@ from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 from lda import types
 from lda.operators import LogicalOr
-from lda.module import Module, Algorithm
+from lda.module import Module, Function, Algorithm
 
 class TestTypeEquivalences(LDATestCase):
 	def _test_self_compatibility(self, a):
@@ -146,6 +146,36 @@ class TestTypeEquivalences(LDATestCase):
 				program='''algorithme
 				lexique r:réel e:entier
 				début r<-3.00000  e<-(**)r  fin''')
+
+	def test_assign_integer_to_inout_integer(self):
+		self.check(cls=Function, program='''\
+				fonction f(a: inout entier)
+				lexique a: inout entier
+				début a <- 3 fin''')
+
+	def test_assign_integer_to_inout_real(self):
+		self.check(cls=Function, program='''\
+				fonction f(a: inout réel)
+				lexique a: inout réel
+				début a <- 3 fin''')
+
+	def test_arithmetic_with_inout_integer(self):
+		self.check(cls=Function, program='''\
+				fonction f(a: inout entier)
+				lexique a: inout entier    b: entier
+				début b <- a * 2 fin''')
+
+	def test_assign_inout_integer_to_plain_integer(self):
+		self.check(cls=Function, program='''\
+				fonction f(a: inout entier)
+				lexique a: inout entier   b : entier
+				début b <- a fin''')
+
+	def test_assign_plain_integer_to_inout_integer(self):
+		self.check(cls=Function, program='''\
+				fonction f(a: inout entier)
+				lexique a: inout entier   b : entier
+				début a <- b fin''')
 
 	def test_binary_logical_op_with_binary_operands(self):
 		self.check(cls=LogicalOr, program='vrai ou faux')
