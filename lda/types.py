@@ -121,6 +121,39 @@ _dual_scalar_compatibility(weak=CHARACTER, strong=STRING)
 
 #######################################################################
 #
+# INOUT WRAPPER
+#
+#######################################################################
+
+class Inout(TypeDescriptor):
+	def __init__(self, inner):
+		super().__init__()
+		self.inner = inner
+
+	def __repr__(self):
+		return "inout {}".format(self.inner)
+
+	def __eq__(self, other):
+		return isinstance(other, Inout) and self.inner.__eq__(other.inner)
+
+	def check(self, context, logger):
+		self.inner.check(context, logger)
+
+	def equivalent(self, other):
+		if isinstance(other, Inout):
+			return self.inner.equivalent(other.inner)
+		else:
+			return self.inner.equivalent(other)
+
+	def compatible(self, other):
+		if isinstance(other, Inout):
+			return self.inner.compatible(other.inner)
+		else:
+			return self.inner.compatible(other)
+
+
+#######################################################################
+#
 # ARRAY TYPE
 #
 #######################################################################

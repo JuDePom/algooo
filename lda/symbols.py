@@ -1,5 +1,5 @@
 from . import kw
-from .types import ERRONEOUS, Composite
+from .types import ERRONEOUS, Composite, Inout
 from .errors import semantic
 
 def hunt_duplicates(item_list, logger):
@@ -56,9 +56,10 @@ class TypeAlias(Identifier):
 					"cet alias", Composite, type(symbol)))
 
 class Field:
-	def __init__(self, ident, type_descriptor):
+	def __init__(self, ident, type_descriptor, formal=False):
 		self.ident = ident
 		self.type_descriptor = type_descriptor
+		self.formal = formal
 
 	def __eq__(self, other):
 		if self is other:
@@ -66,6 +67,9 @@ class Field:
 		return self.ident == other.ident and self.type_descriptor == other.type_descriptor
 
 	def check(self, context, logger):
+		if not self.formal and isinstance(self.type_descriptor, Inout):
+			logger.log(semantic.SemanticError(self.ident.pos,
+					"\"inout\" n'est autorisé que dans un paramètre formel"))
 		self.type_descriptor.check(context, logger)
 		self.resolved_type = self.type_descriptor.resolved_type
 

@@ -100,17 +100,11 @@ class Function:
 		for fp in self.fp_list:
 			fp.check(subcontext, logger)
 
-	def check(self, context, logger):
-		# TODO hackish...
-		self.resolved_type = self
-		# check lexicon
-		if self.lexicon is None:
-			subcontext = context
-		else:
-			subcontext = self.lexicon.check(context, logger)
-		# hunt duplicates among formal parameters
-		symbols.hunt_duplicates(self.fp_list, logger)
-		# ensure each formal parameter matches its declaration in the lexicon
+	def check_fp_lexicon(self, logger):
+		"""
+		Ensure each formal parameter matches its declaration in the lexicon,
+		and set the formal flag in the relevant lexicon declarations.
+		"""
 		for fp in self.fp_list:
 			try:
 				fp_lexicon = self.lexicon.symbol_dict[fp.ident.name]
@@ -122,6 +116,20 @@ class Function:
 					"paramètre formel doit rester le même dans l'en-tête de la fonction "
 					"et dans le lexique de la fonction",
 					fp_lexicon.type_descriptor, fp.type_descriptor))
+			fp_lexicon.formal = True
+
+	def check(self, context, logger):
+		# TODO hackish...
+		self.resolved_type = self
+		# hunt duplicates among formal parameters
+		symbols.hunt_duplicates(self.fp_list, logger)
+		# check formal parameter counterparts in lexicon
+		self.check_fp_lexicon(logger)
+		# check lexicon
+		if self.lexicon is None:
+			subcontext = context
+		else:
+			subcontext = self.lexicon.check(context, logger)
 		# check statements
 		self.body.check(subcontext, logger)
 

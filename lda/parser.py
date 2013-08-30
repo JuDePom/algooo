@@ -247,7 +247,7 @@ class Parser:
 			params = []
 		else:
 			# non-empty parameter list
-			params = self.analyze_varargs(self.analyze_field)
+			params = self.analyze_varargs(self.analyze_field, formal=True)
 			self.consume_keyword(kw.RPAREN)
 		# optional colon before return type (if omitted, no return type)
 		if self.consume_keyword(kw.COLON, soft=True):
@@ -301,20 +301,27 @@ class Parser:
 		return self.analyze_identifier(symbols.TypeAlias)
 
 	def analyze_type_descriptor(self):
+		inout = self.consume_keyword(kw.INOUT, soft=True)
+		type_descriptor = None
 		with BacktrackFailure(self):
-			return self.analyze_array()
-		return self.analyze_non_array_type_descriptor()
+			type_descriptor = self.analyze_array()
+		if type_descriptor is None:
+			type_descriptor = self.analyze_non_array_type_descriptor()
+		if not inout:
+			return type_descriptor
+		else:
+			return types.Inout(type_descriptor)
 
 	def analyze_non_array_type_descriptor(self):
 		return self.analyze_multiple("un descripteur de type non-tableau",
 			self.analyze_scalar_type,
 			self.analyze_type_alias)
 
-	def analyze_field(self):
+	def analyze_field(self, formal=False):
 		ident = self.analyze_identifier()
 		self.consume_keyword(kw.COLON)
 		type_descriptor = self.analyze_type_descriptor()
-		return symbols.Field(ident, type_descriptor)
+		return symbols.Field(ident, type_descriptor, formal)
 
 	def analyze_composite(self):
 		ident = self.analyze_identifier()
@@ -509,7 +516,7 @@ class Parser:
 				return op_class(pos)
 		raise syntax.ExpectedItem(self.pos, "un opérateur")
 
-	def analyze_varargs(self, analyze_arg):
+	def analyze_varargs(self, analyze_arg, **kwargs):
 		pos = self.pos
 		arg_list = []
 		has_next = True
@@ -517,7 +524,7 @@ class Parser:
 			arg = None
 			arg_pos = self.pos
 			with BacktrackFailure(self):
-				arg = analyze_arg()
+				arg = analyze_arg(**kwargs)
 				arg_list.append(arg)
 			has_next = self.consume_keyword(kw.COMMA, soft=True)
 			if has_next and arg is None:
