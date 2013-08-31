@@ -1,4 +1,4 @@
-from .expression import Expression
+from .expression import Expression, surround
 from .errors import semantic
 from . import types
 from . import module
@@ -27,6 +27,7 @@ class UnaryOp(Expression):
 		op_node.shape = "circle"
 		return op_node
 		
+	@surround
 	def lda(self, exp):
 		exp.put(self.keyword_def, " ", self.rhs)
 		
@@ -61,6 +62,7 @@ class BinaryOp(Expression):
 		op_node.shape = "circle"
 		return op_node
 
+	@surround
 	def lda(self, exp):
 		exp.put(self.lhs, " ", self.keyword_def, " ", self.rhs)
 	
@@ -92,6 +94,7 @@ class UnaryNumberOp(UnaryOp):
 		else:
 			self.resolved_type = rtype
 
+	@surround
 	def lda(self, exp):
 		exp.put(self.keyword_def, self.rhs)
 	
@@ -152,7 +155,9 @@ class BinaryEncompassingOp(BinaryOp):
 	closing = None # must be defined by subclasses!
 
 	def lda(self, exp):
-		exp.put(self.lhs, self.keyword_def, self.rhs, self.closing)
+		exp.put(self.lhs, self.keyword_def)
+		exp.join(self.rhs, exp.put, kw.COMMA, " ")
+		exp.put(self.closing)
 
 	def js(self, exp):
 		# TODO this is obviously very wrong
@@ -272,6 +277,7 @@ class MemberSelect(BinaryOp):
 			self.rhs.check(composite.context, logger)
 			self.resolved_type = self.rhs.resolved_type
 
+	@surround
 	def lda(self, exp):
 		exp.put(self.lhs, self.keyword_def, self.rhs)
 	

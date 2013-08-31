@@ -116,14 +116,22 @@ class test_lda_output(LDATestCase):
 				"\t{kw.IF} {kw.FALSE} {kw.THEN}\n"
 				"\t\te {kw.ASSIGN} 3\n"
 				"\t\t{kw.WHILE} e {kw.LT} 10 {kw.DO}\n"
-				"\t\t\te {kw.ASSIGN} e + 1\n"
+				"\t\t\te {kw.ASSIGN} (e + 1)\n"
 				"\t\t{kw.END_WHILE}\n"
 				"\t{kw.ELIF} {kw.TRUE} {kw.THEN}\n"
 				"\t\te {kw.ASSIGN} 12\n"
 				"\t{kw.ELSE}\n"
-				"\t\te {kw.ASSIGN} -1\n"
+				"\t\te {kw.ASSIGN} (-1)\n"
 				"\t{kw.END_IF}\n"
-				"\td.j {kw.ASSIGN} e\n"
+				"\t(d.j) {kw.ASSIGN} e\n"
 				"{kw.END}\n").format(kw=kw)
 		self._assert_export(module.Module, program)
+
+	def test_function_call(self):
+		program = "fonc(a, b, c)"
+		self._assert_export(operators.FunctionCall, program)
+
+	def test_expression_precedences(self):
+		program = "3 * (2 + 4)"
+		self._assert_export(expression.Expression, program)
 

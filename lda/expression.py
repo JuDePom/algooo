@@ -2,6 +2,22 @@ from . import kw
 from . import dot
 from . import types
 
+def surround(lda_method):
+	"""
+	Surround the exported LDA code with parentheses if the object is not the
+	root node of an expression.
+
+	Meant to be used as a decorator for `lda` methods in Expression subclasses.
+	"""
+	def wrapper(self, exp):
+		if self.root:
+			lda_method(self, exp)
+		else:
+			exp.put("(")
+			lda_method(self, exp)
+			exp.put(")")
+	return wrapper
+
 class Expression:
 	def __init__(self, pos):
 		self.pos = pos
