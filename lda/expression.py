@@ -5,6 +5,7 @@ from . import types
 class Expression:
 	def __init__(self, pos):
 		self.pos = pos
+		self.root = False
 
 	def __eq__(self, other):
 		raise NotImplementedError

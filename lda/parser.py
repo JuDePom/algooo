@@ -468,7 +468,7 @@ class Parser:
 		block, _, _ = self.analyze_statement_block(kw.END_WHILE)
 		return statements.While(pos, condition, block)
 
-	def analyze_expression(self):
+	def analyze_expression(self, root=True):
 		with CriticalItem(self, "une expression"):
 			lhs = self.analyze_primary_expression()
 			bo1 = None
@@ -478,6 +478,7 @@ class Parser:
 				return lhs
 			expr, bo2 = self.analyze_partial_expression(lhs, bo1)
 			assert bo2 is None, "bo2 can't be an expression node here!"
+			expr.root = root
 			return expr
 
 	def analyze_partial_expression(self, lhs, bo1, min_p=0):
@@ -516,7 +517,7 @@ class Parser:
 	def analyze_primary_expression(self):
 		# check for sub-expression enclosed in parenthesis
 		if self.consume_keyword(kw.LPAREN, soft=True):
-			sub_expr = self.analyze_expression()
+			sub_expr = self.analyze_expression(False)
 			self.consume_keyword(kw.RPAREN)
 			return sub_expr
 		# check for a unary operator
