@@ -35,11 +35,11 @@ class Identifier:
 	def __ne__(self, other):
 		return self.name != other.name
 
-	def lda(self, exp):
-		exp.put(self.name)
+	def lda(self, pp):
+		pp.put(self.name)
 
-	def js(self, exp):
-		exp.put(self.name)
+	def js(self, pp):
+		pp.put(self.name)
 
 	def put_node(self, cluster):
 		return dot.Node(self.name, cluster)
@@ -96,11 +96,11 @@ class Field:
 		self.type_descriptor.check(context, logger)
 		self.resolved_type = self.type_descriptor.resolved_type
 
-	def lda(self, exp):
-		exp.put(self.ident, kw.COLON, " ", self.type_descriptor)
+	def lda(self, pp):
+		pp.put(self.ident, kw.COLON, " ", self.type_descriptor)
 
-	def js(self, exp):
-		exp.put("var ", self.ident)
+	def js(self, pp):
+		pp.put("var ", self.ident)
 
 class Lexicon:
 	"""
@@ -168,14 +168,14 @@ class Lexicon:
 		"""
 		return bool(self.composites) or bool(self.variables)
 
-	def lda(self, exp):
+	def lda(self, pp):
 		if not self:
 			return
-		exp.putline(kw.LEXICON)
-		exp.indented(exp.join, self.composites + self.variables, exp.newline)
+		pp.putline(kw.LEXICON)
+		pp.indented(pp.join, self.composites + self.variables, pp.newline)
 
-	def js(self, exp):
+	def js(self, pp):
 		if not self:
 			return
-		exp.indented(exp.join, self.composites + self.variables, exp.newline)
+		pp.indented(pp.join, self.composites + self.variables, pp.newline)
 

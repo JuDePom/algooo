@@ -62,15 +62,15 @@ if args.format == 'dot':
 	from lda import dot
 	output = lda.dot.format(module)
 elif args.format == 'lda':
-	from lda import ldaexporter
-	exp = lda.ldaexporter.LDAExporter()
-	module.lda(exp)
-	output = str(exp)
+	from lda import prettyprinter
+	pp = lda.prettyprinter.LDAPrettyPrinter()
+	module.lda(pp)
+	output = str(pp)
 elif args.format == 'js':
-	from lda import jsexporter
-	exp = lda.jsexporter.JSExporter()
-	module.js(exp)
-	output = str(exp)
+	from lda import prettyprinter
+	pp = lda.prettyprinter.JSPrettyPrinter()
+	module.js(pp)
+	output = str(pp)
 else:
 	raise Exception("Format de sortie inconnu : " + args.format)
 

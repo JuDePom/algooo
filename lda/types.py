@@ -143,8 +143,8 @@ class Scalar(TypeDescriptor):
 	def check(self, context, logger):
 		pass
 
-	def lda(self, exp):
-		exp.put(str(self.keyword))
+	def lda(self, pp):
+		pp.put(str(self.keyword))
 
 def _dual_scalar_compatibility(weak, strong):
 	def weak_equivalent(self, other):
@@ -246,8 +246,8 @@ class Array(TypeDescriptor):
 			self.low  = self.expression.lhs
 			self.high = self.expression.rhs
 
-		def lda(self, exp):
-			exp.put(self.expression)
+		def lda(self, pp):
+			pp.put(self.expression)
 
 	class DynamicDimension:
 		"""
@@ -263,8 +263,8 @@ class Array(TypeDescriptor):
 		def check(self, context, logger):
 			pass
 
-		def lda(self, exp):
-			exp.put(kw.QUESTION_MARK)
+		def lda(self, pp):
+			pp.put(kw.QUESTION_MARK)
 
 	def __init__(self, pos, element_type, dimensions):
 		super().__init__()
@@ -287,10 +287,10 @@ class Array(TypeDescriptor):
 			dim.check(context, logger)
 		self.element_type.check(context, logger)
 
-	def lda(self, exp):
-		exp.put(kw.ARRAY, " ", self.element_type, kw.LSBRACK)
-		exp.join(self.dimensions, exp.put, ", ")
-		exp.put(kw.RSBRACK)
+	def lda(self, pp):
+		pp.put(kw.ARRAY, " ", self.element_type, kw.LSBRACK)
+		pp.join(self.dimensions, pp.put, ", ")
+		pp.put(kw.RSBRACK)
 
 	def equivalent(self, other):
 		if not isinstance(other, Array):
@@ -359,8 +359,8 @@ class Composite(TypeDescriptor):
 			except AttributeError:
 				pass
 
-	def lda(self, exp):
-		exp.put(self.ident, " ", kw.EQ, " ", kw.LT)
-		exp.join(self.field_list, exp.put, ", ")
-		exp.put(kw.GT)
+	def lda(self, pp):
+		pp.put(self.ident, " ", kw.EQ, " ", kw.LT)
+		pp.join(self.field_list, pp.put, ", ")
+		pp.put(kw.GT)
 

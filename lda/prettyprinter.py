@@ -1,7 +1,10 @@
-class JSExporter:
+class PrettyPrinter:
 	"""
-	Facilitates the making of a properly-indented JS source file.
+	Facilitates the making of a properly-indented file.
 	"""
+
+	# must be defined by subclasses
+	export_method_name = None
 
 	def __init__(self):
 		self.indent = 0
@@ -10,9 +13,9 @@ class JSExporter:
 
 	def put(self, *items):
 		"""
-		Append items to the JS source code at the current indentation level.
+		Append items to the source code at the current indentation level.
 		If an item is a string, append it right away; otherwise, invoke
-		`item.JS(self)`.
+		`item.<export_method_name>(self)`.
 		"""
 		for i in items:
 			if type(i) is str:
@@ -21,7 +24,7 @@ class JSExporter:
 					self.already_indented = True
 				self.strings.append(i)
 			else:
-				i.js(self)
+				getattr(i, self.export_method_name)(self)
 
 	def indented(self, exportfunc, *args):
 		"""
@@ -50,9 +53,9 @@ class JSExporter:
 
 	def join(self, iterable, gluefunc, *args):
 		"""
-		Concatenate the elements in the iterable and append them to the source code.
-		A 'glue' function (typically put()) is called between each element.
-		Note : This method is similar in purpose to str.join().
+		Concatenate the elements in the iterable and append them to the source
+		code. A 'glue' function (typically put()) is called between each
+		element. Note: This method is similar in purpose to str.join().
 		:param gluefunc: glue function called between each element
 		:param args: arguments passed to gluefunc
 		"""
@@ -69,4 +72,10 @@ class JSExporter:
 		Return the source code built so far.
 		"""
 		return ''.join(self.strings)
+
+class LDAPrettyPrinter(PrettyPrinter):
+	export_method_name = "lda"
+
+class JSPrettyPrinter(PrettyPrinter):
+	export_method_name = "js"
 

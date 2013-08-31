@@ -29,25 +29,25 @@ class Module:
 		if self.algorithms:
 			self.algorithms[0].put_node(supercluster)
 
-	def lda(self, exp):
+	def lda(self, pp):
 		if self.lexicon:
-			exp.putline(self.lexicon)
-			exp.newline(2)
+			pp.putline(self.lexicon)
+			pp.newline(2)
 		for function in self.functions:
-			exp.putline(function)
-			exp.newline(2)
+			pp.putline(function)
+			pp.newline(2)
 		if self.algorithms:
-			exp.putline(self.algorithms[0])
+			pp.putline(self.algorithms[0])
 
-	def js(self, exp):
+	def js(self, pp):
 		if self.lexicon:
-			exp.putline(self.lexicon)
-			exp.newline(2)
+			pp.putline(self.lexicon)
+			pp.newline(2)
 		for function in self.functions:
-			exp.putline(function)
-			exp.newline(2)
+			pp.putline(function)
+			pp.newline(2)
 		if self.algorithms:
-			exp.putline(self.algorithms[0])
+			pp.putline(self.algorithms[0])
 
 class Algorithm:
 	def __init__(self, pos, lexicon, body):
@@ -59,22 +59,22 @@ class Algorithm:
 		algorithm_cluster = dot.Cluster("algorithme", cluster)
 		return self.body.put_node(algorithm_cluster)
 
-	def lda(self, exp):
-		exp.putline(kw.ALGORITHM)
+	def lda(self, pp):
+		pp.putline(kw.ALGORITHM)
 		if self.lexicon:
-			exp.putline(self.lexicon)
-		exp.putline(kw.BEGIN)
+			pp.putline(self.lexicon)
+		pp.putline(kw.BEGIN)
 		if self.body:
-			exp.indented(exp.putline, self.body)
-		exp.put(kw.END)
+			pp.indented(pp.putline, self.body)
+		pp.put(kw.END)
 
-	def js(self, exp):
-		exp.putline("function Main() {")
+	def js(self, pp):
+		pp.putline("function Main() {")
 		if self.lexicon:
-			exp.putline(self.lexicon)
+			pp.putline(self.lexicon)
 		if self.body:
-			exp.indented(exp.putline, self.body)
-		exp.putline("}")
+			pp.indented(pp.putline, self.body)
+		pp.putline("}")
 
 	def check(self, context, logger):
 		if self.lexicon is None:
@@ -137,27 +137,27 @@ class Function:
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
 		return self.body.put_node(function_cluster)
 
-	def lda(self, exp):
-		exp.put(kw.FUNCTION, " ", self.ident, kw.LPAREN)
-		exp.join(self.fp_list, exp.put, ", ")
-		exp.put(kw.RPAREN)
+	def lda(self, pp):
+		pp.put(kw.FUNCTION, " ", self.ident, kw.LPAREN)
+		pp.join(self.fp_list, pp.put, ", ")
+		pp.put(kw.RPAREN)
 		if self.return_type is not types.VOID:
-			exp.put(kw.COLON, " ", self.return_type)
-		exp.newline()
+			pp.put(kw.COLON, " ", self.return_type)
+		pp.newline()
 		if self.lexicon:
-			exp.putline(self.lexicon)
-		exp.putline(kw.BEGIN)
+			pp.putline(self.lexicon)
+		pp.putline(kw.BEGIN)
 		if self.body:
-			exp.indented(exp.putline, self.body)
-		exp.put(kw.END)
+			pp.indented(pp.putline, self.body)
+		pp.put(kw.END)
 		
-	def js(self, exp):
-		exp.put("function", " ", self.ident, " ( ")
-		exp.join(self.fp_list, exp.put, ", ")
-		exp.put(" )")
-		exp.newline()
+	def js(self, pp):
+		pp.put("function", " ", self.ident, " ( ")
+		pp.join(self.fp_list, pp.put, ", ")
+		pp.put(" )")
+		pp.newline()
 		if self.lexicon:
-			exp.putline(self.lexicon)
+			pp.putline(self.lexicon)
 		if self.body:
-			exp.indented(exp.putline, self.body)
+			pp.indented(pp.putline, self.body)
 

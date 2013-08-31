@@ -35,11 +35,11 @@ class Keyword:
 	def __repr__(self):
 		return self.default_spelling
 
-	def lda(self, exp):
-		exp.put(self.default_spelling)
+	def lda(self, pp):
+		pp.put(self.default_spelling)
 		
-	def js(self, exp):
-		exp.put(self.default_spelling)
+	def js(self, pp):
+		pp.put(self.default_spelling)
 
 ALGORITHM      = Keyword("algorithme")
 FUNCTION       = Keyword("fonction")

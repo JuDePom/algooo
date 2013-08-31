@@ -28,11 +28,11 @@ class UnaryOp(Expression):
 		return op_node
 		
 	@surround
-	def lda(self, exp):
-		exp.put(self.keyword_def, " ", self.rhs)
+	def lda(self, pp):
+		pp.put(self.keyword_def, " ", self.rhs)
 		
-	def js(self, exp):
-		exp.put(self.keyword_def, " ", self.rhs)
+	def js(self, pp):
+		pp.put(self.keyword_def, " ", self.rhs)
 
 	def check(self, context, logger):
 		raise NotImplementedError
@@ -63,12 +63,12 @@ class BinaryOp(Expression):
 		return op_node
 
 	@surround
-	def lda(self, exp):
-		exp.put(self.lhs, " ", self.keyword_def, " ", self.rhs)
+	def lda(self, pp):
+		pp.put(self.lhs, " ", self.keyword_def, " ", self.rhs)
 	
-	def js(self, exp):
+	def js(self, pp):
 		# TODO this is obviously very wrong
-		exp.put(self.lhs, " ", self.keyword_def, " ", self.rhs)
+		pp.put(self.lhs, " ", self.keyword_def, " ", self.rhs)
 
 	def check(self, context, logger):
 		raise NotImplementedError
@@ -95,11 +95,11 @@ class UnaryNumberOp(UnaryOp):
 			self.resolved_type = rtype
 
 	@surround
-	def lda(self, exp):
-		exp.put(self.keyword_def, self.rhs)
+	def lda(self, pp):
+		pp.put(self.keyword_def, self.rhs)
 	
-	def js(self, exp):
-		exp.put(self.keyword_def, self.rhs)
+	def js(self, pp):
+		pp.put(self.keyword_def, self.rhs)
 
 class BinaryChameleonOp(BinaryOp):
 	"""
@@ -154,14 +154,14 @@ class BinaryEncompassingOp(BinaryOp):
 
 	closing = None # must be defined by subclasses!
 
-	def lda(self, exp):
-		exp.put(self.lhs, self.keyword_def)
-		exp.join(self.rhs, exp.put, kw.COMMA, " ")
-		exp.put(self.closing)
+	def lda(self, pp):
+		pp.put(self.lhs, self.keyword_def)
+		pp.join(self.rhs, pp.put, kw.COMMA, " ")
+		pp.put(self.closing)
 
-	def js(self, exp):
+	def js(self, pp):
 		# TODO this is obviously very wrong
-		exp.put(self.lhs, self.keyword_def, self.rhs, self.closing)
+		pp.put(self.lhs, self.keyword_def, self.rhs, self.closing)
 
 
 #######################################################################
@@ -278,11 +278,11 @@ class MemberSelect(BinaryOp):
 			self.resolved_type = self.rhs.resolved_type
 
 	@surround
-	def lda(self, exp):
-		exp.put(self.lhs, self.keyword_def, self.rhs)
+	def lda(self, pp):
+		pp.put(self.lhs, self.keyword_def, self.rhs)
 	
-	def js(self, exp):
-		exp.put(self.lhs, self.keyword_def, self.rhs)
+	def js(self, pp):
+		pp.put(self.lhs, self.keyword_def, self.rhs)
 
 class Power(BinaryChameleonOp):
 	"""
@@ -322,50 +322,50 @@ class IntegerRange(BinaryOp):
 class LessThan(BinaryComparisonOp):
 	keyword_def = kw.LT
 	
-	def js(self, exp):
-		exp.put( self.lhs, " < ", self.rhs)
+	def js(self, pp):
+		pp.put( self.lhs, " < ", self.rhs)
 
 class GreaterThan(BinaryComparisonOp):
 	keyword_def = kw.GT
 	
-	def js(self, exp):
-		exp.put( self.lhs, " > ", self.rhs)
+	def js(self, pp):
+		pp.put( self.lhs, " > ", self.rhs)
 
 class LessOrEqual(BinaryComparisonOp):
 	keyword_def = kw.LE
 	
-	def js(self, exp):
-		exp.put( self.lhs, " <= ", self.rhs)
+	def js(self, pp):
+		pp.put( self.lhs, " <= ", self.rhs)
 
 class GreaterOrEqual(BinaryComparisonOp):
 	keyword_def = kw.GE
 	
-	def js(self, exp):
-		exp.put( self.lhs, " >= ", self.rhs)
+	def js(self, pp):
+		pp.put( self.lhs, " >= ", self.rhs)
 
 class Equal(BinaryComparisonOp):
 	keyword_def = kw.EQ
 	
-	def js(self, exp):
-		exp.put( self.lhs, " == ", self.rhs)
+	def js(self, pp):
+		pp.put( self.lhs, " == ", self.rhs)
 
 class NotEqual(BinaryComparisonOp):
 	keyword_def = kw.NE
 
-	def js(self, exp):
-		exp.put( self.lhs, " != ", self.rhs)
+	def js(self, pp):
+		pp.put( self.lhs, " != ", self.rhs)
 		
 class LogicalAnd(BinaryLogicalOp):
 	keyword_def = kw.AND
 	
-	def js(self, exp):
-		exp.put( self.lhs, " && ", self.rhs)
+	def js(self, pp):
+		pp.put( self.lhs, " && ", self.rhs)
 
 class LogicalOr(BinaryLogicalOp):
 	keyword_def = kw.OR
 	
-	def js(self, exp):
-		exp.put( self.lhs, " || ", self.rhs)
+	def js(self, pp):
+		pp.put( self.lhs, " || ", self.rhs)
 
 class Assignment(BinaryOp):
 	keyword_def = kw.ASSIGN
@@ -383,8 +383,8 @@ class Assignment(BinaryOp):
 					"droite doit être compatible avec le type de l'opérande de gauche",
 					ltype, rtype))
 
-	def js(self, exp):
-		exp.put( self.lhs, " = ", self.rhs)
+	def js(self, pp):
+		pp.put(self.lhs, " = ", self.rhs)
 
 #######################################################################
 #

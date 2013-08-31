@@ -1,11 +1,11 @@
 from tests.ldatestcase import LDATestCase
-from lda import kw, module, expression, statements, operators, ldaexporter
+from lda import kw, module, expression, statements, operators, prettyprinter
 from lda.symbols import Lexicon
 
 class test_lda_output(LDATestCase):
 	def _assert_export(self, cls, program):
 		stmt = self.analyze(cls, program)
-		exp = ldaexporter.LDAExporter()
+		exp = prettyprinter.LDAPrettyPrinter()
 		stmt.lda(exp)
 		self.assertEqual(str(exp), program)
 

@@ -34,11 +34,11 @@ class StatementBlock:
 		cluster.rank_chains.append(rank_chain)
 		return first_outer_node
 
-	def lda(self, exp):
-		exp.join(self.body, exp.newline)
+	def lda(self, pp):
+		pp.join(self.body, pp.newline)
 
-	def js(self, exp):
-		exp.join(self.body, exp.newline)
+	def js(self, pp):
+		pp.join(self.body, pp.newline)
 
 	def check(self, context, logger):
 		for statement in self:
@@ -93,27 +93,27 @@ class If:
 		cluster.rank_chains.append(rank_chain)
 		return rank_chain[0]
 
-	def lda(self, exp):
+	def lda(self, pp):
 		intro = kw.IF
 		for conditional in self.conditionals:
-			exp.putline(intro, " ", conditional.condition, " ", kw.THEN)
-			exp.indented(exp.putline, conditional.block)
+			pp.putline(intro, " ", conditional.condition, " ", kw.THEN)
+			pp.indented(pp.putline, conditional.block)
 			intro = kw.ELIF
 		if self.else_block:
-			exp.putline(kw.ELSE)
-			exp.indented(exp.putline, self.else_block)
-		exp.put(kw.END_IF)
+			pp.putline(kw.ELSE)
+			pp.indented(pp.putline, self.else_block)
+		pp.put(kw.END_IF)
 
-	def js(self, exp):
+	def js(self, pp):
 		intro = "if ( "
 		for conditional in self.conditionals:
-			exp.putline(intro, conditional.condition, " ) {")
-			exp.indented(exp.putline, conditional.block)
+			pp.putline(intro, conditional.condition, " ) {")
+			pp.indented(pp.putline, conditional.block)
 			intro = "}else if ( "
 		if self.else_block:
-			exp.putline("}else {")
-			exp.indented(exp.putline, self.else_block)
-		exp.put("}")
+			pp.putline("}else {")
+			pp.indented(pp.putline, self.else_block)
+		pp.put("}")
 		
 class For:
 	_COMPONENT_NAMES = [
@@ -148,19 +148,19 @@ class For:
 		return dot.Node("pour", cluster, counter_node, initial_node,
 				final_node, block_node)
 
-	def lda(self, exp):
-		exp.putline(kw.FOR, " ", self.counter, " ", kw.FROM, " ", self.initial,
+	def lda(self, pp):
+		pp.putline(kw.FOR, " ", self.counter, " ", kw.FROM, " ", self.initial,
 				" ", kw.TO, " ", self.final, " ", kw.DO)
 		if self.block:
-			exp.indented(exp.putline, self.block)
-		exp.put(kw.END_FOR)
+			pp.indented(pp.putline, self.block)
+		pp.put(kw.END_FOR)
 
-	def js(self, exp):
-		exp.putline("for", " (", self.counter, "=", self.initial,
+	def js(self, pp):
+		pp.putline("for", " (", self.counter, "=", self.initial,
 				"; ", self.counter, "===", self.final, ";", self.counter, "++){")
 		if self.block:
-			exp.indented(exp.putline, self.block)
-		exp.put("{")
+			pp.indented(pp.putline, self.block)
+		pp.put("{")
 
 class While(Conditional):
 	def put_node(self, cluster):
@@ -169,14 +169,14 @@ class While(Conditional):
 		block_node = self.block.put_node(block_cluster)
 		return dot.Node("tantque", cluster, cond_node, block_node)
 
-	def lda(self, exp):
-		exp.putline(kw.WHILE, " ", self.condition, " ", kw.DO)
+	def lda(self, pp):
+		pp.putline(kw.WHILE, " ", self.condition, " ", kw.DO)
 		if self.block:
-			exp.indented(exp.putline, self.block)
-		exp.put(kw.END_WHILE)
+			pp.indented(pp.putline, self.block)
+		pp.put(kw.END_WHILE)
 
-	def js(self, exp):
-		exp.putline("while", " ( ", self.condition, " )")
+	def js(self, pp):
+		pp.putline("while", " ( ", self.condition, " )")
 		if self.block:
-			exp.indented(exp.putline, self.block)
+			pp.indented(pp.putline, self.block)
 
