@@ -24,7 +24,7 @@ class TestLexiconSemantics(LDATestCase):
 				fonction f(): Moule lexique début fin''')
 
 	def test_undefined_type_alias(self):
-		alg = self.analyze(Algorithm,
+		alg = self.analyze(cls=Algorithm,
 				program='algorithme lexique m: (**)TypeMysterieux début fin')
 		alg.check({}, handler.DummyHandler())
 		self.assertIs(types.ERRONEOUS, alg.lexicon.symbol_dict['m'].resolved_type)

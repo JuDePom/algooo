@@ -1,6 +1,11 @@
 import unittest
 from lda import parser, module, expression, types, symbols, statements
 from lda.errors import syntax, semantic, handler
+from lda import prettyprinter
+from io import StringIO
+import subprocess
+
+ERROR_MARKER = "(**)"
 
 class DefaultOptions:
 	case_insensitive = False
@@ -27,7 +32,7 @@ class LDATestCase(unittest.TestCase):
 				statements.If:               self.parser.analyze_if,
 		}
 
-	def analyze(self, cls, program, **kwargs):
+	def analyze(self, program, cls=module.Module, **kwargs):
 		"""
 		Parse a program. Raise the most relevant syntax error if needed.
 		If the program was syntactically correct, ensure that:
@@ -62,23 +67,25 @@ class LDATestCase(unittest.TestCase):
 				"stopped at {}").format(self.parser.pos))
 		return thing
 
-	def assertLDAError(self, error_class, analyzer, error_marker="(**)", **kwargs):
+	def assertLDAError(self, error_class, analyzer, **kwargs):
 		"""
 		Ensure a syntax error is raised at a specific point in the input program.
 
+		In the input program, use the empty comment to mark the spot right
+		before the mistake. For example:
+			tableau entier[(**)'a']
+
 		:param error_class  : An instance of this class is expected to be raised
 			as an exception during the syntax analysis of the program.
-		:param error_marker : Substring marking the spot where the syntax error
-			is supposed to be raised.
 		:param kwargs       : Arguments to pass to the analysis function.
 		"""
 		result = None
 		with self.assertRaises(error_class) as cm:
 			result = analyzer(**kwargs)
 		error = cm.exception
-		marker_pos = kwargs['program'].find(error_marker)
-		self.assertGreaterEqual(marker_pos, 0, "can't find error_marker")
-		self.assertEqual(error.pos.char, marker_pos + len(error_marker),
+		marker_pos = kwargs['program'].find(ERROR_MARKER)
+		self.assertGreaterEqual(marker_pos, 0, "can't find error marker")
+		self.assertEqual(error.pos.char, marker_pos + len(ERROR_MARKER),
 				"exception wasn't raised at expected position (raised at {})"
 				.format(error.pos))
 		return result
@@ -93,5 +100,6 @@ class LDATestCase(unittest.TestCase):
 		"""
 		if context is None:
 			context = {}
-		return self.analyze(**kwargs).check(context, handler.Raiser())
+		root = self.analyze(**kwargs)
+		return root.check(context, handler.Raiser())
 

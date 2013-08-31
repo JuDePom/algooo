@@ -4,7 +4,7 @@ from lda.symbols import Lexicon
 
 class test_lda_output(LDATestCase):
 	def _assert_export(self, cls, program):
-		stmt = self.analyze(cls, program)
+		stmt = self.analyze(program, cls)
 		exp = prettyprinter.LDAPrettyPrinter()
 		stmt.lda(exp)
 		self.assertEqual(str(exp), program)

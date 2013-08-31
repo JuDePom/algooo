@@ -4,7 +4,7 @@ from lda.errors import syntax
 
 class TestArglistSyntax(LDATestCase):
 	def _id_arglist(self, program):
-		return self.analyze(list, program,
+		return self.analyze(program, list,
 				analyze_arg=self.parser.analyze_identifier)
 
 	def test_0_args(self):
@@ -25,7 +25,7 @@ class TestArglistSyntax(LDATestCase):
 
 	def test_arglist_with_empty_arg(self):
 		self.assertLDAError(syntax.SyntaxError, self.analyze,
-				cls=list,
 				program='ident,(**),ident',
+				cls=list,
 				analyze_arg=self.parser.analyze_identifier)
 

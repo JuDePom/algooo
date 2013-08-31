@@ -30,164 +30,164 @@ class TestTypeEquivalences(LDATestCase):
 		self._test_conflict_both_ways(types.INTEGER, types.CHARACTER)
 		self._test_conflict_both_ways(types.INTEGER, types.BOOLEAN)
 		self._test_conflict_both_ways(types.INTEGER,
-				self.analyze(types.Array, 'tableau entier[0..5]'))
+				self.analyze(cls=types.Array, program="tableau entier[0..5]"))
 		self._test_conflict_both_ways(types.INTEGER,
-				self.analyze(types.Composite, 'Moule = <a: entier>'))
+				self.analyze(cls=types.Composite, program="Moule = <a: entier>"))
 
 	def test_real_incompatible_with_non_numbers(self):
 		self._test_conflict_both_ways(types.REAL, types.STRING)
 		self._test_conflict_both_ways(types.REAL, types.CHARACTER)
 		self._test_conflict_both_ways(types.REAL, types.BOOLEAN)
 		self._test_conflict_both_ways(types.REAL,
-				self.analyze(types.Array, 'tableau réel[0..5]'))
+				self.analyze(cls=types.Array, program="tableau réel[0..5]"))
 		self._test_conflict_both_ways(types.REAL,
-				self.analyze(types.Composite, 'Moule = <a: réel>'))
+				self.analyze(cls=types.Composite, program="Moule = <a: réel>"))
 
 	def test_string_incompatible_with_composite_and_array(self):
 		self._test_conflict_both_ways(types.STRING,
-				self.analyze(types.Array, 'tableau caractère[0..5]'))
+				self.analyze(cls=types.Array, program="tableau caractère[0..5]"))
 		self._test_conflict_both_ways(types.STRING,
-				self.analyze(types.Composite, 'Moule = <a: chaîne>'))
+				self.analyze(cls=types.Composite, program="Moule = <a: chaîne>"))
 
 	def test_composite_compatible_with_itself(self):
-		moule1 = self.analyze(types.Composite, 'Moule = <>')
-		moule2 = self.analyze(types.Composite, 'Moule = <>')
+		moule1 = self.analyze(cls=types.Composite, program="Moule = <>")
+		moule2 = self.analyze(cls=types.Composite, program="Moule = <>")
 		self._test_compatibility_both_ways(moule1, moule1)
 		self._test_compatibility_both_ways(moule1, moule2)
 
 	def test_composite_incompatible_with_other_composite_with_different_identifier(self):
-		moule1 = self.analyze(types.Composite, 'Moule1 = <>')
-		moule2 = self.analyze(types.Composite, 'Moule2 = <>')
+		moule1 = self.analyze(cls=types.Composite, program="Moule1 = <>")
+		moule2 = self.analyze(cls=types.Composite, program="Moule2 = <>")
 		self._test_conflict_both_ways(moule1, moule2)
 
 	def test_1d_static_array_compatible_with_itself(self):
-		array = self.analyze(types.Array, 'tableau entier[0..5]')
+		array = self.analyze(cls=types.Array, program="tableau entier[0..5]")
 		self._test_self_compatibility(array)
 
 	def test_2d_static_array_compatible_with_itself(self):
-		array = self.analyze(types.Array, 'tableau entier[0..5, -1337..1337]')
+		array = self.analyze(cls=types.Array, program="tableau entier[0..5, -1337..1337]")
 		self._test_self_compatibility(array)
 
 	def test_1d_static_array_incompatible_with_2d_static_array(self):
-		array1d = self.analyze(types.Array, 'tableau entier[0..5]')
-		array2d = self.analyze(types.Array, 'tableau entier[0..5,0..5]')
+		array1d = self.analyze(cls=types.Array, program="tableau entier[0..5]")
+		array2d = self.analyze(cls=types.Array, program="tableau entier[0..5,0..5]")
 		self._test_conflict_both_ways(array1d, array2d)
 
 	def test_1d_static_array_incompatible_with_1d_static_array_with_other_bounds(self):
-		array1 = self.analyze(types.Array, 'tableau entier[0..1]')
-		array2 = self.analyze(types.Array, 'tableau entier[0..2]')
-		array3 = self.analyze(types.Array, 'tableau entier[-1..1]')
-		array4 = self.analyze(types.Array, 'tableau entier[-1..2]')
+		array1 = self.analyze(cls=types.Array, program="tableau entier[0..1]")
+		array2 = self.analyze(cls=types.Array, program="tableau entier[0..2]")
+		array3 = self.analyze(cls=types.Array, program="tableau entier[-1..1]")
+		array4 = self.analyze(cls=types.Array, program="tableau entier[-1..2]")
 		self._test_conflict_both_ways(array1, array2)
 		self._test_conflict_both_ways(array1, array3)
 		self._test_conflict_both_ways(array1, array4)
 
 	def test_1d_static_array_incompatible_with_1d_array_of_different_type_and_same_bounds(self):
-		int_array  = self.analyze(types.Array, 'tableau entier[0..5]')
-		real_array = self.analyze(types.Array, 'tableau réel[0..5]')
+		int_array  = self.analyze(cls=types.Array, program="tableau entier[0..5]")
+		real_array = self.analyze(cls=types.Array, program="tableau réel[0..5]")
 		self._test_conflict_both_ways(int_array, real_array)
 	
 	def test_1d_dynamic_array_compatible_with_itself(self):
-		array = self.analyze(types.Array, 'tableau entier[?]')
+		array = self.analyze(cls=types.Array, program="tableau entier[?]")
 		self._test_self_compatibility(array)
 
 	def test_1d_dynamic_array_compatible_with_other_1d_dynamic_array(self):
-		array1 = self.analyze(types.Array, 'tableau entier[?]')
-		array2 = self.analyze(types.Array, 'tableau entier[?]')
+		array1 = self.analyze(cls=types.Array, program="tableau entier[?]")
+		array2 = self.analyze(cls=types.Array, program="tableau entier[?]")
 		self._test_compatibility_both_ways(array1, array2)
 
 	def test_2d_half_dynamic_half_static_array_compatible_with_itself(self):
-		array = self.analyze(types.Array, 'tableau entier[?, 0..5]')
+		array = self.analyze(cls=types.Array, program="tableau entier[?, 0..5]")
 		self._test_self_compatibility(array)
 
 	def test_2d_half_dynamic_half_static_array_compatible_with_other_such_array(self):
-		array1 = self.analyze(types.Array, 'tableau entier[?, 0..5]')
-		array2 = self.analyze(types.Array, 'tableau entier[?, 0..5]')
+		array1 = self.analyze(cls=types.Array, program="tableau entier[?, 0..5]")
+		array2 = self.analyze(cls=types.Array, program="tableau entier[?, 0..5]")
 		self._test_compatibility_both_ways(array1, array2)
 
 	def test_pass_real_to_function_expecting_integer(self):
-		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=Module, program='''\
+		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=Module, program="""\
 				fonction f(a: entier)
 				lexique
 					a: entier
 				début
 					f((**)3.00)
-				fin''')
+				fin""")
 
 	def test_pass_integer_to_function_expecting_real(self):
-		self.check(cls=Module, program='''\
+		self.check(cls=Module, program="""\
 				fonction f(a: réel)
 				lexique
 					a: réel
 				début
 					f(3)
-				fin''')
+				fin""")
 
 	def test_assign_integer_literal_to_real(self):
-		self.check(cls=Algorithm, program='''\
+		self.check(cls=Algorithm, program="""\
 				algorithme
 				lexique r:réel
-				début r<-3 fin''')
+				début r<-3 fin""")
 
 	def test_assign_integer_variable_to_real(self):
-		self.check(cls=Algorithm, program='''\
+		self.check(cls=Algorithm, program="""\
 				algorithme
 				lexique r:réel e:entier
-				début e<-3   r<-e fin''')
+				début e<-3   r<-e fin""")
 
 	def test_assign_real_literal_to_integer(self):
 		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Algorithm,
-				program='''algorithme
+				program="""algorithme
 				lexique e:entier
-				début e<-(**)3.00000 fin''')
+				début e<-(**)3.00000 fin""")
 
 	def test_assign_real_variable_to_integer(self):
 		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Algorithm,
-				program='''algorithme
+				program="""algorithme
 				lexique r:réel e:entier
-				début r<-3.00000  e<-(**)r  fin''')
+				début r<-3.00000  e<-(**)r  fin""")
 
 	def test_assign_integer_to_inout_integer(self):
-		self.check(cls=Function, program='''\
+		self.check(cls=Function, program="""\
 				fonction f(a: inout entier)
 				lexique a: inout entier
-				début a <- 3 fin''')
+				début a <- 3 fin""")
 
 	def test_assign_integer_to_inout_real(self):
-		self.check(cls=Function, program='''\
+		self.check(cls=Function, program="""\
 				fonction f(a: inout réel)
 				lexique a: inout réel
-				début a <- 3 fin''')
+				début a <- 3 fin""")
 
 	def test_arithmetic_with_inout_integer(self):
-		self.check(cls=Function, program='''\
+		self.check(cls=Function, program="""\
 				fonction f(a: inout entier)
 				lexique a: inout entier    b: entier
-				début b <- a * 2 fin''')
+				début b <- a * 2 fin""")
 
 	def test_assign_inout_integer_to_plain_integer(self):
-		self.check(cls=Function, program='''\
+		self.check(cls=Function, program="""\
 				fonction f(a: inout entier)
 				lexique a: inout entier   b : entier
-				début b <- a fin''')
+				début b <- a fin""")
 
 	def test_assign_plain_integer_to_inout_integer(self):
-		self.check(cls=Function, program='''\
+		self.check(cls=Function, program="""\
 				fonction f(a: inout entier)
 				lexique a: inout entier   b : entier
-				début a <- b fin''')
+				début a <- b fin""")
 
 	def test_binary_logical_op_with_binary_operands(self):
-		self.check(cls=LogicalOr, program='vrai ou faux')
-		self.check(cls=LogicalOr, program='vrai ou vrai')
-		self.check(cls=LogicalOr, program='faux ou vrai')
-		self.check(cls=LogicalOr, program='faux ou faux')
+		self.check(cls=LogicalOr, program="vrai ou faux")
+		self.check(cls=LogicalOr, program="vrai ou vrai")
+		self.check(cls=LogicalOr, program="faux ou vrai")
+		self.check(cls=LogicalOr, program="faux ou faux")
 
 	def test_binary_logical_op_with_non_binary_operands(self):
 		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=LogicalOr,
-				program='vrai ou (**)3')
+				program="vrai ou (**)3")
 		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=LogicalOr,
-				program='(**)3 ou vrai')
+				program="(**)3 ou vrai")
 		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=LogicalOr,
-				program='(**)3 ou (**)4')
+				program="(**)3 ou (**)4")
 

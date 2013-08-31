@@ -7,18 +7,21 @@ from lda.errors import syntax
 
 class TestForSyntax(LDATestCase):
 	def test_for_good_syntax(self):
-		stmt = self.analyze(For, "pour i de 1 jusque 3 faire fessée(toto) fpour")
+		stmt = self.analyze(cls=For,
+				program="pour i de 1 jusque 3 faire fessée(toto) fpour")
 		self.assertIsInstance(stmt.counter, Identifier)
 		self.assertIsInstance(stmt.initial, expression.LiteralInteger)
 		self.assertIsInstance(stmt.final, expression.LiteralInteger)
 		self.assertIsInstance(stmt.block, StatementBlock)
 
 	def test_for_with_array_element_counter(self):
-		stmt = self.analyze(For, "pour t[0] de 1 jusque 3 faire fessée(toto) fpour")
+		stmt = self.analyze(cls=For,
+				program="pour t[0] de 1 jusque 3 faire fessée(toto) fpour")
 		self.assertIsInstance(stmt.counter, operators.ArraySubscript)
 
 	def test_for_with_composite_member_counter(self):
-		stmt = self.analyze(For, "pour moule.compteur de 1 jusque 3 faire fessée(toto) fpour")
+		stmt = self.analyze(cls=For,
+				program="pour moule.compteur de 1 jusque 3 faire fessée(toto) fpour")
 		self.assertIsInstance(stmt.counter, operators.MemberSelect)
 
 	def test_for_missing_keywords(self):

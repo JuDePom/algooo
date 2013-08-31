@@ -5,19 +5,21 @@ from lda.errors import syntax
 
 class TestIfSyntax(LDATestCase):
 	def test_if_then(self):
-		stmt = self.analyze(If, "si toto.gentil alors bisou(toto) fsi")
+		stmt = self.analyze(cls=If,
+				program="si toto.gentil alors bisou(toto) fsi")
 		self.assertIsInstance(stmt.conditionals[0].condition, MemberSelect)
 		self.assertIsInstance(stmt.conditionals[0].block, StatementBlock)
 		self.assertIsNone(stmt.else_block)
 
 	def test_if_then_else(self):
-		stmt = self.analyze(If, "si toto.gentil alors bisou(toto) sinon fessée(toto) fsi")
+		stmt = self.analyze(cls=If,
+				program="si toto.gentil alors bisou(toto) sinon fessée(toto) fsi")
 		self.assertIsInstance(stmt.conditionals[0].condition, MemberSelect)
 		self.assertIsInstance(stmt.conditionals[0].block, StatementBlock)
 		self.assertIsInstance(stmt.else_block, StatementBlock)
 
 	def test_nested_ifs_single_endif(self):
-		stmt = self.analyze(If, '''\
+		stmt = self.analyze(cls=If, program='''\
 			si toto.gentil alors
 				bisou(toto)
 			snsi toto.triste alors

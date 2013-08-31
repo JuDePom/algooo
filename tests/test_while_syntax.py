@@ -5,12 +5,14 @@ from lda.errors import syntax
 
 class TestWhileSyntax(LDATestCase):
 	def test_while_good_syntax(self):
-		stmt = self.analyze(While, "tantque toto.gentil faire bisou(toto) ftant")
+		stmt = self.analyze(cls=While,
+				program="tantque toto.gentil faire bisou(toto) ftant")
 		self.assertIsInstance(stmt.condition, expression.Expression)
 		self.assertIsInstance(stmt.block, StatementBlock)
 	
 	def test_while_alternative_keywords(self):
-		self.analyze(While, "tantque toto.gentil faire bisou(toto) ftantque")
+		self.analyze(cls=While,
+				program="tantque toto.gentil faire bisou(toto) ftantque")
 	
 	def test_while_missing_keyword(self):
 		def test(p):
