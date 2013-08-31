@@ -1,4 +1,5 @@
 from . import kw
+from . import dot
 from .types import ERRONEOUS, Composite, Inout
 from .errors import semantic
 
@@ -39,6 +40,9 @@ class Identifier:
 
 	def js(self, exp):
 		exp.put(self.name)
+
+	def put_node(self, cluster):
+		return dot.Node(self.name, cluster)
 
 	def check(self, context, logger):
 		try:

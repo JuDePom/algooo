@@ -78,10 +78,16 @@ def format(module):
 	master = Cluster("")
 	module.put_node(master)
 	all_nodes = master.node_cascade()
-	s = "digraph program {\nnode [shape=plaintext, height=0];\n\n"
-	s += ''.join(sc.dump_contents() for sc in master.subclusters)
-	s += ''.join(n.dump_def() for n in all_nodes)
-	s += ''.join(n.dump_links() for n in all_nodes)
-	s += "}\n"
-	return s
+	return (
+			"digraph program {{\n"
+			"charset=utf8;\n"
+			"node [shape=plaintext, height=0];\n"
+			"\n"
+			"{subclusters}\n"
+			"{defs}\n"
+			"{links}\n"
+			"}}\n").format(
+			subclusters = ''.join(sc.dump_contents() for sc in master.subclusters),
+			defs = ''.join(n.dump_def() for n in all_nodes),
+			links = ''.join(n.dump_links() for n in all_nodes))
 

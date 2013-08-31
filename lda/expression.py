@@ -21,7 +21,7 @@ class Literal(Expression):
 		return type(self) == type(other) and self.value == other.value
 
 	def put_node(self, cluster):
-		return dot.Node(str(self), cluster)
+		return dot.Node(str(self.value), cluster)
 
 	def check(self, context, logger):
 		pass

@@ -73,15 +73,25 @@ class If:
 			self.else_block.check(context, logger)
 
 	def put_node(self, cluster):
-		cond_node = self.condition.put_node(cluster)
-		then_cluster = dot.Cluster("alors", cluster)
-		then_node = self.then_block.put_node(then_cluster)
-		children = [cond_node, then_node]
+		rank_chain = []
+		prev_node = None
+		for i, conditional in enumerate(self.conditionals):
+			c_cluster = dot.Cluster("", cluster)
+			cond_node = conditional.condition.put_node(c_cluster)
+			then_cluster = dot.Cluster("alors", c_cluster)
+			then_node = conditional.block.put_node(then_cluster)
+			if_node = dot.Node("si" if i == 0 else "snsi", c_cluster, cond_node, then_node)
+			rank_chain.append(if_node)
+			if prev_node is not None:
+				prev_node.children.append(if_node)
+			prev_node = if_node
 		if self.else_block is not None:
 			else_cluster = dot.Cluster("sinon", cluster)
 			else_node = self.else_block.put_node(else_cluster)
-			children.append(else_node)
-		return dot.Node("si", cluster, *children)
+			prev_node.children.append(else_node)
+			rank_chain.append(else_node)
+		cluster.rank_chains.append(rank_chain)
+		return rank_chain[0]
 
 	def lda(self, exp):
 		intro = kw.IF
