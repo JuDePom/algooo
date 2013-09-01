@@ -31,8 +31,9 @@ class UnaryOp(Expression):
 	def lda(self, pp):
 		pp.put(self.keyword_def, " ", self.rhs)
 		
+	@surround
 	def js(self, pp):
-		pp.put(self.keyword_def, " ", self.rhs)
+		pp.put(self.js_kw, " ", self.rhs)
 
 	def check(self, context, logger):
 		raise NotImplementedError
@@ -66,9 +67,9 @@ class BinaryOp(Expression):
 	def lda(self, pp):
 		pp.put(self.lhs, " ", self.keyword_def, " ", self.rhs)
 	
+	@surround
 	def js(self, pp):
-		# TODO this is obviously very wrong
-		pp.put(self.lhs, " ", self.keyword_def, " ", self.rhs)
+		pp.put(self.lhs, " ", self.js_kw, " ", self.rhs)
 
 	def check(self, context, logger):
 		raise NotImplementedError
@@ -98,8 +99,9 @@ class UnaryNumberOp(UnaryOp):
 	def lda(self, pp):
 		pp.put(self.keyword_def, self.rhs)
 	
+	@surround
 	def js(self, pp):
-		pp.put(self.keyword_def, self.rhs)
+		pp.put(self.js_kw, self.rhs)
 
 class BinaryChameleonOp(BinaryOp):
 	"""
@@ -158,10 +160,6 @@ class BinaryEncompassingOp(BinaryOp):
 		pp.put(self.lhs, self.keyword_def)
 		pp.join(self.rhs, pp.put, kw.COMMA, " ")
 		pp.put(self.closing)
-
-	def js(self, pp):
-		# TODO this is obviously very wrong
-		pp.put(self.lhs, self.keyword_def, self.rhs, self.closing)
 
 
 #######################################################################
@@ -281,8 +279,9 @@ class MemberSelect(BinaryOp):
 	def lda(self, pp):
 		pp.put(self.lhs, self.keyword_def, self.rhs)
 	
+	@surround
 	def js(self, pp):
-		pp.put(self.lhs, self.keyword_def, self.rhs)
+		pp.put(self.lhs, ".", self.rhs)
 
 class Power(BinaryChameleonOp):
 	"""
@@ -295,20 +294,29 @@ class Power(BinaryChameleonOp):
 	keyword_def = kw.POWER
 	right_ass = True
 
+	def js(self, pp):
+		pp.put("Math.pow(", self.lhs, ", ", self.rhs, ")")
+
 class Multiplication(BinaryChameleonOp):
 	keyword_def = kw.TIMES
+	js_kw = "*"
 
 class Division(BinaryChameleonOp):
 	keyword_def = kw.SLASH
+	js_kw = "/"
+	#TODO: JS integer division!!!
 
 class Modulo(BinaryChameleonOp):
 	keyword_def = kw.MODULO
+	js_kw = "%"
 
 class Addition(BinaryChameleonOp):
 	keyword_def = kw.PLUS
+	js_kw = "+"
 
 class Subtraction(BinaryChameleonOp):
 	keyword_def = kw.MINUS
+	js_kw = "-"
 
 class IntegerRange(BinaryOp):
 	keyword_def = kw.DOTDOT
@@ -319,56 +327,44 @@ class IntegerRange(BinaryOp):
 			operand.check(context, logger)
 			types.enforce("une borne d'intervalle", types.INTEGER, operand, logger)
 
+	def js(self, pp):
+		raise NotImplementedError
+
 class LessThan(BinaryComparisonOp):
 	keyword_def = kw.LT
-	
-	def js(self, pp):
-		pp.put( self.lhs, " < ", self.rhs)
+	js_kw = "<"
 
 class GreaterThan(BinaryComparisonOp):
 	keyword_def = kw.GT
-	
-	def js(self, pp):
-		pp.put( self.lhs, " > ", self.rhs)
+	js_kw = ">"
 
 class LessOrEqual(BinaryComparisonOp):
 	keyword_def = kw.LE
-	
-	def js(self, pp):
-		pp.put( self.lhs, " <= ", self.rhs)
+	js_kw = "<="
 
 class GreaterOrEqual(BinaryComparisonOp):
 	keyword_def = kw.GE
-	
-	def js(self, pp):
-		pp.put( self.lhs, " >= ", self.rhs)
+	js_kw = ">="
 
 class Equal(BinaryComparisonOp):
 	keyword_def = kw.EQ
-	
-	def js(self, pp):
-		pp.put( self.lhs, " == ", self.rhs)
+	js_kw = "==="
 
 class NotEqual(BinaryComparisonOp):
 	keyword_def = kw.NE
+	js_kw = "!=="
 
-	def js(self, pp):
-		pp.put( self.lhs, " != ", self.rhs)
-		
 class LogicalAnd(BinaryLogicalOp):
 	keyword_def = kw.AND
-	
-	def js(self, pp):
-		pp.put( self.lhs, " && ", self.rhs)
+	js_kw = "&&"
 
 class LogicalOr(BinaryLogicalOp):
 	keyword_def = kw.OR
-	
-	def js(self, pp):
-		pp.put( self.lhs, " || ", self.rhs)
+	js_kw = "||"
 
 class Assignment(BinaryOp):
 	keyword_def = kw.ASSIGN
+	js_kw = "="
 	right_ass = True
 	# an assignment cannot be part of another expression, therefore it has no type
 	resolved_type = types.ASSIGNMENT

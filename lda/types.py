@@ -364,3 +364,9 @@ class Composite(TypeDescriptor):
 		pp.join(self.field_list, pp.put, ", ")
 		pp.put(kw.GT)
 
+	def js(self, pp):
+		pp.putline("var ", self.ident, " = {")
+		for field in self.field_list:
+			pp.indented(pp.putline, field.ident, ",")
+		pp.put("};")
+

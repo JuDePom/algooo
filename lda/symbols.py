@@ -39,7 +39,7 @@ class Identifier:
 		pp.put(self.name)
 
 	def js(self, pp):
-		pp.put(self.name)
+		pp.put("$" + self.name)
 
 	def put_node(self, cluster):
 		return dot.Node(self.name, cluster)
@@ -100,7 +100,7 @@ class Field:
 		pp.put(self.ident, kw.COLON, " ", self.type_descriptor)
 
 	def js(self, pp):
-		pp.put("var ", self.ident)
+		pp.put("var ", self.ident, ";")
 
 class Lexicon:
 	"""

@@ -105,15 +105,15 @@ class If:
 		pp.put(kw.END_IF)
 
 	def js(self, pp):
-		intro = "if ( "
+		intro = "if ("
 		for conditional in self.conditionals:
-			pp.putline(intro, conditional.condition, " ) {")
+			pp.putline(intro, conditional.condition, ") {")
 			pp.indented(pp.putline, conditional.block)
-			intro = "}else if ( "
+			intro = "} else if ("
 		if self.else_block:
-			pp.putline("}else {")
+			pp.putline("} else {")
 			pp.indented(pp.putline, self.else_block)
-		pp.put("}")
+		pp.put("};")
 		
 class For:
 	_COMPONENT_NAMES = [
@@ -156,11 +156,11 @@ class For:
 		pp.put(kw.END_FOR)
 
 	def js(self, pp):
-		pp.putline("for", " (", self.counter, "=", self.initial,
-				"; ", self.counter, "===", self.final, ";", self.counter, "++){")
+		pp.putline("for (", self.counter, " = ", self.initial,
+				"; ", self.counter, " !== ", self.final, "; ", self.counter, "++) {")
 		if self.block:
 			pp.indented(pp.putline, self.block)
-		pp.put("{")
+		pp.put("};")
 
 class While(Conditional):
 	def put_node(self, cluster):

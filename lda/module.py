@@ -152,12 +152,13 @@ class Function:
 		pp.put(kw.END)
 		
 	def js(self, pp):
-		pp.put("function", " ", self.ident, " ( ")
+		pp.put("function ", self.ident, "(")
 		pp.join(self.fp_list, pp.put, ", ")
-		pp.put(" )")
+		pp.put(") {")
 		pp.newline()
 		if self.lexicon:
 			pp.putline(self.lexicon)
 		if self.body:
 			pp.indented(pp.putline, self.body)
+		pp.put("};")
 
