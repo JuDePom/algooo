@@ -6,6 +6,7 @@ LDA compiler entry point.
 
 import lda.parser
 import lda.errors
+import lda.builtin
 import argparse
 import sys
 
@@ -44,7 +45,7 @@ except lda.errors.syntax.SyntaxError as ex:
 print (" * Syntaxe : OK.")
 
 logger = lda.errors.handler.Logger()
-module.check({}, logger)
+module.check(lda.builtin.CONTEXT, logger)
 
 if logger:
 	print (" *** ERREURS DE SÉMANTIQUE", file=sys.stderr)

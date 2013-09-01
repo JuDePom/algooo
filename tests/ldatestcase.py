@@ -1,9 +1,15 @@
 import unittest
-from lda import parser, module, expression, types, symbols, statements
-from lda.errors import syntax, semantic, handler
-from lda import prettyprinter
-from io import StringIO
 import subprocess
+from io import StringIO
+from lda.errors import syntax, semantic, handler
+from lda import parser
+from lda import types
+from lda import symbols
+from lda import statements
+from lda import expression
+from lda import module
+from lda import prettyprinter
+from lda import builtin
 
 ERROR_MARKER = "(**)"
 
@@ -99,7 +105,7 @@ class LDATestCase(unittest.TestCase):
 		:param kwargs : Arguments to pass to the analysis function.
 		"""
 		if context is None:
-			context = {}
+			context = builtin.CONTEXT
 		root = self.analyze(**kwargs)
 		return root.check(context, handler.Raiser())
 
