@@ -133,6 +133,19 @@ class Function:
 		# check statements
 		self.body.check(subcontext, logger)
 
+	def check_effective_parameters(self, context, logger, pos, params):
+		# check parameter count
+		expected_argc = len(self.fp_list)
+		given_argc = len(params)
+		if expected_argc != given_argc:
+			raise semantic.ParameterCountMismatch(pos,
+					given=given_argc, expected=expected_argc)
+		# check parameter types
+		for effective, formal in zip(params, self.fp_list):
+			effective.check(context, logger)
+			types.enforce_compatible("ce paramètre effectif",
+					formal.resolved_type, effective, logger)
+
 	def put_node(self, cluster):
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
 		return self.body.put_node(function_cluster)
@@ -161,4 +174,9 @@ class Function:
 		if self.body:
 			pp.indented(pp.putline, self.body)
 		pp.put("};")
+
+	def js_call(self, pp, call_op):
+		pp.put(self.lhs, "(")
+		pp.join(self.rhs, pp.put, ", ")
+		pp.put(")")
 

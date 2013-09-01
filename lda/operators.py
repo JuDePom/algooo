@@ -1,7 +1,6 @@
 from .expression import Expression, surround
 from .errors import semantic
 from . import types
-from . import module
 from . import dot
 from . import kw
 
@@ -230,27 +229,21 @@ class FunctionCall(BinaryEncompassingOp):
 	closing = kw.RPAREN
 
 	def check(self, context, logger):
-		# guilty until proven innocent
-		self.resolved_type = types.ERRONEOUS
-		# are we trying to call a function?
+		self.resolved_type = types.ERRONEOUS # guilty until proven innocent
 		self.lhs.check(context, logger)
-		function = self.lhs.resolved_type
-		if not isinstance(function, module.Function):
-			logger.log(semantic.NonCallable(self.pos, function.resolved_type))
+		self.function = self.lhs.resolved_type
+		try:
+			self.function.check_effective_parameters(context, logger, self.pos, self.rhs)
+			self.resolved_type = self.function.return_type.resolved_type
+		except AttributeError:
+			logger.log(semantic.NonCallable(self.pos, self.function.resolved_type))
 			return
-		# check parameter count
-		expected_argc = len(function.fp_list)
-		given_argc = len(self.rhs)
-		if expected_argc != given_argc:
-			logger.log(semantic.ParameterCountMismatch(self.pos,
-					given=given_argc, expected=expected_argc))
+		except semantic.SemanticError as e:
+			logger.log(e)
 			return
-		# check parameter types
-		for effective, formal in zip(self.rhs, function.fp_list):
-			effective.check(context, logger)
-			types.enforce_compatible("ce paramètre effectif",
-					formal.resolved_type, effective, logger)
-		self.resolved_type = function.return_type.resolved_type
+
+	def js(self, pp):
+		self.function.js_call(pp, self)
 
 class MemberSelect(BinaryOp):
 	"""
