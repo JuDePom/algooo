@@ -107,5 +107,12 @@ class LDATestCase(unittest.TestCase):
 		if context is None:
 			context = builtin.CONTEXT
 		root = self.analyze(**kwargs)
-		return root.check(context, handler.Raiser())
+		root.check(context, handler.Raiser())
+		return root
+
+	def jseval(self, **kwargs):
+		pp = prettyprinter.JSPrettyPrinter()
+		self.check(**kwargs).js(pp)
+		code = str(pp) + "\n\nMain();\n"
+		return subprocess.check_output(["node", "-e", code], universal_newlines=True)
 
