@@ -46,7 +46,7 @@ FUNCTION       = Keyword("fonction")
 LEXICON        = Keyword("lexique")
 BEGIN          = Keyword("début", "debut")
 END            = Keyword("fin")
-RETURN         = Keyword("return")
+RETURN         = Keyword("retourne")
 
 FOR            = Keyword("pour")
 FROM           = Keyword("de")

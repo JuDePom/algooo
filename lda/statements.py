@@ -114,7 +114,7 @@ class If:
 			pp.putline("} else {")
 			pp.indented(pp.putline, self.else_block)
 		pp.put("};")
-		
+
 class For:
 	_COMPONENT_NAMES = [
 			"le compteur de la boucle",
@@ -180,3 +180,13 @@ class While(Conditional):
 		if self.block:
 			pp.indented(pp.putline, self.block)
 
+class Return:
+	def __init__(self, pos, expr):
+		self.pos = pos
+		self.expression = expr
+
+	def lda(self, pp):
+		pp.put(kw.RETURN, " ", self.expression)
+
+	def js(self, pp):
+		pp.put("return ", self.expression)
