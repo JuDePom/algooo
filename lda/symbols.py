@@ -46,11 +46,11 @@ class Identifier:
 
 	def check(self, context, logger):
 		try:
-			# TODO est-ce qu'on devrait rajouter ErroneousType dans le contexte, histoire de ne pas répéter la même erreur 5000 fois ?
 			symbol = context[self.name]
 			self.resolved_type = symbol.resolved_type
 		except KeyError:
 			logger.log(semantic.MissingDeclaration(self))
+			self.resolved_type = ERRONEOUS
 
 class TypeAlias(Identifier):
 	"""

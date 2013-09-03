@@ -114,3 +114,21 @@ class TestLexiconSemantics(LDATestCase):
 					Moule = <>
 				fonction f(m: Moule) lexique m: Moule début fin''')
 
+	def test_for_loop_uses_undeclared_counter_variable(self):
+		self.assertLDAError(semantic.MissingDeclaration, self.check, program='''\
+				algorithme
+				lexique
+				début
+					pour (**)i de 1 jusque 5 faire
+					fpour
+				fin''')
+
+	def test_variable_of_undeclared_composite_type_used_in_program_body(self):
+		self.assertLDAError(semantic.UnresolvableTypeAlias, self.check, program='''\
+				algorithme
+				lexique
+					a: (**)UnMystérieuxCompositeInexistant
+				début
+					a.b <- 3
+				fin''')
+
