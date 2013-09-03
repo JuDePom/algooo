@@ -63,7 +63,7 @@ def anything_goes(context, logger, pos, args):
 
 PRINT = MagicalFunction(VOID, anything_goes, "console.log")
 
-CONTEXT = {
+SYMBOLS = {
 		"écrire": PRINT,
 		"ecrire": PRINT,
 }

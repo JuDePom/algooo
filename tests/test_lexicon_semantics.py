@@ -2,6 +2,7 @@ from tests.ldatestcase import LDATestCase
 from lda.errors import semantic, handler
 from lda.module import Module, Algorithm, Function
 from lda import types
+from lda.context import ContextStack
 
 class TestLexiconSemantics(LDATestCase):
 	def test_variable_absent_from_lexicon(self):
@@ -26,7 +27,7 @@ class TestLexiconSemantics(LDATestCase):
 	def test_undefined_type_alias(self):
 		alg = self.analyze(cls=Algorithm,
 				program='algorithme lexique m: (**)TypeMysterieux début fin')
-		alg.check({}, handler.DummyHandler())
+		alg.check(ContextStack(), handler.DummyHandler())
 		self.assertIs(types.ERRONEOUS, alg.lexicon.symbol_dict['m'].resolved_type)
 
 	def test_variable_declared_twice(self):
