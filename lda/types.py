@@ -9,14 +9,18 @@ from types import MethodType
 #######################################################################
 
 def _enforce(name, expected_type, typed_object, logger, cmpfunc):
-	if cmpfunc(typed_object.resolved_type):
+	if typed_object is None:
+		given_type = VOID
+	else:
+		given_type = typed_object.resolved_type
+	if cmpfunc(given_type):
 		return True
 	else:
 		logger.log(semantic.SpecificTypeExpected(
 			typed_object.pos,
 			name,
 			expected = expected_type,
-			given = typed_object.resolved_type))
+			given = given_type))
 		return False
 
 def enforce(name, expected_type, typed_object, logger):
