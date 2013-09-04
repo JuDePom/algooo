@@ -248,9 +248,6 @@ class FunctionCall(BinaryEncompassingOp):
 		except AttributeError:
 			logger.log(semantic.NonCallable(self.pos, self.function.resolved_type))
 			return
-		except semantic.SemanticError as e:
-			logger.log(e)
-			return
 
 	def js(self, pp):
 		self.function.js_call(pp, self)

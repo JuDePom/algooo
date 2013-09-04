@@ -141,8 +141,9 @@ class Function:
 		expected_argc = len(self.fp_list)
 		given_argc = len(params)
 		if expected_argc != given_argc:
-			raise semantic.ParameterCountMismatch(pos,
-					given=given_argc, expected=expected_argc)
+			logger.log(semantic.ParameterCountMismatch(pos,
+					given=given_argc, expected=expected_argc))
+			return
 		# check effective parameter types
 		for effective, formal in zip(params, self.fp_list):
 			types.enforce_compatible("ce paramètre effectif",
