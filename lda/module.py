@@ -143,9 +143,8 @@ class Function:
 		if expected_argc != given_argc:
 			raise semantic.ParameterCountMismatch(pos,
 					given=given_argc, expected=expected_argc)
-		# check parameter types
+		# check effective parameter types
 		for effective, formal in zip(params, self.fp_list):
-			effective.check(context, logger)
 			types.enforce_compatible("ce paramètre effectif",
 					formal.resolved_type, effective, logger)
 

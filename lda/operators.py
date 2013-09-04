@@ -240,6 +240,8 @@ class FunctionCall(BinaryEncompassingOp):
 		self.resolved_type = types.ERRONEOUS # guilty until proven innocent
 		self.lhs.check(context, logger)
 		self.function = self.lhs.resolved_type
+		for effective in self.rhs:
+			effective.check(context, logger)
 		try:
 			self.function.check_effective_parameters(context, logger, self.pos, self.rhs)
 			self.resolved_type = self.function.return_type.resolved_type
