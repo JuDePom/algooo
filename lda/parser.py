@@ -421,7 +421,9 @@ class Parser:
 	def analyze_return(self):
 		pos = self.pos
 		self.consume_keyword(kw.RETURN)
-		expr = self.analyze_expression()
+		expr = None
+		with BacktrackFailure(self):
+			expr = self.analyze_expression()
 		return statements.Return(pos, expr)
 
 	def analyze_if(self):

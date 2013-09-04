@@ -181,6 +181,12 @@ class While(Conditional):
 			pp.indented(pp.putline, self.block)
 
 class Return:
+	"""
+	Return statement.
+
+	May own an expression or not, in which case self.expression is None.
+	"""
+
 	def __init__(self, pos, expr):
 		self.pos = pos
 		self.expression = expr
@@ -190,3 +196,14 @@ class Return:
 
 	def js(self, pp):
 		pp.put("return ", self.expression)
+
+	def check(self, context, logger):
+		if self.expression is not None:
+			self.expression.check(context, logger)
+		# The return statement may only occur in a context owned by an algorithm
+		# or a function, so if the assertion below fails, we have a compiler bug.
+		assert hasattr(context.parent, "check_return_expression")
+		# Even if the expression is None, we still need to pass it on to the
+		# parent in order to decide whether an empty return value is OK.
+		context.parent.check_return_expression(logger, self.expression)
+
