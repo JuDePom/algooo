@@ -92,8 +92,8 @@ class LDATestCase(unittest.TestCase):
 		marker_pos = kwargs['program'].find(ERROR_MARKER)
 		self.assertGreaterEqual(marker_pos, 0, "can't find error marker")
 		self.assertEqual(error.pos.char, marker_pos + len(ERROR_MARKER),
-				"exception wasn't raised at expected position (raised at {})"
-				.format(error.pos))
+				"exception wasn't raised at expected position (raised: {})"
+				.format(error))
 		return result
 
 	def check(self, context=None, **kwargs):
