@@ -11,7 +11,7 @@ class TestFunctionCallSemantics(LDATestCase):
 		self.assertLDAError(semantic.ParameterCountMismatch, self.check, cls=Module,
 			program='fonction f1(a:entier) lexique a:entier début f1(**)() fin')
 
-	def test_wrong_return_type(self):
+	def test_assignment_using_function_call_returning_wrong_type(self):
 		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Module,
 				program='''fonction f(): entier
 				lexique
@@ -19,6 +19,26 @@ class TestFunctionCallSemantics(LDATestCase):
 					m: Moule
 				début
 					m <- f(**)()
+				fin''')
+
+	def test_matching_return_type_integer(self):
+		self.check(program='''\
+				fonction f(): entier
+				lexique
+					a: entier
+				début
+					a <- f()
+				fin''')
+
+	def test_matching_return_type_composite(self):
+		self.check(program='''\
+				lexique
+					Moule = <>
+				fonction f(): Moule
+				lexique
+					m: Moule
+				début
+					m <- f()
 				fin''')
 
 	def test_parameter_type_mismatch_1(self):
@@ -53,4 +73,14 @@ class TestFunctionCallSemantics(LDATestCase):
 				début
 					a(**)()
 				fin''')
+
+	def test_function_call_within_function_call(self):
+		self.check(program="""\
+				fonction trois(): entier
+				début retourne 3 fin
+
+				algorithme
+				début
+					écrire(trois())
+				fin""")
 
