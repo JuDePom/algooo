@@ -46,11 +46,11 @@ class Identifier:
 
 	def check(self, context, logger):
 		try:
-			# TODO est-ce qu'on devrait rajouter ErroneousType dans le contexte, histoire de ne pas répéter la même erreur 5000 fois ?
 			symbol = context[self.name]
 			self.resolved_type = symbol.resolved_type
 		except KeyError:
 			logger.log(semantic.MissingDeclaration(self))
+			self.resolved_type = ERRONEOUS
 
 class TypeAlias(Identifier):
 	"""
@@ -126,40 +126,34 @@ class Lexicon:
 				key = lambda item: item.ident.pos)
 		self.symbol_dict = {item.ident.name: item for item in self.all_items}
 
-	def check(self, supercontext, logger):
+	def check(self, context, logger):
 		"""
-		Return supercontext augmented with lexicon components.
+		Augment context with lexicon components
+		and run a semantic analysis on all lexicon components.
 		"""
-		# initialize supercontext if needed
-		if supercontext is None:
-			supercontext = {}
 		# Hunt duplicates. Note that all_items is sorted by declaration
 		# position, which is important to report errors correctly.
 		hunt_duplicates(self.all_items, logger)
 		# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
-		# fill subcontext with the contents of the lexicon so that items can
+		# augment context with the contents of the lexicon so that items can
 		# refer to other items in the lexicon
-		subcontext = supercontext.copy()
-		subcontext.update({c.ident.name: c for c in self.composites})
-		subcontext.update({f.ident.name: f for f in self.functions})
-		subcontext.update({v.ident.name: v for v in self.variables})
-		# refine composite subcontexts
+		context.update(self.symbol_dict)
+		# refine composites
 		for composite in self.composites:
-			composite.check(subcontext, logger)
-		# resolve function signatures before function bodies,  so that the
+			composite.check(context, logger)
+		# resolve function signatures before checking function bodies, so that the
 		# functions can call functions defined within this lexicon
 		for function in self.functions:
-			function.check_signature(subcontext, logger)
-		# Function pass 2: bodies.
+			function.check_signature(context, logger)
+		# check function bodies
 		for function in self.functions:
-			function.check(subcontext, logger)
+			function.check(context, logger)
 		# resolve variable types
 		for variable in self.variables:
-			variable.check(subcontext, logger)
+			variable.check(context, logger)
 		# detect infinite recursion in composites
 		for composite in self.composites:
 			composite.detect_loops(composite, logger)
-		return subcontext
 
 	def __bool__(self):
 		"""

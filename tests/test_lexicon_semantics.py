@@ -2,6 +2,7 @@ from tests.ldatestcase import LDATestCase
 from lda.errors import semantic, handler
 from lda.module import Module, Algorithm, Function
 from lda import types
+from lda.context import ContextStack
 
 class TestLexiconSemantics(LDATestCase):
 	def test_variable_absent_from_lexicon(self):
@@ -26,7 +27,7 @@ class TestLexiconSemantics(LDATestCase):
 	def test_undefined_type_alias(self):
 		alg = self.analyze(cls=Algorithm,
 				program='algorithme lexique m: (**)TypeMysterieux début fin')
-		alg.check({}, handler.DummyHandler())
+		alg.check(ContextStack(), handler.DummyHandler())
 		self.assertIs(types.ERRONEOUS, alg.lexicon.symbol_dict['m'].resolved_type)
 
 	def test_variable_declared_twice(self):
@@ -113,4 +114,22 @@ class TestLexiconSemantics(LDATestCase):
 				lexique
 					Moule = <>
 				fonction f(m: Moule) lexique m: Moule début fin''')
+
+	def test_for_loop_uses_undeclared_counter_variable(self):
+		self.assertLDAError(semantic.MissingDeclaration, self.check, program='''\
+				algorithme
+				lexique
+				début
+					pour (**)i de 1 jusque 5 faire
+					fpour
+				fin''')
+
+	def test_variable_of_undeclared_composite_type_used_in_program_body(self):
+		self.assertLDAError(semantic.UnresolvableTypeAlias, self.check, program='''\
+				algorithme
+				lexique
+					a: (**)UnMystérieuxCompositeInexistant
+				début
+					a.b <- 3
+				fin''')
 

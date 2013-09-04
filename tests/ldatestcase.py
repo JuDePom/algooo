@@ -9,7 +9,7 @@ from lda import statements
 from lda import expression
 from lda import module
 from lda import prettyprinter
-from lda import builtin
+from lda.context import ContextStack
 
 ERROR_MARKER = "(**)"
 
@@ -100,12 +100,12 @@ class LDATestCase(unittest.TestCase):
 		"""
 		Perform syntactic and semantic analysis of a program.
 
-		:param context: Symbol table used by the semantic analysis. If ommitted,
-			an empty table will be used.
+		:param context: Context used by the semantic analysis. If ommitted,
+			the default context will be used.
 		:param kwargs : Arguments to pass to the analysis function.
 		"""
 		if context is None:
-			context = builtin.CONTEXT
+			context = ContextStack()
 		root = self.analyze(**kwargs)
 		root.check(context, handler.Raiser())
 		return root

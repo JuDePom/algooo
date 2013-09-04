@@ -119,6 +119,14 @@ class BinaryChameleonOp(BinaryOp):
 		else:
 			self.resolved_type = strongtype
 
+class NumberArithmeticOp(BinaryChameleonOp):
+	def check(self, context, logger):
+		super().check(context, logger)
+		if self.resolved_type not in (types.INTEGER, types.REAL):
+			logger.log(semantic.TypeError(self.pos,
+					"cet opérateur ne peut être appliqué qu'à des nombres",
+					self.resolved_type))
+
 class BinaryComparisonOp(BinaryOp):
 	"""
 	Binary operator of boolean type, taking operands of equivalent types.
@@ -276,7 +284,7 @@ class MemberSelect(BinaryOp):
 	def js(self, pp):
 		pp.put(self.lhs, ".", self.rhs)
 
-class Power(BinaryChameleonOp):
+class Power(NumberArithmeticOp):
 	"""
 	Exponent.
 
@@ -290,24 +298,24 @@ class Power(BinaryChameleonOp):
 	def js(self, pp):
 		pp.put("Math.pow(", self.lhs, ", ", self.rhs, ")")
 
-class Multiplication(BinaryChameleonOp):
+class Multiplication(NumberArithmeticOp):
 	keyword_def = kw.TIMES
 	js_kw = "*"
 
-class Division(BinaryChameleonOp):
+class Division(NumberArithmeticOp):
 	keyword_def = kw.SLASH
 	js_kw = "/"
 	#TODO: JS integer division!!!
 
-class Modulo(BinaryChameleonOp):
+class Modulo(NumberArithmeticOp):
 	keyword_def = kw.MODULO
 	js_kw = "%"
 
-class Addition(BinaryChameleonOp):
+class Addition(NumberArithmeticOp):
 	keyword_def = kw.PLUS
 	js_kw = "+"
 
-class Subtraction(BinaryChameleonOp):
+class Subtraction(NumberArithmeticOp):
 	keyword_def = kw.MINUS
 	js_kw = "-"
 

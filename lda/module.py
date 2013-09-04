@@ -14,13 +14,15 @@ class Module:
 		self.algorithms = algorithms
 
 	def check(self, context, logger):
-		subcontext = self.lexicon.check(context, logger)
+		context.push(self)
+		self.lexicon.check(context, logger)
 		if len(self.algorithms) > 1:
 			for a in self.algorithms[1:]:
 				logger.log(semantic.SemanticError(a.pos,
 						"il ne peut y avoir qu'un seul algorithme par module"))
-		elif len(self.algorithms) == 1:
-			self.algorithms[0].check(subcontext, logger)
+		for alg in self.algorithms:
+			alg.check(context, logger)
+		context.pop()
 
 	def put_node(self, cluster):
 		supercluster = dot.Cluster("module", cluster)
@@ -77,11 +79,11 @@ class Algorithm:
 		pp.putline("}")
 
 	def check(self, context, logger):
-		if self.lexicon is None:
-			subcontext = context
-		else:
-			subcontext = self.lexicon.check(context, logger)
-		self.body.check(subcontext, logger)
+		context.push(self)
+		if self.lexicon is not None:
+			self.lexicon.check(context, logger)
+		self.body.check(context, logger)
+		context.pop()
 
 class Function:
 	def __init__(self, pos, ident, fp_list, return_type, lexicon, body):
@@ -93,12 +95,13 @@ class Function:
 		self.body = body
 
 	def check_signature(self, context, logger):
-		subcontext = context.copy()
+		context.push(self)
 		for fp in self.fp_list:
-			subcontext[fp.ident.name] = fp
-		self.return_type.check(subcontext, logger)
+			context[fp.ident.name] = fp
+		self.return_type.check(context, logger)
 		for fp in self.fp_list:
-			fp.check(subcontext, logger)
+			fp.check(context, logger)
+		context.pop()
 
 	def check_fp_lexicon(self, logger):
 		"""
@@ -125,13 +128,13 @@ class Function:
 		symbols.hunt_duplicates(self.fp_list, logger)
 		# check formal parameter counterparts in lexicon
 		self.check_fp_lexicon(logger)
+		context.push(self)
 		# check lexicon
-		if self.lexicon is None:
-			subcontext = context
-		else:
-			subcontext = self.lexicon.check(context, logger)
+		if self.lexicon is not None:
+			self.lexicon.check(context, logger)
 		# check statements
-		self.body.check(subcontext, logger)
+		self.body.check(context, logger)
+		context.pop()
 
 	def check_effective_parameters(self, context, logger, pos, params):
 		# check parameter count
