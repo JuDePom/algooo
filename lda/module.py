@@ -179,7 +179,7 @@ class Function:
 		pp.put("};")
 
 	def js_call(self, pp, call_op):
-		pp.put(self.lhs, "(")
-		pp.join(self.rhs, pp.put, ", ")
+		pp.put(call_op.lhs, "(")
+		pp.join(call_op.rhs, pp.put, ", ")
 		pp.put(")")
 
