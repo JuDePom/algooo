@@ -12,9 +12,26 @@ class TestJSExpressions(LDATestCase):
 		self._test("3./2", "1.5\n")
 		self._test("2**9", "512\n")
 		self._test("6 mod 4", "2\n")
-	
-	def test_function_call_return_value(self):
+
+	def test_println(self):
+		self.assertEqual("hello\n", self.jseval(program="""\
+				algorithme début écrire("hello") fin"""))
+
+	def test_function_call_return_value_separated_statements(self):
 		self.assertEqual("1234\n", self.jseval(program="""\
-				fonction f() début retourne 1234 fin
+				fonction f(): entier
+				début
+					retourne 1234
+				fin
+				algorithme
+				lexique a: entier
+				début
+					a <- f()
+					écrire(a)
+				fin"""))
+
+	def test_function_call_return_value_combined_statement(self):
+		self.assertEqual("1234\n", self.jseval(program="""\
+				fonction f(): entier début retourne 1234 fin
 				algorithme début écrire(f()) fin"""))
 
