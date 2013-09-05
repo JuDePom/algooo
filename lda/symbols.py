@@ -133,7 +133,7 @@ class Lexicon:
 		"""
 		# Hunt duplicates. Note that all_items is sorted by declaration
 		# position, which is important to report errors correctly.
-		hunt_duplicates(self.all_items, logger)
+		hunt_duplicates(self.all_items, logger)	
 		for k in self.all_items.keys():
 			if k in context.keys():
 				logger.log(semantic.SemanticError(k.pos,
