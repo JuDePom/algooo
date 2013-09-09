@@ -4,6 +4,12 @@ from . import expression
 from . import types
 from .errors import semantic
 
+#######################################################################
+#
+# HELPER CLASSES
+#
+#######################################################################
+
 class StatementBlock:
 	def __init__(self, pos, body):
 		self.pos = pos
@@ -59,6 +65,70 @@ class Conditional:
 		self.condition.check(context, logger)
 		types.enforce("la condition", types.BOOLEAN, self.condition, logger)
 		self.block.check(context, logger)
+
+
+#######################################################################
+#
+# SELF-CONTAINED STATEMENTS
+#
+#######################################################################
+
+class Assignment:
+	def __init__(self, pos, lhs, rhs):
+		self.pos = pos
+		self.lhs = lhs
+		self.rhs = rhs
+
+	def check(self, context, logger):
+		self.lhs.check(context, logger)
+		self.rhs.check(context, logger)
+		ltype = self.lhs.resolved_type
+		rtype = self.rhs.resolved_type
+		if not ltype.compatible(rtype):
+			logger.log(semantic.TypeMismatch(self.rhs.pos, "le type de l'opérande de "
+					"droite doit être compatible avec le type de l'opérande de gauche",
+					ltype, rtype))
+
+	def lda(self, pp):
+		pp.put(self.lhs, " ", kw.ASSIGN, " ", self.rhs)
+
+	def js(self, pp):
+		pp.put(self.lhs, " = ", self.rhs)
+
+
+class Return:
+	"""
+	Return statement.
+
+	May own an expression or not, in which case self.expression is None.
+	"""
+
+	def __init__(self, pos, expr):
+		self.pos = pos
+		self.expression = expr
+
+	def lda(self, pp):
+		pp.put(kw.RETURN, " ", self.expression)
+
+	def js(self, pp):
+		pp.put("return ", self.expression)
+
+	def check(self, context, logger):
+		if self.expression is not None:
+			self.expression.check(context, logger)
+		# The return statement may only occur in a context owned by an algorithm
+		# or a function, so if the assertion below fails, we have a compiler bug.
+		assert hasattr(context.parent, "check_return_expression")
+		# Even if the expression is None, we still need to pass it on to the
+		# parent in order to decide whether an empty return value is OK.
+		context.parent.check_return_expression(logger, self.expression)
+
+
+#######################################################################
+#
+# META-STATEMENTS (statements that contain other statements)
+#
+#######################################################################
 
 class If:
 	def __init__(self, conditionals, else_block=None):
@@ -179,31 +249,4 @@ class While(Conditional):
 		pp.putline("while", " ( ", self.condition, " )")
 		if self.block:
 			pp.indented(pp.putline, self.block)
-
-class Return:
-	"""
-	Return statement.
-
-	May own an expression or not, in which case self.expression is None.
-	"""
-
-	def __init__(self, pos, expr):
-		self.pos = pos
-		self.expression = expr
-
-	def lda(self, pp):
-		pp.put(kw.RETURN, " ", self.expression)
-
-	def js(self, pp):
-		pp.put("return ", self.expression)
-
-	def check(self, context, logger):
-		if self.expression is not None:
-			self.expression.check(context, logger)
-		# The return statement may only occur in a context owned by an algorithm
-		# or a function, so if the assertion below fails, we have a compiler bug.
-		assert hasattr(context.parent, "check_return_expression")
-		# Even if the expression is None, we still need to pass it on to the
-		# parent in order to decide whether an empty return value is OK.
-		context.parent.check_return_expression(logger, self.expression)
 

@@ -412,11 +412,19 @@ class Parser:
 
 	def analyze_statement(self):
 		return self.analyze_multiple("une instruction",
-			self.analyze_return,
-			self.analyze_expression,
-			self.analyze_if,
-			self.analyze_for,
-			self.analyze_while,)
+				self.analyze_assignment,
+				self.analyze_return,
+				self.analyze_expression,
+				self.analyze_if,
+				self.analyze_for,
+				self.analyze_while,)
+
+	def analyze_assignment(self):
+		lhs = self.analyze_expression()
+		kw_pos = self.pos
+		self.consume_keyword(kw.ASSIGN)
+		rhs = self.analyze_expression()
+		return statements.Assignment(kw_pos, lhs, rhs)
 
 	def analyze_return(self):
 		pos = self.pos

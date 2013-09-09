@@ -43,3 +43,13 @@ class TestIfSyntax(LDATestCase):
 		self.assertLDAError(syntax.ExpectedItem, self.analyze, cls=If,
 				program='si (**)alors fsi')
 
+	def test_if_with_assignment_as_condition(self):
+		self.assertLDAError(syntax.SyntaxError, self.check, program="""\
+					algorithme
+					lexique
+						a: entier
+					début
+						si a (**)<- 3 alors
+						fsi
+					fin""")
+

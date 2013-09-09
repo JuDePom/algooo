@@ -112,8 +112,6 @@ class BlackHole(TypeDescriptor):
 ERRONEOUS = BlackHole()
 ERRONEOUS.relevant = False
 
-ASSIGNMENT = BlackHole()
-
 
 #######################################################################
 #

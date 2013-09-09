@@ -102,7 +102,6 @@ class TestExpressionSyntax(LDATestCase):
 		self.analyze("2=1+1", operators.Equal)
 		self.analyze("ident[ident].ident", operators.MemberSelect)
 		self.analyze("ident.ident[ident]", operators.ArraySubscript)
-		self.analyze("ident <- ident < ident", operators.Assignment)
 		self.analyze("ident(ident < ident)", operators.FunctionCall)
 
 	def test_array_subscript(self):

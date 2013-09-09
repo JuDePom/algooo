@@ -362,25 +362,6 @@ class LogicalOr(BinaryLogicalOp):
 	keyword_def = kw.OR
 	js_kw = "||"
 
-class Assignment(BinaryOp):
-	keyword_def = kw.ASSIGN
-	js_kw = "="
-	right_ass = True
-	# an assignment cannot be part of another expression, therefore it has no type
-	resolved_type = types.ASSIGNMENT
-
-	def check(self, context, logger):
-		self.lhs.check(context, logger)
-		self.rhs.check(context, logger)
-		ltype = self.lhs.resolved_type
-		rtype = self.rhs.resolved_type
-		if not ltype.compatible(rtype):
-			logger.log(semantic.TypeMismatch(self.rhs.pos, "le type de l'opérande de "
-					"droite doit être compatible avec le type de l'opérande de gauche",
-					ltype, rtype))
-
-	def js(self, pp):
-		pp.put(self.lhs, " = ", self.rhs)
 
 #######################################################################
 #
@@ -404,7 +385,6 @@ binary_precedence = [
 		[Equal, NotEqual],
 		[LogicalAnd],
 		[LogicalOr],
-		[Assignment]
 ]
 
 binary_flat = [opcls for sublist in binary_precedence for opcls in sublist]
