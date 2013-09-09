@@ -47,10 +47,10 @@ class RelevantFailureLogger:
 
 	def __init__(self, parser):
 		self.parser = parser
-	
+
 	def __enter__(self):
 		self.pos = self.parser.pos
-	
+
 	def __exit__(self, exc_type, exc_value, traceback):
 		if isinstance(exc_value, syntax.SyntaxError):
 			self.parser.append_syntax_error(exc_value)
@@ -58,7 +58,7 @@ class RelevantFailureLogger:
 		else:
 			# Unknown error. Let Python handle it.
 			return False
-	
+
 	def syntax_error(self, exc_value):
 		# Propagate exception
 		return False
@@ -138,7 +138,7 @@ class Parser:
 			self.syntax_errors = [new_error]
 		elif new_error.pos == self.relevant_syntax_error.pos:
 			self.syntax_errors.append(new_error)
-	
+
 	@property
 	def relevant_syntax_error(self):
 		return self.syntax_errors[-1]
@@ -412,10 +412,19 @@ class Parser:
 
 	def analyze_statement(self):
 		return self.analyze_multiple("une instruction",
+			self.analyze_return,
 			self.analyze_expression,
 			self.analyze_if,
 			self.analyze_for,
 			self.analyze_while,)
+
+	def analyze_return(self):
+		pos = self.pos
+		self.consume_keyword(kw.RETURN)
+		expr = None
+		with BacktrackFailure(self):
+			expr = self.analyze_expression()
+		return statements.Return(pos, expr)
 
 	def analyze_if(self):
 		pos = self.pos
@@ -582,12 +591,12 @@ class Parser:
 		pos = self.pos
 		match = self.consume_regex(re_integer)
 		return expression.LiteralInteger(pos, int(match))
-	
+
 	def analyze_literal_real(self):
 		pos = self.pos
 		match = self.consume_regex(re_real)
 		return expression.LiteralReal(pos, float(match))
-	
+
 	def analyze_literal_string(self):
 		pos = self.pos
 		match = self.consume_regex(re_string, buf=self.raw_buf)

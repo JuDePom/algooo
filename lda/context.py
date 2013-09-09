@@ -27,3 +27,7 @@ class ContextStack:
 	def update(self, extra_symbol_table):
 		self.stack[-1].symbols.update(extra_symbol_table)
 
+	@property
+	def parent(self):
+		return self.stack[-1].parent
+

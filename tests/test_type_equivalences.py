@@ -86,7 +86,7 @@ class TestTypeEquivalences(LDATestCase):
 		int_array  = self.analyze(cls=types.Array, program="tableau entier[0..5]")
 		real_array = self.analyze(cls=types.Array, program="tableau réel[0..5]")
 		self._test_conflict_both_ways(int_array, real_array)
-	
+
 	def test_1d_dynamic_array_compatible_with_itself(self):
 		array = self.analyze(cls=types.Array, program="tableau entier[?]")
 		self._test_self_compatibility(array)
@@ -158,6 +158,15 @@ class TestTypeEquivalences(LDATestCase):
 				fonction f(a: inout réel)
 				lexique a: inout réel
 				début a <- 3 fin""")
+
+	def test_assign_function_to_integer(self):
+		self.assertLDAError(semantic.TypeError, self.check, program="""\
+				fonction f(): entier
+				lexique
+					a: entier
+				début
+					a (**)<- f
+				fin""")
 
 	def test_arithmetic_with_inout_integer(self):
 		self.check(cls=Function, program="""\
