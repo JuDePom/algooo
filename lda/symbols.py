@@ -133,12 +133,15 @@ class Lexicon:
 		"""
 		# Hunt duplicates. Note that all_items is sorted by declaration
 		# position, which is important to report errors correctly.
-		hunt_duplicates(self.all_items, logger)	
-		for k in self.all_items.keys():
-			if k in context.keys():
-				logger.log(semantic.SemanticError(k.pos,
-					"une variable porte déjà ce nom"))
-		# TODO : optionnellement, avertir si on écrase un nom du scope au-dessus
+		hunt_duplicates(self.all_items, logger)
+		# prevent overwriting existing names in context
+		for name in self.symbol_dict:
+			try:
+				existing = context[name]
+				logger.log(semantic.DuplicateDeclaration(
+						self.symbol_dict[name].ident, existing.ident))
+			except KeyError:
+				pass
 		# augment context with the contents of the lexicon so that items can
 		# refer to other items in the lexicon
 		context.update(self.symbol_dict)
