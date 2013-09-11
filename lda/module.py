@@ -85,6 +85,11 @@ class Algorithm:
 		self.body.check(context, logger)
 		context.pop()
 
+	def check_return_expression(self, logger, expression):
+		if expression is not None:
+			logger.log(semantic.SemanticError(expression.pos,
+				"un algorithme ne peut pas retourner une valeur"))
+
 class Function:
 	def __init__(self, pos, ident, fp_list, return_type, lexicon, body):
 		self.pos = pos
@@ -141,13 +146,17 @@ class Function:
 		expected_argc = len(self.fp_list)
 		given_argc = len(params)
 		if expected_argc != given_argc:
-			raise semantic.ParameterCountMismatch(pos,
-					given=given_argc, expected=expected_argc)
-		# check parameter types
+			logger.log(semantic.ParameterCountMismatch(pos,
+					given=given_argc, expected=expected_argc))
+			return
+		# check effective parameter types
 		for effective, formal in zip(params, self.fp_list):
-			effective.check(context, logger)
 			types.enforce_compatible("ce paramètre effectif",
 					formal.resolved_type, effective, logger)
+
+	def check_return_expression(self, logger, expression):
+		types.enforce_compatible("l'expression retournée",
+				self.return_type.resolved_type, expression, logger)
 
 	def put_node(self, cluster):
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
@@ -179,7 +188,7 @@ class Function:
 		pp.put("};")
 
 	def js_call(self, pp, call_op):
-		pp.put(self.lhs, "(")
-		pp.join(self.rhs, pp.put, ", ")
+		pp.put(call_op.lhs, "(")
+		pp.join(call_op.rhs, pp.put, ", ")
 		pp.put(")")
 
