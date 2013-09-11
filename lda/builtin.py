@@ -37,7 +37,7 @@ class MagicalFunction:
 				function call operator during semantic analysis
 		"""
 		self.resolved_type = self
-		self.return_type = return_type
+		self.resolved_return_type = return_type
 		self.check_effective_parameters = check_func
 		self.js_name = js_name
 

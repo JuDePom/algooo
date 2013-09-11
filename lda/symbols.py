@@ -1,6 +1,6 @@
 from . import kw
 from . import dot
-from .types import ERRONEOUS, Composite, Inout
+from .types import ERRONEOUS, NOT_A_VARIABLE, Composite, Inout
 from .errors import semantic
 
 def hunt_duplicates(item_list, logger):
@@ -47,38 +47,44 @@ class Identifier:
 	def check(self, context, logger):
 		# find corresponding symbol in the context's symbol table
 		try:
-			symbol = context[self.name]
+			self.bound = context[self.name]
 		except KeyError:
 			logger.log(semantic.MissingDeclaration(self))
 			self.resolved_type = ERRONEOUS
 			self.writable = False
 			return
 		# steal the symbol's type
-		self.resolved_type = symbol.resolved_type
+		try:
+			self.resolved_type = self.bound.resolved_type
+		except AttributeError:
+			self.resolved_type = NOT_A_VARIABLE
 		# steal the symbol's writability
 		try:
-			self.writable = symbol.writable
+			self.writable = self.bound.writable
 		except AttributeError:
 			self.writable = False
 
 class TypeAlias(Identifier):
 	"""
 	Identifier that can only refer to a Composite.
+
+	It is bound to a Composite during the semantic analysis.
 	"""
 
 	def check(self, context, logger):
-		# guilty until proven innocent
-		self.resolved_type = ERRONEOUS
 		try:
 			symbol = context[self.name]
 		except KeyError:
 			logger.log(semantic.UnresolvableTypeAlias(self))
+			self.bound = ERRONEOUS
 			return
 		if isinstance(symbol, Composite):
-			self.resolved_type = symbol
+			self.bound = symbol
 		else:
 			logger.log(semantic.SpecificTypeExpected(self.pos,
 					"cet alias", Composite, type(symbol)))
+			self.bound = ERRONEOUS
+			return
 
 class Field:
 	"""
@@ -109,7 +115,10 @@ class Field:
 			logger.log(semantic.SemanticError(self.ident.pos,
 					"\"inout\" n'est autorisé que dans un paramètre formel"))
 		self.type_descriptor.check(context, logger)
-		self.resolved_type = self.type_descriptor.resolved_type
+		try:
+			self.resolved_type = self.type_descriptor.bound
+		except AttributeError:
+			self.resolved_type = self.type_descriptor
 
 	def lda(self, pp):
 		pp.put(self.ident, kw.COLON, " ", self.type_descriptor)

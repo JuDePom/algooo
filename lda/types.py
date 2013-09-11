@@ -61,9 +61,6 @@ class TypeDescriptor:
 	check() method) to be complete.
 	"""
 
-	def __init__(self):
-		self.resolved_type = self
-
 	def __eq__(self, other):
 		raise NotImplementedError
 

@@ -240,17 +240,17 @@ class FunctionCall(BinaryEncompassingOp):
 	closing = kw.RPAREN
 
 	def check(self, context, logger):
-		self.resolved_type = types.ERRONEOUS # guilty until proven innocent
 		self.lhs.check(context, logger)
-		self.function = self.lhs.resolved_type
-		for effective in self.rhs:
-			effective.check(context, logger)
 		try:
+			self.function = self.lhs.bound
+			for effective in self.rhs:
+				effective.check(context, logger)
 			self.function.check_effective_parameters(context, logger, self.pos, self.rhs)
-			self.resolved_type = self.function.return_type.resolved_type
 		except AttributeError:
-			logger.log(semantic.NonCallable(self.pos, self.function.resolved_type))
+			logger.log(semantic.NonCallable(self.pos, self.lhs))
+			self.resolved_type = types.ERRONEOUS
 			return
+		self.resolved_type = self.function.resolved_return_type
 
 	def js(self, pp):
 		self.function.js_call(pp, self)

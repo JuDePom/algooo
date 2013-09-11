@@ -100,13 +100,13 @@ class Function:
 		self.body = body
 
 	def check_signature(self, context, logger):
-		context.push(self)
-		for fp in self.fp_list:
-			context[fp.ident.name] = fp
 		self.return_type.check(context, logger)
+		try:
+			self.resolved_return_type = self.return_type.bound
+		except AttributeError:
+			self.resolved_return_type = self.return_type
 		for fp in self.fp_list:
 			fp.check(context, logger)
-		context.pop()
 
 	def check_fp_lexicon(self, logger):
 		"""
@@ -127,8 +127,6 @@ class Function:
 			fp_lexicon.formal = True
 
 	def check(self, context, logger):
-		# TODO hackish...
-		self.resolved_type = self
 		# hunt duplicates among formal parameters
 		symbols.hunt_duplicates(self.fp_list, logger)
 		# check formal parameter counterparts in lexicon
@@ -156,7 +154,7 @@ class Function:
 
 	def check_return_expression(self, logger, expression):
 		types.enforce_compatible("l'expression retournée",
-				self.return_type.resolved_type, expression, logger)
+				self.resolved_return_type, expression, logger)
 
 	def put_node(self, cluster):
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
