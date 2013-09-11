@@ -169,6 +169,7 @@ class Parser:
 					column += 1
 				elif self.buf.startswith('(*', bpos):
 					bpos += 2
+					column += 2
 					in_multi = True
 				elif self.buf.startswith('//', bpos):
 					bpos = self.buf.find('\n', bpos+2)
@@ -177,6 +178,7 @@ class Parser:
 			else:
 				if self.buf.startswith('*)', bpos):
 					bpos += 2
+					column += 2
 					in_multi = False
 				else:
 					bpos += 1
@@ -411,20 +413,28 @@ class Parser:
 		return statements.StatementBlock(pos, block), marker, marker_pos
 
 	def analyze_statement(self):
+		# Assignments and function calls are the only statements that start
+		# with an expression. In order to avoid parsing an expression twice,
+		# we'll look for either of these statements first.
+		with BacktrackFailure(self):
+			expr = self.analyze_expression()
+			# try returning a function call
+			if isinstance(expr, operators.FunctionCall):
+				return expr
+			# it's not a function call
+			op_pos = self.pos
+			# if the ASSIGN operator isn't here, the result of the expression
+			# we just parsed is discarded
+			if not self.consume_keyword(kw.ASSIGN, soft=True):
+				raise syntax.DiscardedExpression(op_pos)
+			rhs = self.analyze_expression()
+			return statements.Assignment(op_pos, expr, rhs)
+		# we didn't find an assignment or a function call
 		return self.analyze_multiple("une instruction",
-				self.analyze_assignment,
 				self.analyze_return,
-				self.analyze_expression,
 				self.analyze_if,
 				self.analyze_for,
 				self.analyze_while,)
-
-	def analyze_assignment(self):
-		lhs = self.analyze_expression()
-		kw_pos = self.pos
-		self.consume_keyword(kw.ASSIGN)
-		rhs = self.analyze_expression()
-		return statements.Assignment(kw_pos, lhs, rhs)
 
 	def analyze_return(self):
 		pos = self.pos

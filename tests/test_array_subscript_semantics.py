@@ -29,5 +29,5 @@ class TestArraySubscriptSemantics(LDATestCase):
 		self.assertLDAError(semantic.SpecificTypeExpected, self.check,
 				cls=module.Algorithm, program='''\
 				algorithme lexique a: tableau entier[0..5]
-				début a[(**)1.234] fin''')
+				début a[(**)1.234] <- 3 fin''')
 

@@ -33,6 +33,7 @@ class LDATestCase(unittest.TestCase):
 				types.Array:                 self.parser.analyze_array,
 				types.Composite:             self.parser.analyze_composite,
 				symbols.Lexicon:             self.parser.analyze_lexicon,
+				statements.StatementBlock:   self.parser.analyze_statement_block,
 				statements.While:            self.parser.analyze_while,
 				statements.For:              self.parser.analyze_for,
 				statements.If:               self.parser.analyze_if,

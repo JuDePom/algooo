@@ -65,3 +65,12 @@ class MissingRightOperand(SyntaxError):
 		super().__init__(pos, "cet opérateur requiert un opérande "
 			"valide à sa droite")
 
+class DiscardedExpression(SyntaxError):
+	'''
+	Raised when the result of an expression is discarded.
+	'''
+
+	def __init__(self, pos):
+		super().__init__(pos, "le résultat de l'expression précédente "
+				"n'est pas conservé (peut-être devriez-vous l'affecter "
+				"à une variable ?)")

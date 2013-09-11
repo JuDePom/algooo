@@ -3,6 +3,7 @@ from lda import expression
 from lda import operators
 from lda.symbols import Identifier
 from lda.errors import syntax
+from lda.statements import StatementBlock
 
 class TestExpressionSyntax(LDATestCase):
 	def _literal(self, cls, expression_string, convert):
@@ -116,4 +117,14 @@ class TestExpressionSyntax(LDATestCase):
 		test("t[0,1]", [0,1])
 		test("t[0,1,2]", [0,1,2])
 		test("t[   25, 05 ,   1991 ]", [25,5,1991])
+
+	def test_discarded_expression_results(self):
+		def test(s):
+			self.assertLDAError(syntax.DiscardedExpression, self.analyze,
+					cls=StatementBlock, program=s)
+		test("1(**)")
+		test("a(**)")
+		test("a[1](**)")
+		test("x+1(**)")
+		test("a.b(**)")
 
