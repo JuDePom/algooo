@@ -46,14 +46,27 @@ class TestLexiconSemantics(LDATestCase):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Algorithm,
 				program='algorithme lexique a=<> (**)a:entier début fin')
 
-	def test_use_existing_function_name_for_variable_and_try_calling_it(self):
+	def test_use_existing_function_name_inside_algorithm_lexicon(self):
 		# has to be analyzed as a whole module so that "f" is accounted for
 		# in the global lexicon
-		self.assertLDAError(semantic.NonCallable, self.check, cls=Module, program='''\
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Module, program='''\
 				fonction f() lexique début fin
 				algorithme
-				lexique f: entier
-				début f(**)() fin''')
+				lexique (**)f: entier
+				début fin''')
+
+	def text_use_existing_composite_name_inside_algorithm_lexicon(self):
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check, program='''\
+				lexique
+					M = <>
+				fonction f() lexique début fin
+				algorithme
+				lexique (**)M = <>
+				début fin''')
+
+	def text_use_own_function_name_inside_own_lexicon(self):
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check, program='''\
+				fonction f() lexique f: entier début fin''')
 
 	def test_function_defined_twice(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Module, program='''\
