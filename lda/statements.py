@@ -82,6 +82,10 @@ class Assignment:
 	def check(self, context, logger):
 		self.lhs.check(context, logger)
 		self.rhs.check(context, logger)
+		if not self.lhs.writable:
+			logger.log(semantic.TypeError(self.lhs.pos,
+					"l'opérande de gauche ne peut pas être affectée"))
+			return
 		ltype = self.lhs.resolved_type
 		rtype = self.rhs.resolved_type
 		if not ltype.compatible(rtype):

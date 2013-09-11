@@ -19,6 +19,22 @@ def surround(lda_method):
 	return wrapper
 
 class Expression:
+	"""
+	Base class for all expressions.
+
+	An expression may stand alone or be built of one or more another
+	expressions.
+
+	An expression is a "root" expression if it is not contained by any
+	expression.
+
+	Expressions are not writable by default, i.e. they cannot legally occupy in
+	the lefthand side of an assignment operation. However, this behavior can be
+	overridden by some subclasses, e.g. the array subscript operator.
+	"""
+
+	writable = False
+
 	def __init__(self, pos):
 		self.pos = pos
 		self.root = False

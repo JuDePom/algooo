@@ -197,8 +197,11 @@ class ArraySubscript(BinaryEncompassingOp):
 	Encompassing.
 	LHS is an array variable identifier.
 	RHS is an arglist of indices, which should resolve to integers.
+
+	Unlike most expressions, this operator is *writable*.
 	"""
 
+	writable = True
 	keyword_def = kw.LSBRACK
 	closing = kw.RSBRACK
 
@@ -259,8 +262,11 @@ class MemberSelect(BinaryOp):
 	LHS's typedef resolves to a "pure" composite
 	(i.e. not an array of composites).
 	RHS resolves to a valid member of the composite.
+
+	Unlike most expressions, this operator is *writable*.
 	"""
 
+	writable = True
 	keyword_def = kw.DOT
 
 	def check(self, context, logger):

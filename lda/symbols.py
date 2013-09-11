@@ -45,12 +45,21 @@ class Identifier:
 		return dot.Node(self.name, cluster)
 
 	def check(self, context, logger):
+		# find corresponding symbol in the context's symbol table
 		try:
 			symbol = context[self.name]
-			self.resolved_type = symbol.resolved_type
 		except KeyError:
 			logger.log(semantic.MissingDeclaration(self))
 			self.resolved_type = ERRONEOUS
+			self.writable = False
+			return
+		# steal the symbol's type
+		self.resolved_type = symbol.resolved_type
+		# steal the symbol's writability
+		try:
+			self.writable = symbol.writable
+		except AttributeError:
+			self.writable = False
 
 class TypeAlias(Identifier):
 	"""
@@ -73,10 +82,16 @@ class TypeAlias(Identifier):
 
 class Field:
 	"""
-	Variable declaration. Has an identifier, a type_descriptor and a formal flag
-	(i.e. formal parameter).
+	Variable declaration. Has an identifier, a type_descriptor and a formal
+	flag (i.e. formal parameter).
+
 	Semantically, only formal variables may have the Inout type.
+
+	All fields are writable by default, i.e. they can legally occupy the
+	lefthand side of an assignment statement.
 	"""
+
+	writable = True
 
 	def __init__(self, ident, type_descriptor, formal=False):
 		self.ident = ident
