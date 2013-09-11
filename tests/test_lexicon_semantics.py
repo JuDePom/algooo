@@ -55,7 +55,7 @@ class TestLexiconSemantics(LDATestCase):
 				lexique (**)f: entier
 				début fin''')
 
-	def text_use_existing_composite_name_inside_algorithm_lexicon(self):
+	def test_use_existing_composite_name_inside_algorithm_lexicon(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, program='''\
 				lexique
 					M = <>
@@ -64,9 +64,9 @@ class TestLexiconSemantics(LDATestCase):
 				lexique (**)M = <>
 				début fin''')
 
-	def text_use_own_function_name_inside_own_lexicon(self):
+	def test_use_own_function_name_inside_own_lexicon(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, program='''\
-				fonction f() lexique f: entier début fin''')
+				fonction f() lexique (**)f: entier début fin''')
 
 	def test_function_defined_twice(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Module, program='''\
