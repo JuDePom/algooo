@@ -41,6 +41,28 @@ class TestFunctionCallSemantics(LDATestCase):
 					m <- f()
 				fin''')
 
+	def test_mismatching_return_type_composite_1(self):
+		self.assertLDAError(semantic.TypeMismatch, self.check, program='''\
+				lexique
+					Moule = <>
+				fonction f(): Moule
+				lexique
+					a: entier
+				début
+					a (**)<- f()
+				fin''')
+
+	def test_mismatching_return_type_composite_2(self):
+		self.assertLDAError(semantic.TypeMismatch, self.check, program='''\
+				lexique
+					Moule = <>
+				fonction f(): entier
+				lexique
+					a: Moule
+				début
+					a (**)<- f()
+				fin''')
+
 	def test_parameter_type_mismatch_1(self):
 		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=Module,
 				program='''fonction f(a: entier)
@@ -65,13 +87,20 @@ class TestFunctionCallSemantics(LDATestCase):
 					f((**)m, (**)a, (**)m)
 				fin''')
 
-	def test_calling_non_function(self):
+	def test_call_non_function_identifier(self):
 		self.assertLDAError(semantic.NonCallable, self.check, cls=Module,
 				program='''algorithme
 				lexique
 					a: entier
 				début
 					a(**)()
+				fin''')
+
+	def test_call_non_function_literal(self):
+		self.assertLDAError(semantic.NonCallable, self.check, cls=Module,
+				program='''algorithme
+				début
+					3(**)()
 				fin''')
 
 	def test_function_call_within_function_call(self):
