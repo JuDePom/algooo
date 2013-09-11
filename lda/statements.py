@@ -89,7 +89,7 @@ class Assignment:
 		ltype = self.lhs.resolved_type
 		rtype = self.rhs.resolved_type
 		if not ltype.compatible(rtype):
-			logger.log(semantic.TypeMismatch(self.rhs.pos, "le type de l'opérande de "
+			logger.log(semantic.TypeMismatch(self.pos, "le type de l'opérande de "
 					"droite doit être compatible avec le type de l'opérande de gauche",
 					ltype, rtype))
 

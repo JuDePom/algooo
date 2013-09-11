@@ -329,6 +329,9 @@ class Composite(TypeDescriptor):
 			return False
 		return self.ident == other.ident and self.field_list == other.field_list
 
+	def __repr__(self):
+		return "composite \"{}\"".format(self.ident)
+
 	def check(self, supercontext, logger):
 		"""
 		Creates self.context: a mini-symbol table associating field name

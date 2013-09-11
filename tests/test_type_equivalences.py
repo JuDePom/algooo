@@ -139,13 +139,13 @@ class TestTypeEquivalences(LDATestCase):
 		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Algorithm,
 				program="""algorithme
 				lexique e:entier
-				début e<-(**)3.00000 fin""")
+				début e(**)<-3.00000 fin""")
 
 	def test_assign_real_variable_to_integer(self):
 		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Algorithm,
 				program="""algorithme
 				lexique r:réel e:entier
-				début r<-3.00000  e<-(**)r  fin""")
+				début r<-3.00000  e(**)<-r  fin""")
 
 	def test_assign_integer_to_inout_integer(self):
 		self.check(cls=Function, program="""\

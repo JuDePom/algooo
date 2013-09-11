@@ -53,6 +53,9 @@ class Literal(Expression):
 	def __eq__(self, other):
 		return type(self) == type(other) and self.value == other.value
 
+	def __repr__(self):
+		return "littéral {}".format(self.resolved_type)
+
 	def put_node(self, cluster):
 		return dot.Node(str(self.value), cluster)
 

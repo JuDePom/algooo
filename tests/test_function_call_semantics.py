@@ -18,7 +18,7 @@ class TestFunctionCallSemantics(LDATestCase):
 					Moule = <>
 					m: Moule
 				début
-					m <- f(**)()
+					m (**)<- f()
 				fin''')
 
 	def test_matching_return_type_integer(self):
