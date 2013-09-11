@@ -11,7 +11,7 @@ class TestExpressionSemantics(LDATestCase):
 					m1: Moule
 					m2: Moule
 				début
-					m1 = m1 (**)+ m2
+					m1 <- m1 (**)+ m2
 				fin""")
 
 	def test_composite_arithmetic_with_itself(self):
@@ -21,7 +21,17 @@ class TestExpressionSemantics(LDATestCase):
 					Moule = <>
 					m1: Moule
 				début
-					m1 = m1 (**)+ m1
+					m1 <- m1 (**)+ m1
+				fin""")
+
+	def test_assign_composite_type_to_composite_variable(self):
+		self.assertLDAError(semantic.TypeError, self.check, program="""\
+				algorithme
+				lexique
+					Moule = <>
+					m1: Moule
+				début
+					m1 (**)<- Moule
 				fin""")
 
 	def test_reassign_composite_alias_to_other_composite_alias(self):
@@ -31,7 +41,7 @@ class TestExpressionSemantics(LDATestCase):
 					Moule = <>
 					Huitre = <>
 				début
-					Moule (**)<- Huitre
+					(**)Moule <- Huitre
 				fin""")
 
 	def test_reassign_composite_alias_to_itself(self):
@@ -40,7 +50,7 @@ class TestExpressionSemantics(LDATestCase):
 				lexique
 					Moule = <>
 				début
-					Moule (**)<- Moule
+					(**)Moule <- Moule
 				fin""")
 
 	def test_reassign_function(self):
@@ -49,14 +59,14 @@ class TestExpressionSemantics(LDATestCase):
 				fonction g() début fin
 				algorithme
 				début
-					f (**)<- g
+					(**)f <- g
 				fin""")
 
 	def test_assign_to_literal(self):
 		self.assertLDAError(semantic.TypeError, self.check, program="""\
 				algorithme
 				début
-					3 (**)<- 4
+					(**)3 <- 4
 				fin""")
 
 	def test_assign_to_non_writable_expression(self):
