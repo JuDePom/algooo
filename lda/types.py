@@ -105,12 +105,21 @@ class BlackHole(TypeDescriptor):
 	an expression doesn't have a type.
 	"""
 
+	def __init__(self, human_name):
+		self.human_name = human_name
+
 	def __eq__(self, other):
 		return False
 
+	def __repr__(self):
+		return self.human_name
 
-ERRONEOUS = BlackHole()
+
+ERRONEOUS = BlackHole("<type erronné>")
 ERRONEOUS.relevant = False
+
+NOT_A_VARIABLE = BlackHole("<pas une variable>")
+NOT_A_VARIABLE.relevant = True
 
 
 #######################################################################
