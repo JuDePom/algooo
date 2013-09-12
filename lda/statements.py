@@ -208,9 +208,9 @@ class For:
 		for comp, name in zip(components, For._COMPONENT_NAMES):
 			comp.check(context, logger)
 			types.enforce(name, types.INTEGER, comp, logger)
-		if isinstance(self.counter, expression.Literal):
+		if not self.counter.writable:
 			logger.log(semantic.SemanticError(self.counter.pos,
-					"le compteur ne peut pas être constant"))
+					"le compteur doit être une variable"))
 		self.block.check(context, logger)
 
 	def put_node(self, cluster):
