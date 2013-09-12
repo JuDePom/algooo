@@ -422,17 +422,21 @@ class Parser:
 		# we'll look for either of these statements first.
 		with BacktrackFailure(self):
 			expr = self.analyze_expression()
-			# try returning a function call
-			if isinstance(expr, operators.FunctionCall):
-				return expr
-			# it's not a function call
 			op_pos = self.pos
-			# if the ASSIGN operator isn't here, the result of the expression
-			# we just parsed is discarded
-			if not self.consume_keyword(kw.ASSIGN, soft=True):
+			if self.consume_keyword(kw.ASSIGN, soft=True):
+				# expr is the lefthand side of an assignment statement
+				rhs = self.analyze_expression()
+				return statements.Assignment(op_pos, expr, rhs)
+			elif isinstance(expr, operators.FunctionCall):
+				# expr is a standalone function call, not followed by the
+				# ASSIGN operator. (If it was followed by ASSIGN, it'd be
+				# parsed as an assignment statement and the semantic analysis
+				# would fail later on)
+				return expr
+			else:
+				# expr is a standalone expression, but we can't treat it as a
+				# statement since its result is discarded
 				raise syntax.DiscardedExpression(op_pos)
-			rhs = self.analyze_expression()
-			return statements.Assignment(op_pos, expr, rhs)
 		# we didn't find an assignment or a function call
 		return self.analyze_multiple("une instruction",
 				self.analyze_return,
