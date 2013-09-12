@@ -13,6 +13,20 @@ from lda.context import ContextStack
 
 ERROR_MARKER = "(**)"
 
+PARSING_FUNCTIONS = {
+		module.Module:               'analyze_module',
+		module.Function:             'analyze_function',
+		module.Algorithm:            'analyze_algorithm',
+		list:                        'analyze_arglist',
+		types.Array:                 'analyze_array',
+		types.Composite:             'analyze_composite',
+		symbols.Lexicon:             'analyze_lexicon',
+		statements.StatementBlock:   'analyze_statement_block',
+		statements.While:            'analyze_while',
+		statements.For:              'analyze_for',
+		statements.If:               'analyze_if',
+}
+
 class DefaultOptions:
 	case_insensitive = False
 
@@ -24,20 +38,6 @@ class LDATestCase(unittest.TestCase):
 	def setUp(self):
 		options = DefaultOptions()
 		self.parser = parser.Parser(options)
-
-		self.parsing_functions = {
-				module.Module:               self.parser.analyze_module,
-				module.Function:             self.parser.analyze_function,
-				module.Algorithm:            self.parser.analyze_algorithm,
-				list:                        self.parser.analyze_arglist,
-				types.Array:                 self.parser.analyze_array,
-				types.Composite:             self.parser.analyze_composite,
-				symbols.Lexicon:             self.parser.analyze_lexicon,
-				statements.StatementBlock:   self.parser.analyze_statement_block,
-				statements.While:            self.parser.analyze_while,
-				statements.For:              self.parser.analyze_for,
-				statements.If:               self.parser.analyze_if,
-		}
 
 	def analyze(self, program, cls=module.Module, **kwargs):
 		"""
@@ -56,7 +56,7 @@ class LDATestCase(unittest.TestCase):
 		"""
 		self.parser.set_buf(program)
 		try:
-			analyze_func = self.parsing_functions[cls]
+			analyze_func = getattr(self.parser, PARSING_FUNCTIONS[cls])
 		except KeyError as e:
 			if issubclass(cls, expression.Expression):
 				analyze_func = self.parser.analyze_expression
