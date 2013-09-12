@@ -49,9 +49,8 @@ module.check(lda.context.ContextStack(), logger)
 
 if logger:
 	print (" *** ERREURS DE SÉMANTIQUE", file=sys.stderr)
-	for e in logger.errors:
-		if e.relevant:
-			print(e, file=sys.stderr)
+	for e in logger.relevant_errors:
+		print(e, file=sys.stderr)
 	sys.exit(1)
 else:
 	print (" * Sémantique : OK.")
