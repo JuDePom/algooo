@@ -4,10 +4,41 @@ from lda.statements import For
 from lda.module import Algorithm
 
 class TestForSemantics(LDATestCase):
-	def test_for_constant_counter(self):
+	def test_for_simple(self):
+		self.check(program='''\
+				algorithme
+				lexique
+					i: entier
+				début
+					pour i de 1 jusque 6 faire
+					fpour
+				fin''')
+
+	def test_for_literal_counter(self):
 		self.assertLDAError(semantic.SemanticError, self.check, cls=For,
 				program='pour (**)0 de 1 jusque 6 faire fpour')
-	
+
+	def test_for_function_name_counter(self):
+		self.assertLDAError(semantic.SemanticError, self.check, program='''\
+				fonction f(): entier début retourne 1337 fin
+				algorithme
+				début
+					pour (**)f de 1 jusque 10 faire
+					fpour
+				fin''')
+
+	def test_for_function_call_counter(self):
+		self.assertLDAError(semantic.SemanticError, self.check, program='''\
+				fonction f(): entier
+				début
+					retourne 1337
+				fin
+				algorithme
+				début
+					pour f(**)() de 1 jusque 10 faire
+					fpour
+				fin''')
+
 	def test_for_non_integer_counter(self):
 		def test(raw_counter_type):
 			program = '''algorithme
