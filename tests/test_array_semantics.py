@@ -41,10 +41,10 @@ class TestArraySemantics(LDATestCase):
 				début fin''')
 
 	def test_non_intrange(self):
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Array,
+		self.assertLDAError(semantic.TypeError, self.check, cls=Array,
 				program='tableau entier[(**)1]')
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Array,
+		self.assertLDAError(semantic.TypeError, self.check, cls=Array,
 				program='tableau entier[(**)"coucou"]')
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Array,
+		self.assertLDAError(semantic.TypeError, self.check, cls=Array,
 				program="tableau entier[(**)'c']")
 	
