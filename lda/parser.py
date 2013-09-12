@@ -7,6 +7,7 @@ from . import operators
 from . import statements
 from . import symbols
 from . import types
+from . import identifier
 from .errors import syntax
 
 re_identifier = re.compile(r'''
@@ -274,7 +275,7 @@ class Parser:
 		pos = self.pos
 		self.consume_keyword(kw.FUNCTION)
 		# identifier
-		ident = self.analyze_identifier()
+		ident = self.analyze_identifier(identifier.PureIdentifier)
 		# left parenthesis
 		self.consume_keyword(kw.LPAREN)
 		# formal parameters, or lack thereof
@@ -334,7 +335,7 @@ class Parser:
 		return types.Array.DynamicDimension(pos)
 
 	def analyze_type_alias(self):
-		return self.analyze_identifier(symbols.TypeAlias)
+		return self.analyze_identifier(types.TypeAlias)
 
 	def analyze_type_descriptor(self):
 		inout = self.consume_keyword(kw.INOUT, soft=True)
@@ -360,7 +361,7 @@ class Parser:
 		return symbols.VarDecl(ident, type_descriptor, formal)
 
 	def analyze_composite(self):
-		ident = self.analyze_identifier()
+		ident = self.analyze_identifier(identifier.PureIdentifier)
 		self.consume_keyword(kw.EQ)
 		self.consume_keyword(kw.LT)
 		fields = self.analyze_arglist(self.analyze_vardecl)
@@ -381,7 +382,7 @@ class Parser:
 			break
 		return symbols.Lexicon(variables, composites)
 
-	def analyze_identifier(self, identifier_class=symbols.Identifier):
+	def analyze_identifier(self, identifier_class):
 		pos = self.pos
 		try:
 			name = self.consume_regex(re_identifier, advance=False)
@@ -391,6 +392,9 @@ class Parser:
 			raise syntax.ReservedWord(self.pos, name)
 		self.advance(len(name))
 		return identifier_class(pos, name)
+
+	def analyze_expression_identifier(self):
+		return self.analyze_identifier(expression.ExpressionIdentifier)
 
 	def analyze_statement_block(self, *end_marker_keywords):
 		"""
@@ -563,7 +567,7 @@ class Parser:
 			self.analyze_literal_string,
 			self.analyze_literal_character,
 			self.analyze_literal_boolean,
-			self.analyze_identifier,)
+			self.analyze_expression_identifier,)
 
 	def analyze_binary_operator(self):
 		return self.analyze_operator(operators.binary_flat)

@@ -225,7 +225,7 @@ class ArraySubscript(BinaryEncompassingOp):
 		for index in self.rhs:
 			index.check(context, logger)
 			types.enforce("cet indice de tableau", types.INTEGER, index, logger)
-		self.resolved_type = array.element_type.resolved_type
+		self.resolved_type = array.resolved_element_type
 
 class FunctionCall(BinaryEncompassingOp):
 	"""

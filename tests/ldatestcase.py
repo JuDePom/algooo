@@ -108,7 +108,10 @@ class LDATestCase(unittest.TestCase):
 		if context is None:
 			context = ContextStack()
 		root = self.analyze(**kwargs)
-		root.check(context, handler.Raiser())
+		if hasattr(root, 'resolve_type'):
+			root.resolve_type(context, handler.Raiser())
+		else:
+			root.check(context, handler.Raiser())
 		return root
 
 	def jseval(self, **kwargs):

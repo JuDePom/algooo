@@ -1,5 +1,6 @@
 from .errors import semantic, handler
 from . import kw
+from .identifier import PureIdentifier
 from types import MethodType
 
 #######################################################################
@@ -67,6 +68,9 @@ class TypeDescriptor:
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+	def resolve_type(self, context, logger):
+		raise NotImplementedError
+
 	def equivalent(self, other):
 		"""
 		If both types are equivalent, return the 'strongest' type among them;
@@ -111,6 +115,9 @@ class BlackHole(TypeDescriptor):
 	def __repr__(self):
 		return self.human_name
 
+	def resolve_type(self, context, logger):
+		return self
+
 
 ERRONEOUS = BlackHole("<type erronné>")
 ERRONEOUS.relevant = False
@@ -148,8 +155,8 @@ class Scalar(TypeDescriptor):
 	def __eq__(self, other):
 		return self is other
 
-	def check(self, context, logger):
-		pass
+	def resolve_type(self, context, logger):
+		return self
 
 	def lda(self, pp):
 		pp.put(str(self.keyword))
@@ -178,7 +185,7 @@ _dual_scalar_compatibility(weak=CHARACTER, strong=STRING)
 
 #######################################################################
 #
-# INOUT WRAPPER
+# TYPES THAT NEED TO BE RESOLVED
 #
 #######################################################################
 
@@ -197,8 +204,9 @@ class Inout(TypeDescriptor):
 	def __eq__(self, other):
 		return isinstance(other, Inout) and self.core.__eq__(other.core)
 
-	def check(self, context, logger):
-		self.core.check(context, logger)
+	def resolve_type(self, context, logger):
+		self.resolved_core = self.core.resolve_type(context, logger)
+		return self.resolved_core
 
 	def equivalent(self, other):
 		if isinstance(other, Inout):
@@ -213,11 +221,29 @@ class Inout(TypeDescriptor):
 			return self.core.compatible(other)
 
 
-#######################################################################
-#
-# ARRAY TYPE
-#
-#######################################################################
+class TypeAlias(PureIdentifier, TypeDescriptor):
+	"""
+	Identifier that can only refer to a Composite.
+
+	It is bound to a Composite during the semantic analysis.
+	"""
+
+	def resolve_type(self, context, logger):
+		try:
+			symbol = context[self.name]
+		except KeyError:
+			logger.log(semantic.UnresolvableTypeAlias(self))
+			self.bound = ERRONEOUS
+			return ERRONEOUS
+		if isinstance(symbol, Composite):
+			self.bound = symbol
+			return self.bound
+		else:
+			logger.log(semantic.SpecificTypeExpected(self.pos,
+					"cet alias", Composite, type(symbol)))
+			self.bound = ERRONEOUS
+			return ERRONEOUS
+
 
 class Array(TypeDescriptor):
 	"""
@@ -287,13 +313,14 @@ class Array(TypeDescriptor):
 			return False
 		return self.dimensions == other.dimensions
 
-	def check(self, context, logger):
+	def resolve_type(self, context, logger):
 		if len(self.dimensions) == 0:
 			logger.log(semantic.SemanticError(self.pos,
 					"un tableau doit avoir au moins une dimension"))
 		for dim in self.dimensions:
 			dim.check(context, logger)
-		self.element_type.check(context, logger)
+		self.resolved_element_type = self.element_type.resolve_type(context, logger)
+		return self
 
 	def lda(self, pp):
 		pp.put(kw.ARRAY, " ", self.element_type, kw.LSBRACK)
@@ -312,12 +339,6 @@ class Array(TypeDescriptor):
 				return
 		return self
 
-
-#######################################################################
-#
-# COMPOSITE TYPE
-#
-#######################################################################
 
 class Composite(TypeDescriptor):
 	"""
@@ -340,7 +361,7 @@ class Composite(TypeDescriptor):
 	def __repr__(self):
 		return "composite \"{}\"".format(self.ident)
 
-	def check(self, supercontext, logger):
+	def resolve_type(self, supercontext, logger):
 		"""
 		Creates self.context: a mini-symbol table associating field name
 		strings the fields themselves.

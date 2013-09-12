@@ -100,11 +100,7 @@ class Function:
 		self.body = body
 
 	def check_signature(self, context, logger):
-		self.return_type.check(context, logger)
-		try:
-			self.resolved_return_type = self.return_type.bound
-		except AttributeError:
-			self.resolved_return_type = self.return_type
+		self.resolved_return_type = self.return_type.resolve_type(context, logger)
 		for fp in self.fp_list:
 			fp.check(context, logger)
 

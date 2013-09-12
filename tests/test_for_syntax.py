@@ -2,14 +2,13 @@ from tests.ldatestcase import LDATestCase
 from lda import expression
 from lda import operators
 from lda.statements import For, StatementBlock
-from lda.symbols import Identifier
 from lda.errors import syntax
 
 class TestForSyntax(LDATestCase):
 	def test_for_good_syntax(self):
 		stmt = self.analyze(cls=For,
 				program="pour i de 1 jusque 3 faire fessée(toto) fpour")
-		self.assertIsInstance(stmt.counter, Identifier)
+		self.assertIsInstance(stmt.counter, expression.ExpressionIdentifier)
 		self.assertIsInstance(stmt.initial, expression.LiteralInteger)
 		self.assertIsInstance(stmt.final, expression.LiteralInteger)
 		self.assertIsInstance(stmt.block, StatementBlock)
