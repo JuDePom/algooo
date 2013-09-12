@@ -1,5 +1,6 @@
 from .errors import semantic, handler
 from . import kw
+from . import prettyprinter
 from .identifier import PureIdentifier
 from types import MethodType
 
@@ -312,6 +313,11 @@ class Array(TypeDescriptor):
 		if not self.equivalent(other):
 			return False
 		return self.dimensions == other.dimensions
+
+	def __repr__(self):
+		pp = prettyprinter.LDAPrettyPrinter()
+		self.lda(pp)
+		return str(pp)
 
 	def resolve_type(self, context, logger):
 		if len(self.dimensions) == 0:
