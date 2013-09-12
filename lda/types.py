@@ -275,9 +275,10 @@ class Array(TypeDescriptor):
 						"une borne de tableau statique doit être construite à partir "
 						"d'une expression constante"))
 			if self.expression.resolved_type is not RANGE:
-				logger.log(semantic.SemanticError(self.expression.pos,
+				logger.log(semantic.TypeError(self.expression.pos,
 						"les bornes d'un tableau statique doivent être données "
-						"sous forme d'intervalle d'entiers littéraux"))
+						"sous forme d'intervalle d'entiers littéraux",
+						self.expression.resolved_type))
 			self.low  = self.expression.lhs
 			self.high = self.expression.rhs
 
