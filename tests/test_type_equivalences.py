@@ -123,6 +123,34 @@ class TestTypeEquivalences(LDATestCase):
 					f(3)
 				fin""")
 
+	def test_pass_good_1d_static_array_to_function(self):
+		self.check(program="""\
+				fonction f(t: tableau entier[0..5])
+				lexique
+					t: tableau entier[0..5]
+				début fin
+
+				algorithme
+				lexique
+					t: tableau entier[0..5]
+				début
+					f(t)
+				fin""")
+
+	def test_pass_bad_1d_static_array_to_function(self):
+		self.assertLDAError(semantic.TypeError, self.check, program="""\
+				fonction f(t: tableau entier[0..5])
+				lexique
+					t: tableau entier[0..5]
+				début fin
+
+				algorithme
+				lexique
+					t: tableau entier[1..5]
+				début
+					f((**)t)
+				fin""")
+
 	def test_assign_integer_literal_to_real(self):
 		self.check(cls=Algorithm, program="""\
 				algorithme
