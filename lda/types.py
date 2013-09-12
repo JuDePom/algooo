@@ -371,17 +371,17 @@ class Composite(TypeDescriptor):
 	composite type) and a list of member fields.
 	"""
 
-	def __init__(self, ident, field_list):
+	def __init__(self, ident, fields):
 		super().__init__()
 		self.ident = ident
-		self.field_list = field_list
+		self.fields = fields
 
 	def __eq__(self, other):
 		if self is other:
 			return True
 		if not isinstance(other, Composite):
 			return False
-		return self.ident == other.ident and self.field_list == other.field_list
+		return self.ident == other.ident and self.fields == other.fields
 
 	def __repr__(self):
 		return "composite \"{}\"".format(self.ident)
@@ -396,10 +396,11 @@ class Composite(TypeDescriptor):
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
 		# TODO very ugly import
 		from lda.symbols import hunt_duplicates
-		hunt_duplicates(self.field_list, logger)
-		self.context = {field.ident.name: field for field in self.field_list}
-		for field in self.field_list:
+		hunt_duplicates(self.fields, logger)
+		self.context = {field.ident.name: field for field in self.fields}
+		for field in self.fields:
 			field.check(supercontext, logger)
+		return self
 
 	def detect_loops(self, composite, logger):
 		"""
@@ -410,7 +411,7 @@ class Composite(TypeDescriptor):
 		its children, grandchildren...) refers to the composite type passed to
 		this method.
 		"""
-		for field in self.field_list:
+		for field in self.fields:
 			if field.resolved_type is composite:
 				logger.log(semantic.RecursiveDeclaration(field.ident.pos))
 			try:
@@ -420,12 +421,12 @@ class Composite(TypeDescriptor):
 
 	def lda(self, pp):
 		pp.put(self.ident, " ", kw.EQ, " ", kw.LT)
-		pp.join(self.field_list, pp.put, ", ")
+		pp.join(self.fields, pp.put, ", ")
 		pp.put(kw.GT)
 
 	def js(self, pp):
 		pp.putline("var ", self.ident, " = {")
-		for field in self.field_list:
+		for field in self.fields:
 			pp.indented(pp.putline, field.ident, ",")
 		pp.put("};")
 
