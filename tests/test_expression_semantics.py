@@ -69,6 +69,17 @@ class TestExpressionSemantics(LDATestCase):
 					(**)3 <- 4
 				fin""")
 
+	def test_assign_to_function_call(self):
+		self.assertLDAError(semantic.TypeError, self.check, program="""\
+				fonction f(): entier
+				début
+					retourne 1337
+				fin
+				algorithme
+				début
+					f(**)() <- 3
+				fin""")
+
 	def test_assign_to_non_writable_expression(self):
 		self.assertLDAError(semantic.TypeError, self.check, program="""\
 				algorithme
