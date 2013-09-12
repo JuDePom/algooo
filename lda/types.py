@@ -265,7 +265,15 @@ class Array(TypeDescriptor):
 			return self is other or (isinstance(other, Array.StaticDimension) and \
 					self.expression == other.expression)
 
-		def check(self, context, logger):
+		def check(self, logger):
+			"""
+			Perform a semantic analysis on the dimension and return True if it
+			succeeded.
+
+			Note that no context is passed to this method. This is because the
+			expression making up the dimension may not look up variables, since
+			it must be evaluable at compile time.
+			"""
 			# Don't let the expression look up variables.
 			# It has to be evaluable at compile time.
 			try:
@@ -274,13 +282,16 @@ class Array(TypeDescriptor):
 				logger.log(semantic.SemanticError(e.pos,
 						"une borne de tableau statique doit être construite à partir "
 						"d'une expression constante"))
+				return False
 			if self.expression.resolved_type is not RANGE:
 				logger.log(semantic.TypeError(self.expression.pos,
 						"les bornes d'un tableau statique doivent être données "
 						"sous forme d'intervalle d'entiers littéraux",
 						self.expression.resolved_type))
+				return False
 			self.low  = self.expression.lhs
 			self.high = self.expression.rhs
+			return True
 
 		def lda(self, pp):
 			pp.put(self.expression)
@@ -296,8 +307,12 @@ class Array(TypeDescriptor):
 		def __eq__(self, other):
 			return isinstance(other, Array.DynamicDimension)
 
-		def check(self, context, logger):
-			pass
+		def check(self, logger):
+			"""
+			Perform a semantic analysis on the dimension and return True if it
+			succeeded.
+			"""
+			return True
 
 		def lda(self, pp):
 			pp.put(kw.QUESTION_MARK)
@@ -321,13 +336,16 @@ class Array(TypeDescriptor):
 		return str(pp)
 
 	def resolve_type(self, context, logger):
+		erroneous = False
 		if len(self.dimensions) == 0:
 			logger.log(semantic.SemanticError(self.pos,
 					"un tableau doit avoir au moins une dimension"))
+			erroneous = True
 		for dim in self.dimensions:
-			dim.check(context, logger)
+			if not dim.check(logger):
+				erroneous = True
 		self.resolved_element_type = self.element_type.resolve_type(context, logger)
-		return self
+		return ERRONEOUS if erroneous else self
 
 	def lda(self, pp):
 		pp.put(kw.ARRAY, " ", self.element_type, kw.LSBRACK)
