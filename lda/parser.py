@@ -283,7 +283,7 @@ class Parser:
 			params = []
 		else:
 			# non-empty parameter list
-			params = self.analyze_arglist(self.analyze_field, formal=True)
+			params = self.analyze_arglist(self.analyze_vardecl, formal=True)
 			self.consume_keyword(kw.RPAREN)
 		# optional colon before return type (if omitted, no return type)
 		if self.consume_keyword(kw.COLON, soft=True):
@@ -353,19 +353,19 @@ class Parser:
 			self.analyze_scalar_type,
 			self.analyze_type_alias)
 
-	def analyze_field(self, formal=False):
-		ident = self.analyze_identifier()
+	def analyze_vardecl(self, formal=False):
+		ident = self.analyze_identifier(identifier.PureIdentifier)
 		self.consume_keyword(kw.COLON)
 		type_descriptor = self.analyze_type_descriptor()
-		return symbols.Field(ident, type_descriptor, formal)
+		return symbols.VarDecl(ident, type_descriptor, formal)
 
 	def analyze_composite(self):
 		ident = self.analyze_identifier()
 		self.consume_keyword(kw.EQ)
 		self.consume_keyword(kw.LT)
-		field_list = self.analyze_arglist(self.analyze_field)
+		fields = self.analyze_arglist(self.analyze_vardecl)
 		self.consume_keyword(kw.GT)
-		return types.Composite(ident, field_list)
+		return types.Composite(ident, fields)
 
 	def analyze_lexicon(self):
 		self.consume_keyword(kw.LEXICON)
@@ -373,7 +373,7 @@ class Parser:
 		composites = []
 		while True:
 			with BacktrackFailure(self):
-				variables.append(self.analyze_field())
+				variables.append(self.analyze_vardecl())
 				continue
 			with BacktrackFailure(self):
 				composites.append(self.analyze_composite())

@@ -86,14 +86,14 @@ class TypeAlias(Identifier):
 			self.bound = ERRONEOUS
 			return
 
-class Field:
+class VarDecl:
 	"""
 	Variable declaration. Has an identifier, a type_descriptor and a formal
 	flag (i.e. formal parameter).
 
 	Semantically, only formal variables may have the Inout type.
 
-	All fields are writable by default, i.e. they can legally occupy the
+	All variables are writable by default, i.e. they can legally occupy the
 	lefthand side of an assignment statement.
 	"""
 
