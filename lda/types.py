@@ -307,7 +307,9 @@ class Array(TypeDescriptor):
 			return
 		if len(self.dimensions) != len(other.dimensions):
 			return
-		# TODO est-ce qu'on s'occupe des intervalles ?
+		for my_dim, their_dim in zip(self.dimensions, other.dimensions):
+			if my_dim != their_dim:
+				return
 		return self
 
 
