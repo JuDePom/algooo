@@ -111,7 +111,21 @@ class LDATestCase(unittest.TestCase):
 		with self.assertRaises(error_class) as cm:
 			result = analyzer(**kwargs)
 		self._assertSingleLDAError(kwargs['program'], cm.exception)
-		return result
+		return cm.exception
+
+	def assertMissingKeywords(self, *expected_keywords, **kwargs):
+		"""
+		Given a syntactically broken LDA program, ensure the syntax analysis
+		fails because a keyword was missing (among a specific set of keywords)
+		at a specific point in the input program.
+
+		:param expected_keywords: One of these keywords is expected at the
+			error marker comment (see assertLDAError's documentation)
+		:param kwargs: Arguments to pass to analyze().
+		"""
+		error = self.assertLDAError(syntax.ExpectedKeyword, self.analyze, **kwargs)
+		self.assertSetEqual(set(error.expected_keywords), set(expected_keywords))
+		return error
 
 	def assertMultipleSemanticErrors(self, error_classes, program):
 		"""
