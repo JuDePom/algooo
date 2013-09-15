@@ -110,7 +110,9 @@ class Parser:
 
 	def __init__(self, options, path=None):
 		self.options = options
-		if path is not None:
+		if path is None:
+			self.path = "<direct>"
+		else:
 			self.path = path
 			with open(path, 'rt', encoding='utf8') as input_file:
 				self.set_buf(input_file.read())
@@ -119,7 +121,6 @@ class Parser:
 		self.pos = position.Position(self.path)
 
 	def set_buf(self, value):
-		self.path = "<direct>"
 		self.syntax_errors = []
 		# raw_buf: only used to parse strings and characters
 		self.raw_buf = value
