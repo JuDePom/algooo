@@ -275,7 +275,8 @@ class Parser:
 			lexicon = self.analyze_lexicon()
 		# statement block
 		self.consume_keyword(kw.BEGIN)
-		body, _, _ = self.analyze_statement_block(kw.END)
+		body = self.analyze_statement_block()
+		self.consume_keyword(kw.END)
 		return module.Algorithm(pos, lexicon, body)
 
 	def analyze_function(self):
@@ -305,7 +306,8 @@ class Parser:
 			lexicon = self.analyze_lexicon()
 		# statement block
 		self.consume_keyword(kw.BEGIN)
-		body, _, _ = self.analyze_statement_block(kw.END)
+		body = self.analyze_statement_block()
+		self.consume_keyword(kw.END)
 		return module.Function(pos, ident, params, return_type, lexicon, body)
 
 	def analyze_scalar_type(self):
@@ -403,14 +405,7 @@ class Parser:
 	def analyze_expression_identifier(self):
 		return self.analyze_identifier(expression.ExpressionIdentifier)
 
-	def analyze_statement_block(self, *end_marker_keywords):
-		"""
-		Build a statement block until an end marker keyword is found.
-		Return a tuple containing:
-		- the statement block
-		- the encountered end marker
-		- the end marker's position
-		"""
+	def analyze_statement_block(self):
 		pos = self.pos
 		block = []
 		while True:
@@ -419,9 +414,7 @@ class Parser:
 				block.append(unit)
 				continue
 			break
-		marker_pos = self.pos
-		marker = self.consume_keyword_choice(*end_marker_keywords)
-		return statements.StatementBlock(pos, block), marker, marker_pos
+		return statements.StatementBlock(pos, block)
 
 	def analyze_statement(self):
 		# Assignments and function calls are the only statements that start
@@ -464,18 +457,21 @@ class Parser:
 		self.consume_keyword(kw.IF)
 		conditionals = []
 		emk = None
+		pos = self.pos
 		while emk in (None, kw.ELIF):
 			# condition
 			with CriticalItem(self, "condition"):
 				condition = self.analyze_expression()
 			# then block
 			self.consume_keyword(kw.THEN)
-			then_block, emk, nextpos = self.analyze_statement_block(kw.ELIF, kw.ELSE, kw.END_IF)
+			then_block = self.analyze_statement_block()
+			emk = self.consume_keyword_choice(kw.ELIF, kw.ELSE, kw.END_IF)
 			conditionals.append(statements.Conditional(pos, condition, then_block))
-			pos = nextpos
+			pos = self.pos
 		# else block
 		if emk is kw.ELSE:
-			else_block, _, _ = self.analyze_statement_block(kw.END_IF)
+			else_block = self.analyze_statement_block()
+			self.consume_keyword(kw.END_IF)
 		else:
 			else_block = None
 		return statements.If(conditionals, else_block)
@@ -496,7 +492,8 @@ class Parser:
 			final = self.analyze_expression()
 		# statement block
 		self.consume_keyword(kw.DO)
-		block, _, _ = self.analyze_statement_block(kw.END_FOR)
+		block = self.analyze_statement_block()
+		self.consume_keyword(kw.END_FOR)
 		return statements.For(pos, counter, initial, final, block)
 
 	def analyze_while(self):
@@ -507,7 +504,8 @@ class Parser:
 			condition = self.analyze_expression()
 		# statement block
 		self.consume_keyword(kw.DO)
-		block, _, _ = self.analyze_statement_block(kw.END_WHILE)
+		block = self.analyze_statement_block()
+		self.consume_keyword(kw.END_WHILE)
 		return statements.While(pos, condition, block)
 
 	def analyze_expression(self, root=True):
