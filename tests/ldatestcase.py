@@ -40,19 +40,18 @@ class LDATestCase(unittest.TestCase):
 		options = DefaultOptions()
 		self.parser = parser.Parser(options)
 
-	def analyze(self, program, cls=module.Module, **kwargs):
+	def analyze(self, program, cls=module.Module, force_eof=True, **kwargs):
 		"""
 		Parse a program. Raise the most relevant syntax error if needed.
 		If the program was syntactically correct, ensure that:
 		- the resulting node is an instance of the class passed as a parameter
 		- the program was parsed in its entirety
 
-		:param analyze: The string "analyze_" will be prepended to this in order to
-			obtain the full name of the desired analysis method of the Parser class.
-			For example, if you want to use "analyze_expression", set this argument
-			to "expression".
-		:param cls: The expected class of the resulting node.
 		:param program: String containing the program itself.
+		:param cls: The expected class of the resulting node. Implicitly
+			determines the analysis method used.
+		:param force_eof: If True, the test will fail if the program string was
+			only parsed partially.
 		:param kwargs: Optional arguments to pass to the analysis function.
 		"""
 		self.parser.set_buf(program)
@@ -71,8 +70,9 @@ class LDATestCase(unittest.TestCase):
 			# parser methods so that they raise relevant_syntax_error)
 			raise self.parser.relevant_syntax_error
 		self.assertIsInstance(thing, cls)
-		self.assertTrue(self.parser.eof(), ("program couldn't be parsed entirely, "
-				"stopped at {}").format(self.parser.pos))
+		if force_eof:
+			self.assertTrue(self.parser.eof(), ("program couldn't be parsed entirely"
+					" -- stopped at {}").format(self.parser.pos))
 		return thing
 
 	def _assertSingleLDAError(self, program, error, start=0, error_no=0):
