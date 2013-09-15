@@ -121,6 +121,9 @@ class Parser:
 		self.pos = position.Position(self.path)
 
 	def set_buf(self, value):
+		# last regex match, used to report slightly more useful errors
+		self.last_match = None
+		self.last_match_pos = None
 		self.syntax_errors = []
 		# raw_buf: only used to parse strings and characters
 		self.raw_buf = value
@@ -142,6 +145,9 @@ class Parser:
 			self.syntax_errors.append(new_error)
 
 	@property
+	def last_good_match(self):
+		if self.last_match is not None and self.last_match_pos == self.pos:
+			return self.last_match
 	def relevant_syntax_error(self):
 		return self.syntax_errors[-1]
 
@@ -229,13 +235,13 @@ class Parser:
 		if soft:
 			return False
 		else:
-			raise syntax.ExpectedKeyword(self.pos, keyword)
+			raise syntax.ExpectedKeyword(self.pos, keyword, found_instead=self.last_good_match)
 
 	def consume_keyword_choice(self, *choices):
 		for keyword in choices:
 			if self.consume_keyword(keyword, soft=True):
 				return keyword
-		raise syntax.ExpectedKeyword(self.pos, *choices)
+		raise syntax.ExpectedKeyword(self.pos, *choices, found_instead=self.last_good_match)
 
 	def analyze_multiple(self, group_name, *analysis_order):
 		for analyze in analysis_order:
@@ -608,6 +614,7 @@ class Parser:
 		match = compiled_regex.match(self.buf, self.pos.char)
 		try:
 			string = match.group(0)
+			self.last_match, self.last_match_pos = string, self.pos
 			if advance:
 				self.advance(len(string))
 			return string

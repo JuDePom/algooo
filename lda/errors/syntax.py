@@ -18,8 +18,10 @@ class ExpectedItem(SyntaxError):
 	something else.
 	'''
 
-	def __init__(self, pos, item_name):
+	def __init__(self, pos, item_name, found_instead=None):
 		message = item_name + " est attendu(e) ici"
+		if found_instead:
+			message = "{}, mais \"{}\" a été trouvé à la place".format(message, found_instead)
 		super().__init__(pos, message)
 
 class ExpectedKeyword(ExpectedItem):
@@ -28,14 +30,15 @@ class ExpectedKeyword(ExpectedItem):
 	something else.
 	'''
 
-	def __init__(self, pos, *expected_keywords):
+	def __init__(self, pos, *expected_keywords, found_instead=None):
+		self.expected_keywords = expected_keywords
 		if len(expected_keywords) == 1:
 			message = "mot-clé \"{}\"".format(
 					expected_keywords[0].default_spelling)
 		else:
 			message = "l'un des mot-clés suivants : {}".format(
 				", ".join('"{}"'.format(k) for k in expected_keywords))
-		super().__init__(pos, message)
+		super().__init__(pos, message, found_instead)
 
 class IllegalIdentifier(SyntaxError):
 	'''
