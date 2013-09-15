@@ -24,26 +24,31 @@ class Expression:
 	"""
 	Base class for all expressions.
 
-	An expression may stand alone or be built of one or more expressions.
+	An expression requires the following attributes to be set as soon as
+	possible after being created:
 
-	An expression is a "root" expression if it is not contained by any
-	expression. The `root` attribute is set to `False` by default.
+	- pos: the expression's position in the input program
 
-	An expression must be checked for semantic correctness with the `check()`
-	method. If the semantic analysis is successful, the expression gains the
-	`resolved_type` attribute. Otherwise, `resolved_type` is set to a
-	`BlackHole` type (typically `ERRONEOUS`).
+	- root: True if the expression is not contained by any other
+	  expression. This is set to False by the default constructor.
 
-	Expressions are not writable by default, i.e. they cannot legally occupy in
-	the lefthand side of an assignment operation. However, this behavior can be
-	overridden by some subclasses, e.g. the array subscript operator.
+	- writable: True if the expression can legally occupy the lefthand
+	  side of an assignment statement
+
+	- compound: True if the expression is made of other expressions, False if
+	  the whole expression fits in a single token
+
+	In addition, an expression must be checked for semantic correctness with
+	the `check()` method. If the semantic analysis is successful, the
+	expression gains the `resolved_type` attribute. Otherwise, `resolved_type`
+	is set to a `BlackHole` type (typically `ERRONEOUS`).
 	"""
-
-	writable = False
 
 	def __init__(self, pos):
 		self.pos = pos
 		self.root = False
+		assert hasattr(self, 'writable')
+		assert hasattr(self, 'compound')
 
 	def __eq__(self, other):
 		raise NotImplementedError
@@ -61,6 +66,9 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 	"""
 	Name bound to a symbol during the semantic analysis phase.
 	"""
+
+	writable = False
+	compound = False
 
 	def check(self, context, logger):
 		"""
@@ -94,9 +102,18 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 			self.writable = False
 
 class Literal(Expression):
+	"""
+	Value hard-coded into the program.
+	Not writable.
+	"""
+
+	writable = False
+	compound = False
+
 	def __init__(self, pos, value):
 		super().__init__(pos)
 		self.value = value
+		assert hasattr(self, 'resolved_type'), "a literal's resolved_type must be fixed at compile time!"
 
 	def __eq__(self, other):
 		return type(self) == type(other) and self.value == other.value

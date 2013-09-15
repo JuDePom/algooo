@@ -11,7 +11,9 @@ from . import kw
 #######################################################################
 
 class UnaryOp(Expression):
+	writable = False # can be overridden
 	right_ass = True
+	compound = True
 
 	def __init__(self, pos, rhs=None):
 		super().__init__(pos)
@@ -38,7 +40,9 @@ class UnaryOp(Expression):
 		raise NotImplementedError
 
 class BinaryOp(Expression):
+	writable = False # can be overridden
 	right_ass = False
+	compound = True
 
 	def __init__(self, pos, lhs=None, rhs=None):
 		super().__init__(pos)
@@ -201,9 +205,9 @@ class ArraySubscript(BinaryEncompassingOp):
 	Unlike most expressions, this operator is *writable*.
 	"""
 
-	writable = True
 	keyword_def = kw.LSBRACK
 	closing = kw.RSBRACK
+	writable = True
 
 	def check(self, context, logger):
 		# guilty until proven innocent
@@ -266,8 +270,8 @@ class MemberSelect(BinaryOp):
 	Unlike most expressions, this operator is *writable*.
 	"""
 
-	writable = True
 	keyword_def = kw.DOT
+	writable = True
 
 	def check(self, context, logger):
 		# LHS is supposed to refer to a TypeAlias, which refers to a composite

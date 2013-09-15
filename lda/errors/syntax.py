@@ -70,7 +70,10 @@ class DiscardedExpression(SyntaxError):
 	Raised when the result of an expression is discarded.
 	'''
 
-	def __init__(self, pos):
-		super().__init__(pos, "le résultat de l'expression précédente "
-				"n'est pas conservé (peut-être devriez-vous l'affecter "
-				"à une variable ?)")
+	def __init__(self, expr):
+		if expr.compound:
+			super().__init__(expr.pos, "le résultat de cette expression n'est pas "
+					"conservé (peut-être devriez-vous l'affecter à une variable ?)")
+		else:
+			super().__init__(expr.pos, "lexème errant")
+
