@@ -1,13 +1,12 @@
 from . import kw
 from . import dot
-from . import expression
 from . import types
 from . import semantictools
 from .errors import semantic
 
 #######################################################################
 #
-# HELPER CLASSES
+# STATEMENT-RELATED CLASSES
 #
 #######################################################################
 
@@ -98,7 +97,7 @@ class Assignment:
 		pp.put(self.lhs, " ", kw.ASSIGN, " ", self.rhs)
 
 	def js(self, pp):
-		pp.put(self.lhs, " = ", self.rhs)
+		pp.put(self.lhs, " = ", self.rhs, ";")
 
 
 class Return:
@@ -116,7 +115,7 @@ class Return:
 		pp.put(kw.RETURN, " ", self.expression)
 
 	def js(self, pp):
-		pp.put("return ", self.expression)
+		pp.put("return ", self.expression, ";")
 
 	def check(self, context, logger):
 		if self.expression is not None:
@@ -266,7 +265,8 @@ class While(Conditional):
 		pp.put(kw.END_WHILE)
 
 	def js(self, pp):
-		pp.putline("while", " ( ", self.condition, " )")
+		pp.putline("while (", self.condition, ") {")
 		if self.block:
 			pp.indented(pp.putline, self.block)
+		pp.put("};")
 
