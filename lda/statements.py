@@ -129,6 +129,21 @@ class Return:
 		context.parent.check_return(logger, self)
 
 
+class FunctionCallWrapper:
+	def __init__(self, call_op):
+		self.pos = call_op.pos
+		self.call_op = call_op
+
+	def lda(self, pp):
+		self.call_op.put(pp)
+
+	def js(self, pp):
+		pp.put(self.call_op, ";")
+
+	def check(self, context, logger):
+		self.call_op.check(context, logger)
+
+
 #######################################################################
 #
 # META-STATEMENTS (statements that contain other statements)

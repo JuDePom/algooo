@@ -235,8 +235,7 @@ class Parser(BaseParser):
 			# ASSIGN operator. (If it was followed by ASSIGN, it'd be
 			# parsed as an assignment statement and the semantic analysis
 			# would fail later on)
-			# TODO make a statement thin wrapper class! so that we can add a proper semicolon in the JS output
-			return expr
+			return statements.FunctionCallWrapper(expr)
 		else:
 			# expr is a standalone expression, but we can't treat it as a
 			# statement since its result is discarded.
