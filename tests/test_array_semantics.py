@@ -6,7 +6,7 @@ from lda.types import Array
 class TestArraySemantics(LDATestCase):
 	def test_0d(self):
 		self.assertLDAError(semantic.SemanticError, self.check, cls=Array,
-				program='tableau entier(**)[]')
+				program='(**)tableau entier[]')
 	
 	def test_1d_constant_intrange(self):
 		self.check(cls=Array, program='tableau entier[0..5]')
