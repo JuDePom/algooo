@@ -3,6 +3,7 @@ from .errors import semantic
 from . import types
 from . import dot
 from . import kw
+from . import semantictools
 
 #######################################################################
 #
@@ -156,7 +157,7 @@ class BinaryLogicalOp(BinaryOp):
 	def check(self, context, logger):
 		for side in (self.lhs, self.rhs):
 			side.check(context, logger)
-			types.enforce("cet opérande", types.BOOLEAN, side, logger)
+			semantictools.enforce("cet opérande", types.BOOLEAN, side, logger)
 
 class BinaryEncompassingOp(BinaryOp):
 	"""
@@ -228,7 +229,7 @@ class ArraySubscript(BinaryEncompassingOp):
 		# check indices in arglist
 		for index in self.rhs:
 			index.check(context, logger)
-			types.enforce("cet indice de tableau", types.INTEGER, index, logger)
+			semantictools.enforce("cet indice de tableau", types.INTEGER, index, logger)
 		self.resolved_type = array.resolved_element_type
 
 class FunctionCall(BinaryEncompassingOp):
@@ -335,7 +336,7 @@ class IntegerRange(BinaryOp):
 	def check(self, context, logger):
 		for operand in (self.lhs, self.rhs):
 			operand.check(context, logger)
-			types.enforce("une borne d'intervalle", types.INTEGER, operand, logger)
+			semantictools.enforce("une borne d'intervalle", types.INTEGER, operand, logger)
 
 	def js(self, pp):
 		raise NotImplementedError

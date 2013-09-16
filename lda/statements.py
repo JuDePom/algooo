@@ -2,6 +2,7 @@ from . import kw
 from . import dot
 from . import expression
 from . import types
+from . import semantictools
 from .errors import semantic
 
 #######################################################################
@@ -63,7 +64,7 @@ class Conditional:
 
 	def check(self, context, logger):
 		self.condition.check(context, logger)
-		types.enforce("la condition", types.BOOLEAN, self.condition, logger)
+		semantictools.enforce("la condition", types.BOOLEAN, self.condition, logger)
 		self.block.check(context, logger)
 
 
@@ -122,10 +123,10 @@ class Return:
 			self.expression.check(context, logger)
 		# The return statement may only occur in a context owned by an algorithm
 		# or a function, so if the assertion below fails, we have a compiler bug.
-		assert hasattr(context.parent, "check_return_expression")
+		assert hasattr(context.parent, "check_return"), "please implement check_return()"
 		# Even if the expression is None, we still need to pass it on to the
 		# parent in order to decide whether an empty return value is OK.
-		context.parent.check_return_expression(logger, self.expression)
+		context.parent.check_return(logger, self)
 
 
 #######################################################################
@@ -207,7 +208,7 @@ class For:
 		components = [self.counter, self.initial, self.final]
 		for comp, name in zip(components, For._COMPONENT_NAMES):
 			comp.check(context, logger)
-			types.enforce(name, types.INTEGER, comp, logger)
+			semantictools.enforce(name, types.INTEGER, comp, logger)
 		if not self.counter.writable:
 			logger.log(semantic.SemanticError(self.counter.pos,
 					"le compteur doit être une variable"))

@@ -1,53 +1,9 @@
 from .errors import semantic, handler
 from . import kw
 from . import prettyprinter
+from . import semantictools
 from .identifier import PureIdentifier
 from types import MethodType
-
-#######################################################################
-#
-# UTILITY FUNCTIONS
-#
-#######################################################################
-
-def _enforce(name, expected_type, typed_object, logger, cmpfunc):
-	if typed_object is None:
-		given_type = VOID
-	else:
-		given_type = typed_object.resolved_type
-	if cmpfunc(given_type):
-		return True
-	else:
-		logger.log(semantic.SpecificTypeExpected(
-			typed_object.pos,
-			name,
-			expected = expected_type,
-			given = given_type))
-		return False
-
-def enforce(name, expected_type, typed_object, logger):
-	"""
-	Ensure the expected type is *equal* to an object's resolved_type.
-	Log SpecificTypeExpected if the type does not conform.
-	:param expected_type: type the object's resolved type must be equal to
-	:param typed_object: object whose resolved_type member will be tested against
-			expected_type
-	:param logger: semantic error logger
-	"""
-	return _enforce(name, expected_type, typed_object, logger,
-			expected_type.__eq__)
-
-def enforce_compatible(name, expected_type, typed_object, logger):
-	"""
-	Ensure the expected type is *compatible with* an object's resolved_type.
-	Log SpecificTypeExpected if the type does not conform.
-	:param expected_type: type the object's resolved type must be equal to
-	:param typed_object: object whose resolved_type member will be tested against
-			expected_type
-	:param logger: semantic error logger
-	"""
-	return _enforce(name, expected_type, typed_object, logger,
-			expected_type.compatible)
 
 #######################################################################
 #
@@ -394,9 +350,7 @@ class Composite(TypeDescriptor):
 		Also hunts down duplicate field names.
 		"""
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
-		# TODO very ugly import
-		from lda.symbols import hunt_duplicates
-		hunt_duplicates(self.fields, logger)
+		semantictools.hunt_duplicates(self.fields, logger)
 		self.context = {field.ident.name: field for field in self.fields}
 		for field in self.fields:
 			field.check(supercontext, logger)

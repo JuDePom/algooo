@@ -1,21 +1,8 @@
 from . import kw
 from . import dot
+from . import semantictools
 from .types import Inout
 from .errors import semantic
-
-def hunt_duplicates(item_list, logger):
-	"""
-	Log DuplicateDeclaration for any item using a name already used by another
-	item in the list.
-	"""
-	seen = {}
-	for item in item_list:
-		name = item.ident.name
-		try:
-			pioneer = seen[name]
-			logger.log(semantic.DuplicateDeclaration(item.ident, pioneer.ident))
-		except KeyError:
-			seen[name] = item
 
 class VarDecl:
 	"""
@@ -84,7 +71,7 @@ class Lexicon:
 		"""
 		# Hunt duplicates. Note that all_items is sorted by declaration
 		# position, which is important to report errors correctly.
-		hunt_duplicates(self.all_items, logger)
+		semantictools.hunt_duplicates(self.all_items, logger)
 		# prevent overwriting existing names in context
 		for name in self.symbol_dict:
 			try:
