@@ -37,8 +37,7 @@ class LDATestCase(unittest.TestCase):
 	"""
 
 	def setUp(self):
-		options = DefaultOptions()
-		self.parser = parser.Parser(options)
+		self.options = DefaultOptions()
 
 	def analyze(self, program, cls=module.Module, force_eof=True, **kwargs):
 		"""
@@ -54,7 +53,7 @@ class LDATestCase(unittest.TestCase):
 			only parsed partially.
 		:param kwargs: Optional arguments to pass to the analysis function.
 		"""
-		self.parser.set_buf(program)
+		self.parser = parser.Parser(self.options, raw_buf=program)
 		try:
 			analyze_func = getattr(self.parser, PARSING_FUNCTIONS[cls])
 		except KeyError as e:
@@ -62,13 +61,7 @@ class LDATestCase(unittest.TestCase):
 				analyze_func = self.parser.analyze_expression
 			else:
 				raise e
-		try:
-			with parser.RelevantFailureLogger(self.parser):
-				thing = analyze_func(**kwargs)
-		except syntax.SyntaxError:
-			# TODO get rid of this kludge ASAP (e.g. by decorating all
-			# parser methods so that they raise relevant_syntax_error)
-			raise self.parser.relevant_syntax_error
+		thing = analyze_func(**kwargs)
 		self.assertIsInstance(thing, cls)
 		if force_eof:
 			self.assertTrue(self.parser.eof(), ("program couldn't be parsed entirely"
@@ -186,6 +179,10 @@ class LDATestCase(unittest.TestCase):
 		return root
 
 	def jseval(self, **kwargs):
+		"""
+		Compile a program to JavaScript, execute it, and return the output.
+		The input program's entry point is its Algorithm.
+		"""
 		pp = prettyprinter.JSPrettyPrinter()
 		self.check(**kwargs).js(pp)
 		code = str(pp) + "\n\nMain();\n"

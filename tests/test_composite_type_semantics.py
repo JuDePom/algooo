@@ -6,7 +6,8 @@ from lda.module import Module
 class TestCompositeTypeSemantics(LDATestCase):
 	def test_duplicate_fields_in_composite(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Composite,
-				program='Moule = <a:entier, (**)a:chaîne>')
+				program='<a:entier, (**)a:chaîne>',
+				ident=None)
 
 	def test_composite_complex_cross_references(self):
 		self.check(cls=Module, program='''\

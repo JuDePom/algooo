@@ -1,6 +1,7 @@
 from tests.ldatestcase import LDATestCase
-from lda.errors import semantic
 from lda import types
+from lda.errors import semantic
+from lda.identifier import PureIdentifier
 from lda.operators import LogicalOr
 from lda.module import Module, Function, Algorithm
 
@@ -32,7 +33,7 @@ class TestTypeEquivalences(LDATestCase):
 		self._test_conflict_both_ways(types.INTEGER,
 				self.analyze(cls=types.Array, program="tableau entier[0..5]"))
 		self._test_conflict_both_ways(types.INTEGER,
-				self.analyze(cls=types.Composite, program="Moule = <a: entier>"))
+				self.analyze(cls=types.Composite, program="<a: entier>", ident=None))
 
 	def test_real_incompatible_with_non_numbers(self):
 		self._test_conflict_both_ways(types.REAL, types.STRING)
@@ -41,23 +42,23 @@ class TestTypeEquivalences(LDATestCase):
 		self._test_conflict_both_ways(types.REAL,
 				self.analyze(cls=types.Array, program="tableau réel[0..5]"))
 		self._test_conflict_both_ways(types.REAL,
-				self.analyze(cls=types.Composite, program="Moule = <a: réel>"))
+				self.analyze(cls=types.Composite, program="<a: réel>", ident=None))
 
 	def test_string_incompatible_with_composite_and_array(self):
 		self._test_conflict_both_ways(types.STRING,
 				self.analyze(cls=types.Array, program="tableau caractère[0..5]"))
 		self._test_conflict_both_ways(types.STRING,
-				self.analyze(cls=types.Composite, program="Moule = <a: chaîne>"))
+				self.analyze(cls=types.Composite, program="<a: chaîne>", ident=None))
 
 	def test_composite_compatible_with_itself(self):
-		moule1 = self.analyze(cls=types.Composite, program="Moule = <>")
-		moule2 = self.analyze(cls=types.Composite, program="Moule = <>")
+		moule1 = self.analyze(cls=types.Composite, program="<>", ident=PureIdentifier(None, "Moule"))
+		moule2 = self.analyze(cls=types.Composite, program="<>", ident=PureIdentifier(None, "Moule"))
 		self._test_compatibility_both_ways(moule1, moule1)
 		self._test_compatibility_both_ways(moule1, moule2)
 
 	def test_composite_incompatible_with_other_composite_with_different_identifier(self):
-		moule1 = self.analyze(cls=types.Composite, program="Moule1 = <>")
-		moule2 = self.analyze(cls=types.Composite, program="Moule2 = <>")
+		moule1 = self.analyze(cls=types.Composite, program="<>", ident=PureIdentifier(None, "Moule1"))
+		moule2 = self.analyze(cls=types.Composite, program="<>", ident=PureIdentifier(None, "Moule2"))
 		self._test_conflict_both_ways(moule1, moule2)
 
 	def test_1d_static_array_compatible_with_itself(self):

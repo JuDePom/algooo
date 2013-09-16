@@ -9,7 +9,7 @@ class SyntaxError(Exception):
 
 	def __init__(self, pos, message):
 		self.pos = pos
-		message = "{} : erreur de syntaxe : {}".format(pos, message)
+		message = "{}: {}".format(pos, message)
 		super().__init__(message)
 
 class ExpectedItem(SyntaxError):
@@ -47,7 +47,7 @@ class IllegalIdentifier(SyntaxError):
 	'''
 
 	def __init__(self, pos):
-		message = "mauvais format d'identifieur"
+		message = "mauvais format d'identificateur"
 		super().__init__(pos, message)
 
 class ReservedWord(SyntaxError):
@@ -64,8 +64,8 @@ class MissingRightOperand(SyntaxError):
 	Raised when a unary or binary operator is missing its right operand.
 	'''
 
-	def __init__(self, pos):
-		super().__init__(pos, "cet opérateur requiert un opérande "
+	def __init__(self, op):
+		super().__init__(op.pos, "cet opérateur requiert un opérande "
 			"valide à sa droite")
 
 class DiscardedExpression(SyntaxError):

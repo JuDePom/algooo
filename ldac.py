@@ -38,8 +38,12 @@ parser = lda.parser.Parser(args, path=args.path)
 
 try:
 	module = parser.analyze_module()
-except lda.errors.syntax.SyntaxError as ex:
-	print(parser.relevant_syntax_error, file=sys.stderr)
+except lda.errors.syntax.SyntaxError as e:
+	print(e, file=sys.stderr)
+	if hasattr(e, 'intent'):
+		print(" ...Lors de l'analyse de :", e.intent, file=sys.stderr)
+	if hasattr(e, 'tip'):
+		print(" ...Conseil sur cette erreur :", e.tip, file=sys.stderr)
 	sys.exit(1)
 
 print (" * Syntaxe : OK.")

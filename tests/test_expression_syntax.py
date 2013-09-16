@@ -1,6 +1,8 @@
 from tests.ldatestcase import LDATestCase
 from lda import expression
 from lda import operators
+from lda import kw
+from lda.parser import NotFoundHere
 from lda.errors import syntax
 from lda.statements import StatementBlock
 
@@ -8,7 +10,7 @@ class TestExpressionSyntax(LDATestCase):
 	def _literal(self, cls, expression_string, convert):
 		literal = self.analyze(expression_string, cls)
 		self.assertEqual(literal.value, convert(expression_string))
-			
+
 	def test_literal_integers(self):
 		test = lambda s: self._literal(expression.LiteralInteger, s, int)
 		test("1")
@@ -48,7 +50,7 @@ class TestExpressionSyntax(LDATestCase):
 		self.assertIsInstance(rangeop.rhs, expression.LiteralReal)
 		self.assertEqual(rangeop.lhs.value, 0.123)
 		self.assertEqual(rangeop.rhs.value, 4.567)
-	
+
 	def test_identifiers_within_range(self):
 		rangeop = self.analyze("a..b", operators.IntegerRange)
 		self.assertIsInstance(rangeop.lhs, expression.ExpressionIdentifier)
@@ -56,31 +58,49 @@ class TestExpressionSyntax(LDATestCase):
 		self.assertEqual(rangeop.lhs.name, "a")
 		self.assertEqual(rangeop.rhs.name, "b")
 
-	def test_incomplete_binary_operations(self):
+	def test_incomplete_binary_operations_no_right_operand(self):
 		def test(s):
-			self.assertLDAError(syntax.ExpectedItem, self.analyze,
+			self.assertLDAError(syntax.MissingRightOperand, self.analyze,
 					program=s, cls=expression.Expression)
-		test("1-(**)")
-		test("1 -(**)")
-		test("1+(**)")
-		test("1 +(**)")
-		test("1*(**)")
-		test("1 *(**)")
-		test("1/(**)")
-		test("1 /(**)")
-		test("1 mod (**)")
-		test("1..(**)")
-		test("1 ..(**)")
-		test("ident [(**)")
-		test("ident.(**)")
-		test("(**)..")
-		test("(**)*")
-		test("(**)/")
-		test("(**)mod")
-		test("(**).")
-		test("moule. (**).champ")
-		test("oh_no [ the_closing_square_bracket_is_missing(**)")
-	
+		test("1(**)-")
+		test("1 (**)-")
+		test("1(**)+")
+		test("1 (**)+")
+		test("1(**)*")
+		test("1 (**)*")
+		test("1(**)/")
+		test("1 (**)/")
+		test("1 (**)mod ")
+		test("1(**)..")
+		test("1 (**)..")
+		test("ident(**).")
+		test("moule(**). .champ")
+
+	def test_incomplete_binary_operations_no_left_operand(self):
+		def test(s):
+			self.assertRaises(NotFoundHere, self.analyze,
+					program=s, cls=expression.Expression)
+		test("..")
+		test("*")
+		test("/")
+		test("mod")
+		test(".")
+
+	def test_encompassing_operators_missing_closing_keyword(self):
+		def test(program, closing_kw):
+			self.assertMissingKeywords(closing_kw,
+					program=program, cls=expression.Expression)
+		test("oh_no [ the_closing_square_bracket, is_missing(**)", kw.RSBRACK)
+		test("oh_no ( the_closing_parenthesis, is_missing(**)", kw.RPAREN)
+
+	def test_incomplete_unary_operations(self):
+		def test(s):
+			self.assertLDAError(syntax.MissingRightOperand, self.analyze,
+					program=s, cls=expression.Expression)
+		test("(**)-")
+		test("(**)+")
+		test("(**)non")
+
 	def test_root_in_binary_operation_tree(self):
 		self.analyze("1+1", operators.Addition)
 		self.analyze("1-1", operators.Subtraction)
@@ -121,9 +141,22 @@ class TestExpressionSyntax(LDATestCase):
 		def test(s):
 			self.assertLDAError(syntax.DiscardedExpression, self.analyze,
 					cls=StatementBlock, program=s)
-		test("1(**)")
-		test("a(**)")
-		test("a[1](**)")
-		test("x+1(**)")
-		test("a.b(**)")
+		test("a(**)[1]")
+		test("x(**)+1")
+		test("a(**).b")
+
+	def test_stray_token_as_end_marker_for_statement_block(self):
+		def test(program):
+			sblock = self.analyze(program, force_eof=False, cls=StatementBlock)
+			self.assertEqual(0, len(sblock.body))
+		test("1")
+		test("123")
+		test("123.234")
+		test("a")
+		test("abcdef")
+		# some keywords that DON'T start statements
+		test("ftant")
+		test("fpour")
+		test("fsi")
+		test("fin")
 
