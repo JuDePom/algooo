@@ -70,7 +70,8 @@ class Parser(BaseParser):
 			with Backtrack(self):
 				algorithms.append(self.analyze_algorithm())
 				continue
-			raise syntax.ExpectedItem(self.pos, "une fonction ou un algorithme")
+			raise syntax.ExpectedItem(self.pos, "une fonction ou un algorithme",
+					self.last_good_match)
 		return module.Module(lexicon, functions, algorithms)
 
 	def analyze_lexicon_and_body(self):
