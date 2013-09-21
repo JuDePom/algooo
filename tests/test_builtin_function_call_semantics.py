@@ -13,3 +13,8 @@ class TestBuiltinFunctionCallSemantics(LDATestCase):
 			fonction f() début retourne fin
 			algorithme début écrire((**)f()) fin""")
 
+	def test_println_call_with_not_a_variable_argument(self):
+		self.assertLDAError(semantic.TypeError, self.check, program="""\
+			fonction f() début retourne fin
+			algorithme début écrire((**)f) fin""")
+
