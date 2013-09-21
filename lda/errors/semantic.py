@@ -151,3 +151,7 @@ class RecursiveDeclaration(SemanticError):
 	def __init__(self, pos):
 		super().__init__(pos, "déclaration récursive")
 
+class UnreachableStatement(SemanticError):
+	def __init__(self, pos):
+		super().__init__(pos, "instruction jamais atteinte")
+

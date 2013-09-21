@@ -47,8 +47,18 @@ class StatementBlock:
 		pp.join(self.body, pp.newline)
 
 	def check(self, context, logger):
+		"""
+		Check all child statements and set the `returns` attribute if one of
+		them returns.
+		"""
+		self.returns = False
+		warned = False
 		for statement in self:
 			statement.check(context, logger)
+			if self.returns and not warned:
+				logger.log(semantic.UnreachableStatement(statement.pos))
+				warned = True
+			self.returns |= statement.returns
 
 class Conditional(StatementBlock):
 	"""
@@ -109,6 +119,8 @@ class Return:
 	May own an expression or not, in which case self.expression is None.
 	"""
 
+	returns = True
+
 	def __init__(self, pos, expr):
 		self.pos = pos
 		self.expression = expr
@@ -136,6 +148,8 @@ class Return:
 
 
 class FunctionCallWrapper:
+	returns = False
+
 	def __init__(self, call_op):
 		self.pos = call_op.pos
 		self.call_op = call_op
@@ -163,10 +177,15 @@ class If:
 		self.else_block = else_block
 
 	def check(self, context, logger):
+		self.returns = True
 		for clause in self.conditionals:
 			clause.check(context, logger)
+			self.returns &= clause.returns
 		if self.else_block is not None:
 			self.else_block.check(context, logger)
+			self.returns &= self.else_block.returns
+		else:
+			self.returns = False
 
 	def put_node(self, cluster):
 		rank_chain = []
