@@ -7,6 +7,31 @@ from . import semantictools
 
 #######################################################################
 #
+# HELPER CLASSES
+#
+#######################################################################
+
+class NakedOperator:
+	"""
+	Container for a position and an operator class.
+
+	Meant for temporary use by the parser during the parsing of an operator.
+	When the parser has finished parsing all components of an operator, i.e.
+	the operator token and its operands, it should call build() to create a
+	proper operator object.
+
+	Instances of NakedOperator must not be placed into the AST!
+	"""
+
+	def __init__(self, pos, cls):
+		self.pos = pos
+		self.cls = cls
+
+	def build(self, *args, **kwargs):
+		return self.cls(self.pos, *args, **kwargs)
+
+#######################################################################
+#
 # GENERIC OPERATOR BASE CLASSES
 #
 #######################################################################
@@ -16,7 +41,7 @@ class UnaryOp(Expression):
 	right_ass = True
 	compound = True
 
-	def __init__(self, pos, rhs=None):
+	def __init__(self, pos, rhs):
 		super().__init__(pos)
 		self.rhs = rhs
 
@@ -45,7 +70,7 @@ class BinaryOp(Expression):
 	right_ass = False
 	compound = True
 
-	def __init__(self, pos, lhs=None, rhs=None):
+	def __init__(self, pos, lhs, rhs):
 		super().__init__(pos)
 		self.lhs = lhs
 		self.rhs = rhs
@@ -55,9 +80,10 @@ class BinaryOp(Expression):
 				self.lhs == other.lhs and \
 				self.rhs == other.rhs
 
-	def part_of_rhs(self, whose):
-		return self.precedence > whose.precedence or \
-			(self.right_ass and self.precedence == whose.precedence)
+	@classmethod
+	def part_of_rhs(cls, whose):
+		return cls.precedence > whose.precedence or \
+			(cls.right_ass and cls.precedence == whose.precedence)
 
 	def put_node(self, cluster):
 		op_node = dot.Node(self.keyword_def.default_spelling,

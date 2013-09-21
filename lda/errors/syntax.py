@@ -64,8 +64,8 @@ class MissingRightOperand(SyntaxError):
 	Raised when a unary or binary operator is missing its right operand.
 	'''
 
-	def __init__(self, op):
-		super().__init__(op.pos, "cet opérateur requiert un opérande "
+	def __init__(self, pos):
+		super().__init__(pos, "cet opérateur requiert un opérande "
 			"valide à sa droite")
 
 class DiscardedExpression(SyntaxError):

@@ -308,44 +308,48 @@ class Parser(BaseParser):
 
 	def analyze_expression(self, root=True):
 		lhs = self.analyze_primary_expression()
-		bo1 = Backtrack(self).give(self.analyze_binary_operator)
-		if bo1 is None:
+		# try to find a binary operator
+		nbo1 = Backtrack(self).give(self.analyze_naked_binary_operator)
+		if nbo1 is None:
 			return lhs
-		expr, bo2 = self.analyze_partial_expression(lhs, bo1)
-		assert bo2 is None, "bo2 can't be an expression node here!"
+		expr, nbo2 = self.analyze_partial_expression(lhs, nbo1)
+		assert nbo2 is None, "expression complete but an operator is still pending!"
 		expr.root = root
 		return expr
 
-	def analyze_partial_expression(self, lhs, bo1, min_p=0):
-		assert bo1 is None or isinstance(bo1, operators.BinaryOp)
-		while bo1 is not None and bo1.precedence >= min_p:
-			# Parse bo1's righthand-side operand.
+	def analyze_partial_expression(self, lhs, nbo1, min_p=0):
+		if nbo1 is not None:
+			assert isinstance(nbo1, operators.NakedOperator)
+			assert issubclass(nbo1.cls, operators.BinaryOp)
+		while nbo1 is not None and nbo1.cls.precedence >= min_p:
+			# Parse the righthand-side operand of the first operator.
 			try:
-				if isinstance(bo1, operators.BinaryEncompassingOp):
-					rhs = self.analyze_arglist(self.analyze_expression, bo1.closing)
+				if issubclass(nbo1.cls, operators.BinaryEncompassingOp):
+					rhs = self.analyze_arglist(self.analyze_expression, nbo1.cls.closing)
 				else:
 					rhs = self.analyze_primary_expression()
 			except NotFoundHere:
-				raise syntax.MissingRightOperand(bo1)
+				raise syntax.MissingRightOperand(nbo1.pos)
 			# Parse the next operator, if any.
-			bo2 = Backtrack(self).give(self.analyze_binary_operator)
+			nbo2 = Backtrack(self).give(self.analyze_naked_binary_operator)
 			# Keep extending bo1's RHS as long as the operators to the right (bo2) are
 			# supposed to be part of its RHS (see BinaryOp.part_of_rhs
 			# to see what this means)
-			while bo2 is not None and bo2.part_of_rhs(bo1):
-				rhs, bo2 = self.analyze_partial_expression(rhs, bo2, bo2.precedence)
-			# At this point, either bo2 is an operator that's not supposed to be part
-			# of bo1's RHS, or we hit a non-expression token (in which case bo2 is
-			# None). Finish the bo1 node properly, and move onto bo2 if needed.
-			bo1.lhs, bo1.rhs = lhs, rhs
-			# Use bo1's node as the LHS for the next operator (bo2)
-			lhs = bo1
+			while nbo2 is not None and nbo2.cls.part_of_rhs(nbo1.cls):
+				rhs, nbo2 = self.analyze_partial_expression(
+						rhs, nbo2, nbo2.cls.precedence)
+			# At this point, either bo2 is an operator that's not supposed to
+			# be part of bo1's RHS, or we hit a non-expression token (in which
+			# case bo2 is None).
+			# Finish building the first binary operator and use it as the
+			# lefthand-side operand for the next operator.
+			lhs = nbo1.build(lhs, rhs)
 			# Prepare next iteration
-			bo1 = bo2
+			nbo1 = nbo2
 		# Return bo1's LHS (which is supposed to be an expression node in its own
 		# right by now), and bo1 itself, which is a 'naked' operator (no LHS, no
 		# RHS) with a low precedence or None if it's not an operator at all.
-		return lhs, bo1
+		return lhs, nbo1
 
 	def analyze_primary_expression(self):
 		# check for sub-expression enclosed in parenthesis
@@ -354,14 +358,14 @@ class Parser(BaseParser):
 			self.hardskip(kw.RPAREN)
 			return sub_expr
 		# check for a unary operator
-		uo = Backtrack(self).give(self.analyze_operator, operators.unary)
-		if uo is not None:
+		nuo = Backtrack(self).give(self.analyze_naked_operator, operators.unary)
+		if nuo is not None:
 			# analyze unary operator's operand, which is a primary expression
 			try:
-				uo.rhs = self.analyze_primary_expression()
+				rhs = self.analyze_primary_expression()
 			except NotFoundHere:
-				raise syntax.MissingRightOperand(uo)
-			return uo
+				raise syntax.MissingRightOperand(nuo.pos)
+			return nuo.build(rhs)
 		# terminal
 		with Backtrack(self):
 			return self.analyze_identifier(expression.ExpressionIdentifier)
@@ -372,14 +376,14 @@ class Parser(BaseParser):
 				self.analyze_literal_character,
 				self.analyze_literal_boolean)
 
-	def analyze_binary_operator(self):
-		return self.analyze_operator(operators.binary_flat)
+	def analyze_naked_binary_operator(self):
+		return self.analyze_naked_operator(operators.binary_flat)
 
-	def analyze_operator(self, op_list):
+	def analyze_naked_operator(self, op_list):
 		pos = self.pos
 		for op_class in op_list:
 			if self.softskip(op_class.keyword_def):
-				return op_class(pos)
+				return operators.NakedOperator(pos, op_class)
 		raise NotFoundHere
 
 	def analyze_arglist(self, analyze_arg, closing_kw, **kwargs):
