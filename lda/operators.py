@@ -92,9 +92,9 @@ class UnaryNumberOp(UnaryOp):
 		self.rhs.check(context, logger)
 		rtype = self.rhs.resolved_type
 		if rtype not in (types.INTEGER, types.REAL):
-			# TODO peut-être que SpecificTypeExpected est plus adapté ici ?
-			logger.log(semantic.SemanticError(self.pos, "cet opérateur unaire "
-					"ne peut être appliqué qu'à un nombre entier ou réel"))
+			logger.log(semantic.TypeError(self.pos, "cet opérateur unaire "
+					"ne peut être appliqué qu'à un nombre entier ou réel",
+					rtype))
 			self.resolved_type = types.ERRONEOUS
 		else:
 			self.resolved_type = rtype

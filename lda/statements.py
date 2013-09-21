@@ -84,7 +84,8 @@ class Assignment:
 		self.rhs.check(context, logger)
 		if not self.lhs.writable:
 			logger.log(semantic.TypeError(self.lhs.pos,
-					"l'opérande de gauche ne peut pas être affectée"))
+					"l'opérande de gauche ne peut pas être affectée",
+					self.lhs.resolved_type))
 			return
 		ltype = self.lhs.resolved_type
 		rtype = self.rhs.resolved_type
@@ -224,8 +225,9 @@ class For:
 			comp.check(context, logger)
 			semantictools.enforce(name, types.INTEGER, comp, logger)
 		if not self.counter.writable:
-			logger.log(semantic.SemanticError(self.counter.pos,
-					"le compteur doit être une variable"))
+			logger.log(semantic.TypeError(self.counter.pos,
+					"le compteur doit être une variable",
+					self.counter.resolved_type))
 		self.block.check(context, logger)
 
 	def put_node(self, cluster):

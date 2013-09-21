@@ -157,7 +157,8 @@ class Function:
 			logger.log(semantic.TypeError(return_statement.pos,
 					"cette instruction 'retourne' ne renvoit rien alors que la "
 					"fonction est censée renvoyer une valeur de type {}".format(
-					self.return_type)))
+					self.return_type),
+					self.return_type))
 
 	def put_node(self, cluster):
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)

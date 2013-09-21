@@ -85,7 +85,13 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 		try:
 			self.bound = context[self.name]
 		except KeyError:
+			# Make the name refer to a fake symbol (None) so that later
+			# invocations of this this name don't raise MissingDeclaration.
+			context[self.name] = None
+			self.bound = None
 			logger.log(semantic.MissingDeclaration(self))
+		if self.bound is None:
+			# Bound to an undeclared symbol.
 			self.resolved_type = types.ERRONEOUS
 			self.writable = False
 			return
