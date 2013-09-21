@@ -37,6 +37,16 @@ class NakedOperator:
 #######################################################################
 
 class UnaryOp(Expression):
+	"""
+	Unary operator.
+
+	Right-associative, non-writable, and compound by default (these properties
+	can be overridden). See Expression's docstring for info about writable and
+	compound.
+
+	Has a righthand-side operand only.
+	"""
+
 	writable = False # can be overridden
 	right_ass = True
 	compound = True
@@ -66,6 +76,16 @@ class UnaryOp(Expression):
 		raise NotImplementedError
 
 class BinaryOp(Expression):
+	"""
+	Binary operator.
+
+	Left-associative, non-writable, and compound by default (these properties
+	can be overridden). See Expression's docstring for info about writable and
+	compound.
+
+	Has a lefthand-side operand and a righthand-side operand.
+	"""
+
 	writable = False # can be overridden
 	right_ass = False
 	compound = True
