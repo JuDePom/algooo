@@ -76,11 +76,23 @@ class BlackHole(TypeDescriptor):
 		return self
 
 
+"""
+The ERRONEOUS black hole type is used whenever an identifier does not refer to
+any existing symbol in the symbol table.
+"""
 ERRONEOUS = BlackHole("<type erronné>")
-ERRONEOUS.relevant = False
+ERRONEOUS.relevant_in_semantic_errors = False
 
+"""
+The NOT_A_VARIABLE black hole type is used whenever an identifier resolves to a
+non-variable (anything that is not a VarDecl, such as a function name or a
+composite name) in a context where a VarDecl was expected.
+
+For example, in an expression, it is forbidden to perform arithmetic on a
+function name without calling it; in that case, the ExpressionIdentifier
+representing the function's name will resolve to a NOT_A_VARIABLE type.
+"""
 NOT_A_VARIABLE = BlackHole("<pas une variable>")
-NOT_A_VARIABLE.relevant = True
 
 
 #######################################################################

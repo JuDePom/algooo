@@ -81,7 +81,7 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 		- `NOT_A_VARIABLE` if the name refers to a non-variable object such as
 		a composite or a function.
 		"""
-		# find corresponding symbol in the context's symbol table
+		# Find corresponding symbol in the context's symbol table.
 		try:
 			self.bound = context[self.name]
 		except KeyError:
@@ -95,13 +95,16 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 			self.resolved_type = types.ERRONEOUS
 			self.writable = False
 			return
-		# steal the symbol's type
+		# Steal the bound symbol's type.
 		try:
 			self.resolved_type = self.bound.resolved_type
 		except AttributeError:
-			# only variable declarations have a resolved_type
+			# In the symbol table, only VarDecl objects have a resolved_type
+			# attribute. Anything else (function names, composite names) yields
+			# a NOT_A_VARIABLE type, which will ultimately trigger a TypeError
+			# if this identifier is used improperly.
 			self.resolved_type = types.NOT_A_VARIABLE
-		# steal the symbol's writability
+		# Steal the bound symbol's writability.
 		try:
 			self.writable = self.bound.writable
 		except AttributeError:

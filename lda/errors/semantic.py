@@ -8,6 +8,13 @@ class SemanticError(Exception):
 
 	This happens when the user writes syntactically correct code which will
 	invariably fail to produce a working program.
+
+	SemanticErrors are relevant by default, but this can be overridden by
+	subclass constructors. Being relevant means that the error is the first to
+	relate to the erroneous object. It can happen that a cascade of semantic
+	errors are triggered by a single erroneous statement in the source code;
+	typically, we only want to log the error pertaining to that statement, and
+	ignore all errors that ensue.
 	"""
 	def __init__(self, pos, message):
 		self.pos = pos
@@ -49,12 +56,19 @@ class DuplicateDeclaration(SemanticError):
 class TypeError(SemanticError):
 	"""
 	Base class for semantic errors pertaining to type problems.
+
+	The constructor takes 1 or more types that are incriminated in the
+	problem. If a single one of these is irrelevant, the entire TypeError is
+	considered irrelevant. See the docstrings on SemanticError to learn more
+	about error relevance.
 	"""
-	def __init__(self, pos, message, *incriminated):
+	def __init__(self, pos, message, *incriminated_types):
 		super().__init__(pos, message)
-		for i in incriminated:
+		assert len(incriminated_types) > 0, \
+				"there must be at least one incriminated type!"
+		for i in incriminated_types:
 			try:
-				if not i.relevant:
+				if not i.relevant_in_semantic_errors:
 					self.relevant = False
 					break
 			except AttributeError:
