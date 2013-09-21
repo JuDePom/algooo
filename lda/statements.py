@@ -113,10 +113,15 @@ class Return:
 		self.expression = expr
 
 	def lda(self, pp):
-		pp.put(kw.RETURN, " ", self.expression)
+		pp.put(kw.RETURN)
+		if self.expression is not None:
+			pp.put(" ", self.expression)
 
 	def js(self, pp):
-		pp.put("return ", self.expression, ";")
+		if self.expression is not None:
+			pp.put("return ", self.expression, ";")
+		else:
+			pp.put("return;")
 
 	def check(self, context, logger):
 		if self.expression is not None:

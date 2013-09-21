@@ -135,3 +135,11 @@ class test_lda_output(LDATestCase):
 		program = "3 * (2 + 4)"
 		self._assert_export(expression.Expression, program)
 
+	def test_function_returning_nothing(self):
+		program = (
+				"{kw.FUNCTION} f()\n"
+				"{kw.BEGIN}\n"
+				"\t{kw.RETURN}\n"
+				"{kw.END}\n\n\n").format(kw=kw)
+		self._assert_export(module.Module, program)
+
