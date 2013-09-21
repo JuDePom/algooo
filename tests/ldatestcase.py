@@ -140,15 +140,14 @@ class LDATestCase(unittest.TestCase):
 		"""
 		logger = handler.Logger()
 		self.check(program=program, error_handler=logger)
-		errors = list(logger.relevant_errors)
 		# make sure the analysis raised as many errors as expected
-		expected_count, reported_count = len(error_classes), len(errors)
+		expected_count, reported_count = len(error_classes), len(logger.errors)
 		self.assertEqual(expected_count, reported_count,
 				"we expected {} errors but only {} were reported".format(
 				expected_count, reported_count))
 		# check each error
 		start = 0
-		for i, error, class_ in zip(count(), errors, error_classes):
+		for i, error, class_ in zip(count(), logger.errors, error_classes):
 			start = self._assertSingleLDAError(program, error, start, i)
 			self.assertIsInstance(error, class_,
 					"wrong error found at error marker #{}".format(i))
