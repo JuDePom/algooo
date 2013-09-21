@@ -35,7 +35,7 @@ class TestForSemantics(LDATestCase):
 				fin
 				algorithme
 				début
-					pour f(**)() de 1 jusque 10 faire
+					pour (**)f() de 1 jusque 10 faire
 					fpour
 				fin''')
 

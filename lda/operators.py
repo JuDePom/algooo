@@ -270,6 +270,11 @@ class FunctionCall(BinaryEncompassingOp):
 	keyword_def = kw.LPAREN
 	closing = kw.RPAREN
 
+	def __init__(self, pos, lhs, rhs):
+		# Report position as lhs's position (makes for more understandable
+		# errors instead of reporting the opening parenthesis's position)
+		super().__init__(lhs.pos, lhs, rhs)
+
 	def check(self, context, logger):
 		self.lhs.check(context, logger)
 		try:

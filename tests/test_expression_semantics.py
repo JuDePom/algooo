@@ -77,7 +77,7 @@ class TestExpressionSemantics(LDATestCase):
 				fin
 				algorithme
 				début
-					f(**)() <- 3
+					(**)f() <- 3
 				fin""")
 
 	def test_assign_to_non_writable_expression(self):
