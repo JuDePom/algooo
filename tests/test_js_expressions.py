@@ -36,7 +36,7 @@ class TestJSExpressions(LDATestCase):
 				algorithme début écrire(f()) fin"""))
 
 	def test_function_call_return_nothing(self):
-		self.assertEqual("\n", self.jseval(program="""\
+		self.jseval(program="""\
 				fonction f() début retourne fin
-				algorithme début f() fin"""))
+				algorithme début f() fin""")
 
