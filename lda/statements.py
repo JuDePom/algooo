@@ -246,7 +246,7 @@ class For:
 
 	def js(self, pp):
 		pp.putline("for (", self.counter, " = ", self.initial,
-				"; ", self.counter, " !== ", self.final, "; ", self.counter, "++) {")
+				"; ", self.counter, " <= ", self.final, "; ", self.counter, "++) {")
 		if self.block:
 			pp.indented(pp.putline, self.block)
 		pp.put("};")
