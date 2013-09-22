@@ -77,7 +77,7 @@ class Algorithm:
 			pp.putline(self.lexicon)
 		if self.body:
 			pp.indented(pp.putline, self.body)
-		pp.putline("}")
+		pp.put("}")
 
 	def check(self, context, logger):
 		context.push(self)
@@ -190,7 +190,7 @@ class Function:
 			pp.putline(self.lexicon)
 		if self.body:
 			pp.indented(pp.putline, self.body)
-		pp.put("};")
+		pp.put("}")
 
 	def js_call(self, pp, call_op):
 		pp.put(call_op.lhs, "(")

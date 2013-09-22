@@ -234,7 +234,7 @@ class If:
 		if self.else_block:
 			pp.putline("} else {")
 			pp.indented(pp.putline, self.else_block)
-		pp.put("};")
+		pp.put("}")
 
 class For(StatementBlock):
 	_COMPONENT_NAMES = [
@@ -281,7 +281,7 @@ class For(StatementBlock):
 				"; ", self.counter, " <= ", self.final, "; ", self.counter, "++) {")
 		if self.body:
 			pp.indented(pp.putline, super())
-		pp.put("};")
+		pp.put("}")
 
 class While(Conditional):
 	def put_node(self, cluster):
@@ -300,5 +300,5 @@ class While(Conditional):
 		pp.putline("while (", self.condition, ") {")
 		if self.body:
 			pp.indented(pp.putline, super())
-		pp.put("};")
+		pp.put("}")
 
