@@ -204,8 +204,7 @@ class Parser(BaseParser):
 			self.advance(len(name))
 			return identifier_class(pos, name)
 
-	def analyze_statement_block(self):
-		pos = self.pos
+	def analyze_statement_list(self):
 		block = []
 		while True:
 			with Backtrack(self):
@@ -213,7 +212,11 @@ class Parser(BaseParser):
 				block.append(unit)
 				continue
 			break
-		return statements.StatementBlock(pos, block)
+		return block
+
+	def analyze_statement_block(self):
+		pos = self.pos
+		return statements.StatementBlock(pos, self.analyze_statement_list())
 
 	def analyze_statement(self):
 		# First, try statements that start with a keyword.
@@ -264,9 +267,9 @@ class Parser(BaseParser):
 				condition = self.analyze_expression()
 			# then block
 			self.hardskip(kw.THEN)
-			then_block = self.analyze_statement_block()
+			then_body = self.analyze_statement_list()
 			keyword = self.hardskip(kw.ELIF, kw.ELSE, kw.END_IF)
-			conditionals.append(statements.Conditional(pos, condition, then_block))
+			conditionals.append(statements.Conditional(pos, condition, then_body))
 			pos = self.pos
 		# else block
 		if keyword is kw.ELSE:
@@ -291,9 +294,9 @@ class Parser(BaseParser):
 			final = self.analyze_expression()
 		# statement block
 		self.hardskip(kw.DO)
-		block = self.analyze_statement_block()
+		body = self.analyze_statement_list()
 		self.hardskip(kw.END_FOR)
-		return statements.For(kwpos, counter, initial, final, block)
+		return statements.For(kwpos, counter, initial, final, body)
 
 	@opening_keyword(kw.WHILE)
 	def analyze_while(self, kwpos):
@@ -302,9 +305,9 @@ class Parser(BaseParser):
 			condition = self.analyze_expression()
 		# statement block
 		self.hardskip(kw.DO)
-		block = self.analyze_statement_block()
+		body = self.analyze_statement_list()
 		self.hardskip(kw.END_WHILE)
-		return statements.While(kwpos, condition, block)
+		return statements.While(kwpos, condition, body)
 
 	def analyze_expression(self, root=True):
 		lhs = self.analyze_primary_expression()

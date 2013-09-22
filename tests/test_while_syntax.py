@@ -9,7 +9,7 @@ class TestWhileSyntax(LDATestCase):
 		stmt = self.analyze(cls=While,
 				program="tantque toto.gentil faire bisou(toto) ftant")
 		self.assertIsInstance(stmt.condition, expression.Expression)
-		self.assertIsInstance(stmt.block, StatementBlock)
+		self.assertIsInstance(stmt.body, list)
 	
 	def test_while_alternative_keywords(self):
 		self.analyze(cls=While,

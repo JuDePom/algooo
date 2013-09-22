@@ -8,14 +8,14 @@ class TestIfSyntax(LDATestCase):
 		stmt = self.analyze(cls=If,
 				program="si toto.gentil alors bisou(toto) fsi")
 		self.assertIsInstance(stmt.conditionals[0].condition, MemberSelect)
-		self.assertIsInstance(stmt.conditionals[0].block, StatementBlock)
+		self.assertIsInstance(stmt.conditionals[0].body, list)
 		self.assertIsNone(stmt.else_block)
 
 	def test_if_then_else(self):
 		stmt = self.analyze(cls=If,
 				program="si toto.gentil alors bisou(toto) sinon fessée(toto) fsi")
 		self.assertIsInstance(stmt.conditionals[0].condition, MemberSelect)
-		self.assertIsInstance(stmt.conditionals[0].block, StatementBlock)
+		self.assertIsInstance(stmt.conditionals[0].body, list)
 		self.assertIsInstance(stmt.else_block, StatementBlock)
 
 	def test_nested_ifs_single_endif(self):

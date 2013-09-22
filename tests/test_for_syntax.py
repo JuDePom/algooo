@@ -12,7 +12,7 @@ class TestForSyntax(LDATestCase):
 		self.assertIsInstance(stmt.counter, expression.ExpressionIdentifier)
 		self.assertIsInstance(stmt.initial, expression.LiteralInteger)
 		self.assertIsInstance(stmt.final, expression.LiteralInteger)
-		self.assertIsInstance(stmt.block, StatementBlock)
+		self.assertIsInstance(stmt.body, list)
 
 	def test_for_with_array_element_counter(self):
 		stmt = self.analyze(cls=For,

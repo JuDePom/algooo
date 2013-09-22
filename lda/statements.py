@@ -50,21 +50,20 @@ class StatementBlock:
 		for statement in self:
 			statement.check(context, logger)
 
-class Conditional:
+class Conditional(StatementBlock):
 	"""
 	Statement containing a condition and a statement block. The statement
 	block is only executed if the condition is verified.
 	"""
 
-	def __init__(self, pos, condition, block):
-		self.pos = pos
-		self.condition  = condition
-		self.block = block
+	def __init__(self, pos, condition, body):
+		super().__init__(pos, body)
+		self.condition = condition
 
 	def check(self, context, logger):
 		self.condition.check(context, logger)
 		semantictools.enforce("la condition", types.BOOLEAN, self.condition, logger)
-		self.block.check(context, logger)
+		super().check(context, logger)
 
 
 #######################################################################
@@ -74,6 +73,8 @@ class Conditional:
 #######################################################################
 
 class Assignment:
+	returns = False
+
 	def __init__(self, pos, lhs, rhs):
 		self.pos = pos
 		self.lhs = lhs
@@ -192,7 +193,7 @@ class If:
 		intro = kw.IF
 		for conditional in self.conditionals:
 			pp.putline(intro, " ", conditional.condition, " ", kw.THEN)
-			pp.indented(pp.putline, conditional.block)
+			pp.indented(pp.putline, conditional)
 			intro = kw.ELIF
 		if self.else_block:
 			pp.putline(kw.ELSE)
@@ -210,19 +211,18 @@ class If:
 			pp.indented(pp.putline, self.else_block)
 		pp.put("};")
 
-class For:
+class For(StatementBlock):
 	_COMPONENT_NAMES = [
 			"le compteur de la boucle",
 			"la valeur initiale du compteur",
 			"la valeur finale du compteur"
 	]
 
-	def __init__(self, pos, counter, initial, final, block):
-		self.pos = pos
+	def __init__(self, pos, counter, initial, final, body):
+		super().__init__(pos, body)
 		self.counter = counter
 		self.initial = initial
 		self.final = final
-		self.block = block
 
 	def check(self, context, logger):
 		components = [self.counter, self.initial, self.final]
@@ -233,47 +233,47 @@ class For:
 			logger.log(semantic.TypeError(self.counter.pos,
 					"le compteur doit être une variable",
 					self.counter.resolved_type))
-		self.block.check(context, logger)
+		super().check(context, logger)
 
 	def put_node(self, cluster):
 		counter_node = self.counter.put_node(cluster)
 		initial_node = self.initial.put_node(cluster)
 		final_node = self.final.put_node(cluster)
 		block_cluster = dot.Cluster("faire", cluster)
-		block_node = self.block.put_node(block_cluster)
+		block_node = super().put_node(block_cluster)
 		return dot.Node("pour", cluster, counter_node, initial_node,
 				final_node, block_node)
 
 	def lda(self, pp):
 		pp.putline(kw.FOR, " ", self.counter, " ", kw.FROM, " ", self.initial,
 				" ", kw.TO, " ", self.final, " ", kw.DO)
-		if self.block:
-			pp.indented(pp.putline, self.block)
+		if self.body:
+			pp.indented(pp.putline, super())
 		pp.put(kw.END_FOR)
 
 	def js(self, pp):
 		pp.putline("for (", self.counter, " = ", self.initial,
 				"; ", self.counter, " <= ", self.final, "; ", self.counter, "++) {")
-		if self.block:
-			pp.indented(pp.putline, self.block)
+		if self.body:
+			pp.indented(pp.putline, super())
 		pp.put("};")
 
 class While(Conditional):
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)
 		block_cluster = dot.Cluster("faire", cluster)
-		block_node = self.block.put_node(block_cluster)
+		block_node = super().put_node(block_cluster)
 		return dot.Node("tantque", cluster, cond_node, block_node)
 
 	def lda(self, pp):
 		pp.putline(kw.WHILE, " ", self.condition, " ", kw.DO)
-		if self.block:
-			pp.indented(pp.putline, self.block)
+		if self.body:
+			pp.indented(pp.putline, super())
 		pp.put(kw.END_WHILE)
 
 	def js(self, pp):
 		pp.putline("while (", self.condition, ") {")
-		if self.block:
-			pp.indented(pp.putline, self.block)
+		if self.body:
+			pp.indented(pp.putline, super())
 		pp.put("};")
 
