@@ -148,6 +148,12 @@ class Return:
 
 
 class FunctionCallWrapper:
+	"""
+	Wrapper for a FunctionCall as a standalone statement.
+
+	FunctionCall operators that are not the root of an expression must not use
+	this class.
+	"""
 	returns = False
 
 	def __init__(self, call_op):
