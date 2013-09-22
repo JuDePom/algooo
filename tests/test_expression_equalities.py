@@ -1,7 +1,7 @@
 from . import ldatestcase
 from lda import expression, position
 from lda import operators as ops
-from lda.symbols import Identifier
+from lda.identifier import PureIdentifier
 
 class TestExpressionEqualities(ldatestcase.LDATestCase):
 	def test_literal_integer_equality(self):
@@ -48,17 +48,17 @@ class TestExpressionEqualities(ldatestcase.LDATestCase):
 		self.assertNotEqual(plus1234[0], minus1234)
 	
 	def test_identifier_equalities(self):
-		identa1 = Identifier(position.Position('toto', 2, 3, 4), "a")
-		identa2 = Identifier(position.Position('toto', 5, 6, 7), "a")
-		identb = Identifier(position.Position('toto', 2, 3, 4), "b")
+		identa1 = PureIdentifier(position.Position('toto', 2, 3, 4), "a")
+		identa2 = PureIdentifier(position.Position('toto', 5, 6, 7), "a")
+		identb = PureIdentifier(position.Position('toto', 2, 3, 4), "b")
 		self.assertEqual(identa1, identa1)
 		self.assertEqual(identa1, identa2)
 		self.assertNotEqual(identa1, identb)
 	
 	def test_logical_not_equalities(self):
-		identa1 = Identifier(position.Position('toto', 2, 3, 4), "a")
-		identa2 = Identifier(position.Position('toto', 5, 6, 7), "a")
-		identb = Identifier(position.Position('toto', 2, 3, 4), "b")
+		identa1 = PureIdentifier(position.Position('toto', 2, 3, 4), "a")
+		identa2 = PureIdentifier(position.Position('toto', 5, 6, 7), "a")
+		identb = PureIdentifier(position.Position('toto', 2, 3, 4), "b")
 		not1 = ops.LogicalNot(None, identa1)
 		not2 = ops.LogicalNot(None, identa2)
 		not3 = ops.LogicalNot(None, identb)

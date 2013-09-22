@@ -8,7 +8,8 @@ The built-in functions are 'magical' in that none of them contain any
 statements, and some of them cannot be implemented in pure LDA.
 """
 
-from .types import VOID
+from . import types
+from .errors import semantic
 
 class MagicalFunction:
 	"""
@@ -57,11 +58,18 @@ class MagicalFunction:
 		pp.join(call_op.rhs, pp.put, ", ")
 		pp.put(")")
 
-def anything_goes(context, logger, pos, args):
-	"""Pass-through param checker."""
-	pass
+def pass_through(context, logger, pos, args):
+	"""
+	Allow all parameters except VOID and BlackHole types.
+	"""
+	for arg in args:
+		if isinstance(arg.resolved_type, types.BlackHole) or \
+				arg.resolved_type is types.VOID:
+			logger.log(semantic.TypeError(arg.pos,
+					"cet argument ne peut pas être passé comme paramètre",
+					arg.resolved_type))
 
-PRINT = MagicalFunction(VOID, anything_goes, "console.log")
+PRINT = MagicalFunction(types.VOID, pass_through, "console.log")
 
 SYMBOLS = {
 		"écrire": PRINT,

@@ -5,11 +5,11 @@ from lda.module import Module
 class TestFunctionCallSemantics(LDATestCase):
 	def test_wrong_effective_parameter_count_1_instead_of_0(self):
 		self.assertLDAError(semantic.ParameterCountMismatch, self.check, cls=Module,
-			program='fonction f0() lexique début f0(**)(1) fin')
+			program='fonction f0() lexique début (**)f0(1) fin')
 
 	def test_wrong_effective_parameter_count_0_instead_of_1(self):
 		self.assertLDAError(semantic.ParameterCountMismatch, self.check, cls=Module,
-			program='fonction f1(a:entier) lexique a:entier début f1(**)() fin')
+			program='fonction f1(a:entier) lexique a:entier début (**)f1() fin')
 
 	def test_assignment_using_function_call_returning_wrong_type(self):
 		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Module,
@@ -93,14 +93,14 @@ class TestFunctionCallSemantics(LDATestCase):
 				lexique
 					a: entier
 				début
-					a(**)()
+					(**)a()
 				fin''')
 
 	def test_call_non_function_literal(self):
 		self.assertLDAError(semantic.NonCallable, self.check, cls=Module,
 				program='''algorithme
 				début
-					3(**)()
+					(**)3()
 				fin''')
 
 	def test_function_call_within_function_call(self):

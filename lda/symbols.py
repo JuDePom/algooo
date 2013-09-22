@@ -1,99 +1,17 @@
 from . import kw
 from . import dot
-from .types import ERRONEOUS, NOT_A_VARIABLE, Composite, Inout
+from . import semantictools
+from .types import Inout
 from .errors import semantic
 
-def hunt_duplicates(item_list, logger):
-	"""
-	Log DuplicateDeclaration for any item using a name already used by another
-	item in the list.
-	"""
-	seen = {}
-	for item in item_list:
-		name = item.ident.name
-		try:
-			pioneer = seen[name]
-			logger.log(semantic.DuplicateDeclaration(item.ident, pioneer.ident))
-		except KeyError:
-			seen[name] = item
-
-class Identifier:
-	"""
-	Name that refers to a symbol in the symbol table.
-	"""
-
-	def __init__(self, pos, name):
-		self.pos = pos
-		self.name = name
-
-	def __repr__(self):
-		return self.name
-
-	def __eq__(self, other):
-		return self.name == other.name
-
-	def __ne__(self, other):
-		return self.name != other.name
-
-	def lda(self, pp):
-		pp.put(self.name)
-
-	def js(self, pp):
-		pp.put("$" + self.name)
-
-	def put_node(self, cluster):
-		return dot.Node(self.name, cluster)
-
-	def check(self, context, logger):
-		# find corresponding symbol in the context's symbol table
-		try:
-			self.bound = context[self.name]
-		except KeyError:
-			logger.log(semantic.MissingDeclaration(self))
-			self.resolved_type = ERRONEOUS
-			self.writable = False
-			return
-		# steal the symbol's type
-		try:
-			self.resolved_type = self.bound.resolved_type
-		except AttributeError:
-			self.resolved_type = NOT_A_VARIABLE
-		# steal the symbol's writability
-		try:
-			self.writable = self.bound.writable
-		except AttributeError:
-			self.writable = False
-
-class TypeAlias(Identifier):
-	"""
-	Identifier that can only refer to a Composite.
-
-	It is bound to a Composite during the semantic analysis.
-	"""
-
-	def check(self, context, logger):
-		try:
-			symbol = context[self.name]
-		except KeyError:
-			logger.log(semantic.UnresolvableTypeAlias(self))
-			self.bound = ERRONEOUS
-			return
-		if isinstance(symbol, Composite):
-			self.bound = symbol
-		else:
-			logger.log(semantic.SpecificTypeExpected(self.pos,
-					"cet alias", Composite, type(symbol)))
-			self.bound = ERRONEOUS
-			return
-
-class Field:
+class VarDecl:
 	"""
 	Variable declaration. Has an identifier, a type_descriptor and a formal
 	flag (i.e. formal parameter).
 
 	Semantically, only formal variables may have the Inout type.
 
-	All fields are writable by default, i.e. they can legally occupy the
+	All variables are writable by default, i.e. they can legally occupy the
 	lefthand side of an assignment statement.
 	"""
 
@@ -114,11 +32,7 @@ class Field:
 		if not self.formal and isinstance(self.type_descriptor, Inout):
 			logger.log(semantic.SemanticError(self.ident.pos,
 					"\"inout\" n'est autorisé que dans un paramètre formel"))
-		self.type_descriptor.check(context, logger)
-		try:
-			self.resolved_type = self.type_descriptor.bound
-		except AttributeError:
-			self.resolved_type = self.type_descriptor
+		self.resolved_type = self.type_descriptor.resolve_type(context, logger)
 
 	def lda(self, pp):
 		pp.put(self.ident, kw.COLON, " ", self.type_descriptor)
@@ -157,7 +71,7 @@ class Lexicon:
 		"""
 		# Hunt duplicates. Note that all_items is sorted by declaration
 		# position, which is important to report errors correctly.
-		hunt_duplicates(self.all_items, logger)
+		semantictools.hunt_duplicates(self.all_items, logger)
 		# prevent overwriting existing names in context
 		for name in self.symbol_dict:
 			try:
@@ -171,7 +85,7 @@ class Lexicon:
 		context.update(self.symbol_dict)
 		# refine composites
 		for composite in self.composites:
-			composite.check(context, logger)
+			composite.resolve_type(context, logger)
 		# resolve function signatures before checking function bodies, so that the
 		# functions can call functions defined within this lexicon
 		for function in self.functions:

@@ -2,6 +2,7 @@ from . import kw
 from . import dot
 from . import symbols
 from . import types
+from . import semantictools
 from .errors import semantic
 from .statements import StatementBlock
 
@@ -85,10 +86,10 @@ class Algorithm:
 		self.body.check(context, logger)
 		context.pop()
 
-	def check_return_expression(self, logger, expression):
-		if expression is not None:
-			logger.log(semantic.SemanticError(expression.pos,
-				"un algorithme ne peut pas retourner une valeur"))
+	def check_return(self, logger, return_statement):
+		if return_statement.expression is not None:
+			logger.log(semantic.SemanticError(return_statement.expression.pos,
+					"un algorithme ne peut pas retourner une valeur"))
 
 class Function:
 	def __init__(self, pos, ident, fp_list, return_type, lexicon, body):
@@ -100,11 +101,7 @@ class Function:
 		self.body = body
 
 	def check_signature(self, context, logger):
-		self.return_type.check(context, logger)
-		try:
-			self.resolved_return_type = self.return_type.bound
-		except AttributeError:
-			self.resolved_return_type = self.return_type
+		self.resolved_return_type = self.return_type.resolve_type(context, logger)
 		for fp in self.fp_list:
 			fp.check(context, logger)
 
@@ -128,7 +125,7 @@ class Function:
 
 	def check(self, context, logger):
 		# hunt duplicates among formal parameters
-		symbols.hunt_duplicates(self.fp_list, logger)
+		semantictools.hunt_duplicates(self.fp_list, logger)
 		# check formal parameter counterparts in lexicon
 		self.check_fp_lexicon(logger)
 		context.push(self)
@@ -149,12 +146,19 @@ class Function:
 			return
 		# check effective parameter types
 		for effective, formal in zip(params, self.fp_list):
-			types.enforce_compatible("ce paramètre effectif",
+			semantictools.enforce_compatible("ce paramètre effectif",
 					formal.resolved_type, effective, logger)
 
-	def check_return_expression(self, logger, expression):
-		types.enforce_compatible("l'expression retournée",
-				self.resolved_return_type, expression, logger)
+	def check_return(self, logger, return_statement):
+		if return_statement.expression is not None:
+			semantictools.enforce_compatible("l'expression retournée",
+					self.resolved_return_type, return_statement.expression, logger)
+		elif self.return_type is not types.VOID:
+			logger.log(semantic.TypeError(return_statement.pos,
+					"cette instruction 'retourne' ne renvoit rien alors que la "
+					"fonction est censée renvoyer une valeur de type {}".format(
+					self.return_type),
+					self.return_type))
 
 	def put_node(self, cluster):
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)

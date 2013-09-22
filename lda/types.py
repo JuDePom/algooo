@@ -1,51 +1,9 @@
 from .errors import semantic, handler
 from . import kw
+from . import prettyprinter
+from . import semantictools
+from .identifier import PureIdentifier
 from types import MethodType
-
-#######################################################################
-#
-# UTILITY FUNCTIONS
-#
-#######################################################################
-
-def _enforce(name, expected_type, typed_object, logger, cmpfunc):
-	if typed_object is None:
-		given_type = VOID
-	else:
-		given_type = typed_object.resolved_type
-	if cmpfunc(given_type):
-		return True
-	else:
-		logger.log(semantic.SpecificTypeExpected(
-			typed_object.pos,
-			name,
-			expected = expected_type,
-			given = given_type))
-		return False
-
-def enforce(name, expected_type, typed_object, logger):
-	"""
-	Ensure the expected type is *equal* to an object's resolved_type.
-	Log SpecificTypeExpected if the type does not conform.
-	:param expected_type: type the object's resolved type must be equal to
-	:param typed_object: object whose resolved_type member will be tested against
-			expected_type
-	:param logger: semantic error logger
-	"""
-	return _enforce(name, expected_type, typed_object, logger,
-			expected_type.__eq__)
-
-def enforce_compatible(name, expected_type, typed_object, logger):
-	"""
-	Ensure the expected type is *compatible with* an object's resolved_type.
-	Log SpecificTypeExpected if the type does not conform.
-	:param expected_type: type the object's resolved type must be equal to
-	:param typed_object: object whose resolved_type member will be tested against
-			expected_type
-	:param logger: semantic error logger
-	"""
-	return _enforce(name, expected_type, typed_object, logger,
-			expected_type.compatible)
 
 #######################################################################
 #
@@ -66,6 +24,9 @@ class TypeDescriptor:
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
+
+	def resolve_type(self, context, logger):
+		raise NotImplementedError
 
 	def equivalent(self, other):
 		"""
@@ -111,12 +72,27 @@ class BlackHole(TypeDescriptor):
 	def __repr__(self):
 		return self.human_name
 
+	def resolve_type(self, context, logger):
+		return self
 
+
+"""
+The ERRONEOUS black hole type is used whenever an identifier does not refer to
+any existing symbol in the symbol table.
+"""
 ERRONEOUS = BlackHole("<type erronné>")
-ERRONEOUS.relevant = False
+ERRONEOUS.relevant_in_semantic_errors = False
 
+"""
+The NOT_A_VARIABLE black hole type is used whenever an identifier resolves to a
+non-variable (anything that is not a VarDecl, such as a function name or a
+composite name) in a context where a VarDecl was expected.
+
+For example, in an expression, it is forbidden to perform arithmetic on a
+function name without calling it; in that case, the ExpressionIdentifier
+representing the function's name will resolve to a NOT_A_VARIABLE type.
+"""
 NOT_A_VARIABLE = BlackHole("<pas une variable>")
-NOT_A_VARIABLE.relevant = True
 
 
 #######################################################################
@@ -148,8 +124,8 @@ class Scalar(TypeDescriptor):
 	def __eq__(self, other):
 		return self is other
 
-	def check(self, context, logger):
-		pass
+	def resolve_type(self, context, logger):
+		return self
 
 	def lda(self, pp):
 		pp.put(str(self.keyword))
@@ -178,7 +154,7 @@ _dual_scalar_compatibility(weak=CHARACTER, strong=STRING)
 
 #######################################################################
 #
-# INOUT WRAPPER
+# TYPES THAT NEED TO BE RESOLVED
 #
 #######################################################################
 
@@ -197,8 +173,9 @@ class Inout(TypeDescriptor):
 	def __eq__(self, other):
 		return isinstance(other, Inout) and self.core.__eq__(other.core)
 
-	def check(self, context, logger):
-		self.core.check(context, logger)
+	def resolve_type(self, context, logger):
+		self.resolved_core = self.core.resolve_type(context, logger)
+		return self.resolved_core
 
 	def equivalent(self, other):
 		if isinstance(other, Inout):
@@ -213,11 +190,29 @@ class Inout(TypeDescriptor):
 			return self.core.compatible(other)
 
 
-#######################################################################
-#
-# ARRAY TYPE
-#
-#######################################################################
+class TypeAlias(PureIdentifier, TypeDescriptor):
+	"""
+	Identifier that can only refer to a Composite.
+
+	It is bound to a Composite during the semantic analysis.
+	"""
+
+	def resolve_type(self, context, logger):
+		try:
+			symbol = context[self.name]
+		except KeyError:
+			logger.log(semantic.UnresolvableTypeAlias(self))
+			self.bound = ERRONEOUS
+			return ERRONEOUS
+		if isinstance(symbol, Composite):
+			self.bound = symbol
+			return self.bound
+		else:
+			logger.log(semantic.SpecificTypeExpected(self.pos,
+					"cet alias", Composite, type(symbol)))
+			self.bound = ERRONEOUS
+			return ERRONEOUS
+
 
 class Array(TypeDescriptor):
 	"""
@@ -238,7 +233,15 @@ class Array(TypeDescriptor):
 			return self is other or (isinstance(other, Array.StaticDimension) and \
 					self.expression == other.expression)
 
-		def check(self, context, logger):
+		def check(self, logger):
+			"""
+			Perform a semantic analysis on the dimension and return True if it
+			succeeded.
+
+			Note that no context is passed to this method. This is because the
+			expression making up the dimension may not look up variables, since
+			it must be evaluable at compile time.
+			"""
 			# Don't let the expression look up variables.
 			# It has to be evaluable at compile time.
 			try:
@@ -247,12 +250,16 @@ class Array(TypeDescriptor):
 				logger.log(semantic.SemanticError(e.pos,
 						"une borne de tableau statique doit être construite à partir "
 						"d'une expression constante"))
+				return False
 			if self.expression.resolved_type is not RANGE:
-				logger.log(semantic.SemanticError(self.expression.pos,
+				logger.log(semantic.TypeError(self.expression.pos,
 						"les bornes d'un tableau statique doivent être données "
-						"sous forme d'intervalle d'entiers littéraux"))
+						"sous forme d'intervalle d'entiers littéraux",
+						self.expression.resolved_type))
+				return False
 			self.low  = self.expression.lhs
 			self.high = self.expression.rhs
+			return True
 
 		def lda(self, pp):
 			pp.put(self.expression)
@@ -268,8 +275,12 @@ class Array(TypeDescriptor):
 		def __eq__(self, other):
 			return isinstance(other, Array.DynamicDimension)
 
-		def check(self, context, logger):
-			pass
+		def check(self, logger):
+			"""
+			Perform a semantic analysis on the dimension and return True if it
+			succeeded.
+			"""
+			return True
 
 		def lda(self, pp):
 			pp.put(kw.QUESTION_MARK)
@@ -287,13 +298,22 @@ class Array(TypeDescriptor):
 			return False
 		return self.dimensions == other.dimensions
 
-	def check(self, context, logger):
+	def __repr__(self):
+		pp = prettyprinter.LDAPrettyPrinter()
+		self.lda(pp)
+		return str(pp)
+
+	def resolve_type(self, context, logger):
+		erroneous = False
 		if len(self.dimensions) == 0:
 			logger.log(semantic.SemanticError(self.pos,
 					"un tableau doit avoir au moins une dimension"))
+			erroneous = True
 		for dim in self.dimensions:
-			dim.check(context, logger)
-		self.element_type.check(context, logger)
+			if not dim.check(logger):
+				erroneous = True
+		self.resolved_element_type = self.element_type.resolve_type(context, logger)
+		return ERRONEOUS if erroneous else self
 
 	def lda(self, pp):
 		pp.put(kw.ARRAY, " ", self.element_type, kw.LSBRACK)
@@ -307,15 +327,11 @@ class Array(TypeDescriptor):
 			return
 		if len(self.dimensions) != len(other.dimensions):
 			return
-		# TODO est-ce qu'on s'occupe des intervalles ?
+		for my_dim, their_dim in zip(self.dimensions, other.dimensions):
+			if my_dim != their_dim:
+				return
 		return self
 
-
-#######################################################################
-#
-# COMPOSITE TYPE
-#
-#######################################################################
 
 class Composite(TypeDescriptor):
 	"""
@@ -323,22 +339,22 @@ class Composite(TypeDescriptor):
 	composite type) and a list of member fields.
 	"""
 
-	def __init__(self, ident, field_list):
+	def __init__(self, ident, fields):
 		super().__init__()
 		self.ident = ident
-		self.field_list = field_list
+		self.fields = fields
 
 	def __eq__(self, other):
 		if self is other:
 			return True
 		if not isinstance(other, Composite):
 			return False
-		return self.ident == other.ident and self.field_list == other.field_list
+		return self.ident == other.ident and self.fields == other.fields
 
 	def __repr__(self):
 		return "composite \"{}\"".format(self.ident)
 
-	def check(self, supercontext, logger):
+	def resolve_type(self, supercontext, logger):
 		"""
 		Creates self.context: a mini-symbol table associating field name
 		strings the fields themselves.
@@ -346,12 +362,11 @@ class Composite(TypeDescriptor):
 		Also hunts down duplicate field names.
 		"""
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
-		# TODO very ugly import
-		from lda.symbols import hunt_duplicates
-		hunt_duplicates(self.field_list, logger)
-		self.context = {field.ident.name: field for field in self.field_list}
-		for field in self.field_list:
+		semantictools.hunt_duplicates(self.fields, logger)
+		self.context = {field.ident.name: field for field in self.fields}
+		for field in self.fields:
 			field.check(supercontext, logger)
+		return self
 
 	def detect_loops(self, composite, logger):
 		"""
@@ -362,7 +377,7 @@ class Composite(TypeDescriptor):
 		its children, grandchildren...) refers to the composite type passed to
 		this method.
 		"""
-		for field in self.field_list:
+		for field in self.fields:
 			if field.resolved_type is composite:
 				logger.log(semantic.RecursiveDeclaration(field.ident.pos))
 			try:
@@ -372,12 +387,12 @@ class Composite(TypeDescriptor):
 
 	def lda(self, pp):
 		pp.put(self.ident, " ", kw.EQ, " ", kw.LT)
-		pp.join(self.field_list, pp.put, ", ")
+		pp.join(self.fields, pp.put, ", ")
 		pp.put(kw.GT)
 
 	def js(self, pp):
 		pp.putline("var ", self.ident, " = {")
-		for field in self.field_list:
+		for field in self.fields:
 			pp.indented(pp.putline, field.ident, ",")
 		pp.put("};")
 
