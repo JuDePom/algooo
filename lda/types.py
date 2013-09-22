@@ -227,6 +227,7 @@ class Array(TypeDescriptor):
 		"""
 
 		def __init__(self, expression):
+			self.pos = expression.pos
 			self.expression = expression
 
 		def __eq__(self, other):
@@ -304,15 +305,35 @@ class Array(TypeDescriptor):
 		return str(pp)
 
 	def resolve_type(self, context, logger):
+		"""
+		Perform a semantic analysis on the dimensions and the element type. Set
+		the `resolved_element_type` attribute and the `dynamic` and `static`
+		boolean attributes.
+		"""
+		# Innocent until proven guilty.
 		erroneous = False
+		# Check dimensions.
 		if len(self.dimensions) == 0:
 			logger.log(semantic.SemanticError(self.pos,
 					"un tableau doit avoir au moins une dimension"))
 			erroneous = True
-		for dim in self.dimensions:
-			if not dim.check(logger):
-				erroneous = True
+		else:
+			dim0_type = type(self.dimensions[0])
+			self.dynamic = dim0_type is Array.DynamicDimension
+			self.static = not self.dynamic
+			for dim in self.dimensions:
+				# Semantic analysis of the dimension.
+				if not dim.check(logger):
+					erroneous = True
+				# Ensure we don't have a mix of static and dynamic dimensions.
+				if type(dim) is not dim0_type:
+					logger.log(semantic.SemanticError(dim.pos,
+							"un tableau doit être complètement statique ou "
+							"complètement dynamique"))
+					erroneous = True
+		# Resolve element type.
 		self.resolved_element_type = self.element_type.resolve_type(context, logger)
+		# If an error occured during this method, the entire type is erroneous.
 		return ERRONEOUS if erroneous else self
 
 	def lda(self, pp):

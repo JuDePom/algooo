@@ -48,3 +48,9 @@ class TestArraySemantics(LDATestCase):
 		self.assertLDAError(semantic.TypeError, self.check, cls=Array,
 				program="tableau entier[(**)'c']")
 	
+	def test_part_dynamic_part_static(self):
+		self.assertLDAError(semantic.SemanticError, self.check, cls=Array,
+				program="tableau entier[0..5, (**)?]")
+		self.assertLDAError(semantic.SemanticError, self.check, cls=Array,
+				program="tableau entier[?, 0(**)..5, ?, 0..3]")
+
