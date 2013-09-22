@@ -2,15 +2,15 @@
 Lexical and syntactic errors that can be raised during the parsing phase.
 '''
 
-class SyntaxError(Exception):
+from .error import LDAError
+
+class SyntaxError(LDAError):
 	'''
 	Raised when the parser encounters an LDA syntax error.
 	'''
 
 	def __init__(self, pos, message):
-		self.pos = pos
-		message = "{}: {}".format(pos, message)
-		super().__init__(message)
+		super().__init__(pos, message)
 
 class ExpectedItem(SyntaxError):
 	'''

@@ -2,7 +2,9 @@
 Semantic errors that can be raised during the semantic analysis phase.
 """
 
-class SemanticError(Exception):
+from .error import LDAError
+
+class SemanticError(LDAError):
 	"""
 	Raised when the semantic analysis on a given element fails.
 
@@ -17,9 +19,7 @@ class SemanticError(Exception):
 	ignore all errors that ensue.
 	"""
 	def __init__(self, pos, message):
-		self.pos = pos
-		message = "{}: {}".format(pos.pretty(), message)
-		super().__init__(message)
+		super().__init__(pos, message)
 		self.relevant = True
 
 class MissingDeclaration(SemanticError):
