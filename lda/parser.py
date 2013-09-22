@@ -86,12 +86,13 @@ class Parser(BaseParser):
 						"avez-vous pensé au mot-clé lexique ?")
 			raise e
 		body = self.analyze_statement_block()
+		end_pos = self.pos
 		self.hardskip(kw.END)
-		return lexicon, body
+		return lexicon, body, end_pos
 
 	@opening_keyword(kw.ALGORITHM)
 	def analyze_algorithm(self, kwpos):
-		lexicon, body = self.analyze_lexicon_and_body()
+		lexicon, body, _ = self.analyze_lexicon_and_body()
 		return module.Algorithm(kwpos, lexicon, body)
 
 	@opening_keyword(kw.FUNCTION)
@@ -108,8 +109,8 @@ class Parser(BaseParser):
 				return_type = self.analyze_type_descriptor()
 		else:
 			return_type = types.VOID
-		lexicon, body = self.analyze_lexicon_and_body()
-		return module.Function(kwpos, ident, params, return_type, lexicon, body)
+		lexicon, body, end_pos = self.analyze_lexicon_and_body()
+		return module.Function(kwpos, end_pos, ident, params, return_type, lexicon, body)
 
 	@opening_keyword(kw.ARRAY)
 	def analyze_array(self, kwpos):

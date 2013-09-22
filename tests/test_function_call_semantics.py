@@ -28,6 +28,7 @@ class TestFunctionCallSemantics(LDATestCase):
 					a: entier
 				début
 					a <- f()
+					retourne a
 				fin''')
 
 	def test_matching_return_type_composite(self):
@@ -39,6 +40,7 @@ class TestFunctionCallSemantics(LDATestCase):
 					m: Moule
 				début
 					m <- f()
+					retourne m
 				fin''')
 
 	def test_mismatching_return_type_composite_1(self):

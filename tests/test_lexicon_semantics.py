@@ -22,7 +22,7 @@ class TestLexiconSemantics(LDATestCase):
 		self.check(cls=Module, program='''\
 				lexique
 					Moule = <>
-				fonction f(): Moule lexique début fin''')
+				fonction f(): Moule lexique m: Moule début retourne m fin''')
 
 	def test_undefined_type_alias(self):
 		alg = self.analyze(cls=Algorithm,

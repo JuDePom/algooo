@@ -92,13 +92,14 @@ class Algorithm:
 					"un algorithme ne peut pas retourner une valeur"))
 
 class Function:
-	def __init__(self, pos, ident, fp_list, return_type, lexicon, body):
-		self.pos = pos
-		self.ident = ident
-		self.fp_list = fp_list
+	def __init__(self, pos, end_pos, ident, fp_list, return_type, lexicon, body):
+		self.pos         = pos
+		self.end_pos     = end_pos
+		self.ident       = ident
+		self.fp_list     = fp_list
 		self.return_type = return_type
-		self.lexicon = lexicon
-		self.body = body
+		self.lexicon     = lexicon
+		self.body        = body
 
 	def check_signature(self, context, logger):
 		self.resolved_return_type = self.return_type.resolve_type(context, logger)
@@ -134,6 +135,8 @@ class Function:
 			self.lexicon.check(context, logger)
 		# check statements
 		self.body.check(context, logger)
+		if self.return_type is not types.VOID and not self.body.returns:
+			logger.log(semantic.MissingReturnStatement(self.end_pos))
 		context.pop()
 
 	def check_effective_parameters(self, context, logger, pos, params):

@@ -155,3 +155,7 @@ class UnreachableStatement(SemanticError):
 	def __init__(self, pos):
 		super().__init__(pos, "instruction jamais atteinte")
 
+class MissingReturnStatement(SemanticError):
+	def __init__(self, pos):
+		super().__init__(pos, "il manque une instruction retourne dans "
+				"cette fonction")

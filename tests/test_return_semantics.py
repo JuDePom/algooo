@@ -50,3 +50,8 @@ class TestReturnSemantics(LDATestCase):
 					(**)retourne
 				fin""")
 
+	def test_missing_return_in_function_returning_integer(self):
+		self.assertLDAError(semantic.MissingReturnStatement, self.check, program="""\
+				fonction f(): entier
+				début (**)fin""")
+
