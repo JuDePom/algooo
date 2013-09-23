@@ -183,9 +183,8 @@ class Function:
 		
 	def js(self, pp):
 		pp.put("function ", self.ident, "(")
-		pp.join(self.fp_list, pp.put, ", ")
-		pp.put(") {")
-		pp.newline()
+		pp.join((item.ident for item in self.fp_list), pp.put, ", ")
+		pp.putline(") {")
 		if self.lexicon:
 			pp.putline(self.lexicon)
 		if self.body:
