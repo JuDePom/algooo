@@ -38,7 +38,8 @@ class VarDecl:
 		pp.put(self.ident, kw.COLON, " ", self.type_descriptor)
 
 	def js(self, pp):
-		pp.put("var ", self.ident, ";")
+		if not self.formal:
+			self.resolved_type.js_declare(pp, self)
 
 class Lexicon:
 	"""

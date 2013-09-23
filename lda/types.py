@@ -46,6 +46,15 @@ class TypeDescriptor:
 		"""
 		return self.__eq__(other.equivalent(self))
 
+	def js_declare(self, pp, var):
+		"""
+		Generate a JavaScript declaration of a variable whose resolved_type is
+		this LDA type descriptor.
+
+		`var` is a VarDecl instance representing the variable being declared.
+		"""
+		raise NotImplementedError
+
 
 #######################################################################
 #
@@ -129,6 +138,9 @@ class Scalar(TypeDescriptor):
 
 	def lda(self, pp):
 		pp.put(str(self.keyword))
+
+	def js_declare(self, pp, var):
+		pp.put("var ", var.ident, ";")
 
 def _dual_scalar_compatibility(weak, strong):
 	def weak_equivalent(self, other):
