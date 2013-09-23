@@ -74,7 +74,7 @@ class Algorithm:
 	def js(self, pp):
 		pp.putline("function Main() {")
 		if self.lexicon:
-			pp.putline(self.lexicon)
+			pp.indented(pp.putline, self.lexicon)
 		if self.body:
 			pp.indented(pp.putline, self.body)
 		pp.put("}")
@@ -186,7 +186,7 @@ class Function:
 		pp.join((item.ident for item in self.fp_list), pp.put, ", ")
 		pp.putline(") {")
 		if self.lexicon:
-			pp.putline(self.lexicon)
+			pp.indented(pp.putline, self.lexicon)
 		if self.body:
 			pp.indented(pp.putline, self.body)
 		pp.put("}")

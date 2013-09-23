@@ -116,5 +116,5 @@ class Lexicon:
 	def js(self, pp):
 		if not self:
 			return
-		pp.indented(pp.join, self.composites + self.variables, pp.newline)
+		pp.join((self.composites + self.variables), pp.newline)
 
