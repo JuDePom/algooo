@@ -109,7 +109,12 @@ class Assignment:
 		pp.put(self.lhs, " ", kw.ASSIGN, " ", self.rhs)
 
 	def js(self, pp):
-		pp.put(self.lhs, " = ", self.rhs, ";")
+		try:
+			# Try using LHS's JS export method specific to assignments
+			self.lhs.js_assign_lhs(pp, self)
+		except AttributeError:
+			# Fall back to standard JS assignment statement
+			pp.put(self.lhs, " = ", self.rhs, ";")
 
 
 class Return:

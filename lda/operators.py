@@ -278,6 +278,27 @@ class ArraySubscript(BinaryEncompassingOp):
 			semantictools.enforce("cet indice de tableau", types.INTEGER, index, logger)
 		self.resolved_type = array.resolved_element_type
 
+	def js_indices(self, pp):
+		"""
+		Generate a JavaScript translation of the array indices.
+		"""
+		pp.put("[")
+		pp.join(self.rhs, pp.put, ",")
+		pp.put("]")
+
+	# JS getter
+	def js(self, pp):
+		pp.put(self.lhs, ".get(")
+		self.js_indices(pp)
+		pp.put(")")
+
+	# JS setter
+	def js_assign_lhs(self, pp, assignment):
+		pp.put(self.lhs, ".set(")
+		self.js_indices(pp)
+		pp.put(", ", assignment.rhs, ");")
+
+
 class FunctionCall(BinaryEncompassingOp):
 	"""
 	Function call operator.

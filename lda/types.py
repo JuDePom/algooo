@@ -353,6 +353,24 @@ class Array(TypeDescriptor):
 		pp.join(self.dimensions, pp.put, ", ")
 		pp.put(kw.RSBRACK)
 
+	def js_declare(self, pp, var):
+		# The JS runtime implementation requires LDA arrays to be LDA.Array
+		# "objects". We can make such an object right away if the array is
+		# static. Otherwise we'll have to wait until the user calls the array
+		# allocation builtin function.
+		pp.put("var ", var.ident, " = ")
+		if self.static:
+			pp.put("new LDA.Array([")
+			prefix = ""
+			for dim in self.dimensions:
+				pp.put(prefix, "[", dim.low, ", ", dim.high, "]")
+				prefix = ", "
+			pp.put("])")
+		else:
+			# nothing to do for now
+			raise NotImplementedError("implement builtin array allocation function!")
+		pp.put(";")
+
 	def equivalent(self, other):
 		if not isinstance(other, Array):
 			return
