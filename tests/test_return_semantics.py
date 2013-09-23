@@ -42,3 +42,11 @@ class TestReturnSemantics(LDATestCase):
 				début
 					retourne
 				fin""")
+
+	def test_return_nothing_in_function_returning_integer(self):
+		self.assertLDAError(semantic.TypeError, self.check, program="""\
+				fonction f(): entier
+				début
+					(**)retourne
+				fin""")
+

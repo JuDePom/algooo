@@ -3,6 +3,32 @@ from .errors import semantic
 from . import types
 from . import dot
 from . import kw
+from . import semantictools
+
+#######################################################################
+#
+# HELPER CLASSES
+#
+#######################################################################
+
+class NakedOperator:
+	"""
+	Container for a position and an operator class.
+
+	Meant for temporary use by the parser during the parsing of an operator.
+	When the parser has finished parsing all components of an operator, i.e.
+	the operator token and its operands, it should call build() to create a
+	proper operator object.
+
+	Instances of NakedOperator must not be placed into the AST!
+	"""
+
+	def __init__(self, pos, cls):
+		self.pos = pos
+		self.cls = cls
+
+	def build(self, *args, **kwargs):
+		return self.cls(self.pos, *args, **kwargs)
 
 #######################################################################
 #
@@ -11,9 +37,21 @@ from . import kw
 #######################################################################
 
 class UnaryOp(Expression):
-	right_ass = True
+	"""
+	Unary operator.
 
-	def __init__(self, pos, rhs=None):
+	Right-associative, non-writable, and compound by default (these properties
+	can be overridden). See Expression's docstring for info about writable and
+	compound.
+
+	Has a righthand-side operand only.
+	"""
+
+	writable = False # can be overridden
+	right_ass = True
+	compound = True
+
+	def __init__(self, pos, rhs):
 		super().__init__(pos)
 		self.rhs = rhs
 
@@ -38,9 +76,21 @@ class UnaryOp(Expression):
 		raise NotImplementedError
 
 class BinaryOp(Expression):
-	right_ass = False
+	"""
+	Binary operator.
 
-	def __init__(self, pos, lhs=None, rhs=None):
+	Left-associative, non-writable, and compound by default (these properties
+	can be overridden). See Expression's docstring for info about writable and
+	compound.
+
+	Has a lefthand-side operand and a righthand-side operand.
+	"""
+
+	writable = False # can be overridden
+	right_ass = False
+	compound = True
+
+	def __init__(self, pos, lhs, rhs):
 		super().__init__(pos)
 		self.lhs = lhs
 		self.rhs = rhs
@@ -50,9 +100,10 @@ class BinaryOp(Expression):
 				self.lhs == other.lhs and \
 				self.rhs == other.rhs
 
-	def part_of_rhs(self, whose):
-		return self.precedence > whose.precedence or \
-			(self.right_ass and self.precedence == whose.precedence)
+	@classmethod
+	def part_of_rhs(cls, whose):
+		return cls.precedence > whose.precedence or \
+			(cls.right_ass and cls.precedence == whose.precedence)
 
 	def put_node(self, cluster):
 		op_node = dot.Node(self.keyword_def.default_spelling,
@@ -87,9 +138,9 @@ class UnaryNumberOp(UnaryOp):
 		self.rhs.check(context, logger)
 		rtype = self.rhs.resolved_type
 		if rtype not in (types.INTEGER, types.REAL):
-			# TODO peut-être que SpecificTypeExpected est plus adapté ici ?
-			logger.log(semantic.SemanticError(self.pos, "cet opérateur unaire "
-					"ne peut être appliqué qu'à un nombre entier ou réel"))
+			logger.log(semantic.TypeError(self.pos, "cet opérateur unaire "
+					"ne peut être appliqué qu'à un nombre entier ou réel",
+					rtype))
 			self.resolved_type = types.ERRONEOUS
 		else:
 			self.resolved_type = rtype
@@ -152,7 +203,7 @@ class BinaryLogicalOp(BinaryOp):
 	def check(self, context, logger):
 		for side in (self.lhs, self.rhs):
 			side.check(context, logger)
-			types.enforce("cet opérande", types.BOOLEAN, side, logger)
+			semantictools.enforce("cet opérande", types.BOOLEAN, side, logger)
 
 class BinaryEncompassingOp(BinaryOp):
 	"""
@@ -201,9 +252,9 @@ class ArraySubscript(BinaryEncompassingOp):
 	Unlike most expressions, this operator is *writable*.
 	"""
 
-	writable = True
 	keyword_def = kw.LSBRACK
 	closing = kw.RSBRACK
+	writable = True
 
 	def check(self, context, logger):
 		# guilty until proven innocent
@@ -224,8 +275,8 @@ class ArraySubscript(BinaryEncompassingOp):
 		# check indices in arglist
 		for index in self.rhs:
 			index.check(context, logger)
-			types.enforce("cet indice de tableau", types.INTEGER, index, logger)
-		self.resolved_type = array.element_type.resolved_type
+			semantictools.enforce("cet indice de tableau", types.INTEGER, index, logger)
+		self.resolved_type = array.resolved_element_type
 
 class FunctionCall(BinaryEncompassingOp):
 	"""
@@ -238,6 +289,11 @@ class FunctionCall(BinaryEncompassingOp):
 
 	keyword_def = kw.LPAREN
 	closing = kw.RPAREN
+
+	def __init__(self, pos, lhs, rhs):
+		# Report position as lhs's position (makes for more understandable
+		# errors instead of reporting the opening parenthesis's position)
+		super().__init__(lhs.pos, lhs, rhs)
 
 	def check(self, context, logger):
 		self.lhs.check(context, logger)
@@ -266,8 +322,8 @@ class MemberSelect(BinaryOp):
 	Unlike most expressions, this operator is *writable*.
 	"""
 
-	writable = True
 	keyword_def = kw.DOT
+	writable = True
 
 	def check(self, context, logger):
 		# LHS is supposed to refer to a TypeAlias, which refers to a composite
@@ -331,7 +387,7 @@ class IntegerRange(BinaryOp):
 	def check(self, context, logger):
 		for operand in (self.lhs, self.rhs):
 			operand.check(context, logger)
-			types.enforce("une borne d'intervalle", types.INTEGER, operand, logger)
+			semantictools.enforce("une borne d'intervalle", types.INTEGER, operand, logger)
 
 	def js(self, pp):
 		raise NotImplementedError

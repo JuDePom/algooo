@@ -1,12 +1,12 @@
 from . import kw
 from . import dot
-from . import expression
 from . import types
+from . import semantictools
 from .errors import semantic
 
 #######################################################################
 #
-# HELPER CLASSES
+# STATEMENT-RELATED CLASSES
 #
 #######################################################################
 
@@ -47,24 +47,33 @@ class StatementBlock:
 		pp.join(self.body, pp.newline)
 
 	def check(self, context, logger):
+		"""
+		Check all child statements and set the `returns` attribute if one of
+		them returns.
+		"""
+		self.returns = False
+		warned = False
 		for statement in self:
 			statement.check(context, logger)
+			if self.returns and not warned:
+				logger.log(semantic.UnreachableStatement(statement.pos))
+				warned = True
+			self.returns |= statement.returns
 
-class Conditional:
+class Conditional(StatementBlock):
 	"""
 	Statement containing a condition and a statement block. The statement
 	block is only executed if the condition is verified.
 	"""
 
-	def __init__(self, pos, condition, block):
-		self.pos = pos
-		self.condition  = condition
-		self.block = block
+	def __init__(self, pos, condition, body):
+		super().__init__(pos, body)
+		self.condition = condition
 
 	def check(self, context, logger):
 		self.condition.check(context, logger)
-		types.enforce("la condition", types.BOOLEAN, self.condition, logger)
-		self.block.check(context, logger)
+		semantictools.enforce("la condition", types.BOOLEAN, self.condition, logger)
+		super().check(context, logger)
 
 
 #######################################################################
@@ -74,6 +83,8 @@ class Conditional:
 #######################################################################
 
 class Assignment:
+	returns = False
+
 	def __init__(self, pos, lhs, rhs):
 		self.pos = pos
 		self.lhs = lhs
@@ -84,7 +95,8 @@ class Assignment:
 		self.rhs.check(context, logger)
 		if not self.lhs.writable:
 			logger.log(semantic.TypeError(self.lhs.pos,
-					"l'opérande de gauche ne peut pas être affectée"))
+					"l'opérande de gauche ne peut pas être affectée",
+					self.lhs.resolved_type))
 			return
 		ltype = self.lhs.resolved_type
 		rtype = self.rhs.resolved_type
@@ -97,7 +109,7 @@ class Assignment:
 		pp.put(self.lhs, " ", kw.ASSIGN, " ", self.rhs)
 
 	def js(self, pp):
-		pp.put(self.lhs, " = ", self.rhs)
+		pp.put(self.lhs, " = ", self.rhs, ";")
 
 
 class Return:
@@ -107,25 +119,55 @@ class Return:
 	May own an expression or not, in which case self.expression is None.
 	"""
 
+	returns = True
+
 	def __init__(self, pos, expr):
 		self.pos = pos
 		self.expression = expr
 
 	def lda(self, pp):
-		pp.put(kw.RETURN, " ", self.expression)
+		pp.put(kw.RETURN)
+		if self.expression is not None:
+			pp.put(" ", self.expression)
 
 	def js(self, pp):
-		pp.put("return ", self.expression)
+		if self.expression is not None:
+			pp.put("return ", self.expression, ";")
+		else:
+			pp.put("return;")
 
 	def check(self, context, logger):
 		if self.expression is not None:
 			self.expression.check(context, logger)
 		# The return statement may only occur in a context owned by an algorithm
 		# or a function, so if the assertion below fails, we have a compiler bug.
-		assert hasattr(context.parent, "check_return_expression")
+		assert hasattr(context.parent, "check_return"), "please implement check_return()"
 		# Even if the expression is None, we still need to pass it on to the
 		# parent in order to decide whether an empty return value is OK.
-		context.parent.check_return_expression(logger, self.expression)
+		context.parent.check_return(logger, self)
+
+
+class FunctionCallWrapper:
+	"""
+	Wrapper for a FunctionCall as a standalone statement.
+
+	FunctionCall operators that are not the root of an expression must not use
+	this class.
+	"""
+	returns = False
+
+	def __init__(self, call_op):
+		self.pos = call_op.pos
+		self.call_op = call_op
+
+	def lda(self, pp):
+		self.call_op.put(pp)
+
+	def js(self, pp):
+		pp.put(self.call_op, ";")
+
+	def check(self, context, logger):
+		self.call_op.check(context, logger)
 
 
 #######################################################################
@@ -141,10 +183,15 @@ class If:
 		self.else_block = else_block
 
 	def check(self, context, logger):
+		self.returns = True
 		for clause in self.conditionals:
 			clause.check(context, logger)
+			self.returns &= clause.returns
 		if self.else_block is not None:
 			self.else_block.check(context, logger)
+			self.returns &= self.else_block.returns
+		else:
+			self.returns = False
 
 	def put_node(self, cluster):
 		rank_chain = []
@@ -171,7 +218,7 @@ class If:
 		intro = kw.IF
 		for conditional in self.conditionals:
 			pp.putline(intro, " ", conditional.condition, " ", kw.THEN)
-			pp.indented(pp.putline, conditional.block)
+			pp.indented(pp.putline, conditional)
 			intro = kw.ELIF
 		if self.else_block:
 			pp.putline(kw.ELSE)
@@ -189,68 +236,69 @@ class If:
 			pp.indented(pp.putline, self.else_block)
 		pp.put("};")
 
-class For:
+class For(StatementBlock):
 	_COMPONENT_NAMES = [
 			"le compteur de la boucle",
 			"la valeur initiale du compteur",
 			"la valeur finale du compteur"
 	]
 
-	def __init__(self, pos, counter, initial, final, block):
-		self.pos = pos
+	def __init__(self, pos, counter, initial, final, body):
+		super().__init__(pos, body)
 		self.counter = counter
 		self.initial = initial
 		self.final = final
-		self.block = block
 
 	def check(self, context, logger):
 		components = [self.counter, self.initial, self.final]
 		for comp, name in zip(components, For._COMPONENT_NAMES):
 			comp.check(context, logger)
-			types.enforce(name, types.INTEGER, comp, logger)
-		if isinstance(self.counter, expression.Literal):
-			logger.log(semantic.SemanticError(self.counter.pos,
-					"le compteur ne peut pas être constant"))
-		self.block.check(context, logger)
+			semantictools.enforce(name, types.INTEGER, comp, logger)
+		if not self.counter.writable:
+			logger.log(semantic.TypeError(self.counter.pos,
+					"le compteur doit être une variable",
+					self.counter.resolved_type))
+		super().check(context, logger)
 
 	def put_node(self, cluster):
 		counter_node = self.counter.put_node(cluster)
 		initial_node = self.initial.put_node(cluster)
 		final_node = self.final.put_node(cluster)
 		block_cluster = dot.Cluster("faire", cluster)
-		block_node = self.block.put_node(block_cluster)
+		block_node = super().put_node(block_cluster)
 		return dot.Node("pour", cluster, counter_node, initial_node,
 				final_node, block_node)
 
 	def lda(self, pp):
 		pp.putline(kw.FOR, " ", self.counter, " ", kw.FROM, " ", self.initial,
 				" ", kw.TO, " ", self.final, " ", kw.DO)
-		if self.block:
-			pp.indented(pp.putline, self.block)
+		if self.body:
+			pp.indented(pp.putline, super())
 		pp.put(kw.END_FOR)
 
 	def js(self, pp):
 		pp.putline("for (", self.counter, " = ", self.initial,
-				"; ", self.counter, " !== ", self.final, "; ", self.counter, "++) {")
-		if self.block:
-			pp.indented(pp.putline, self.block)
+				"; ", self.counter, " <= ", self.final, "; ", self.counter, "++) {")
+		if self.body:
+			pp.indented(pp.putline, super())
 		pp.put("};")
 
 class While(Conditional):
 	def put_node(self, cluster):
 		cond_node = self.condition.put_node(cluster)
 		block_cluster = dot.Cluster("faire", cluster)
-		block_node = self.block.put_node(block_cluster)
+		block_node = super().put_node(block_cluster)
 		return dot.Node("tantque", cluster, cond_node, block_node)
 
 	def lda(self, pp):
 		pp.putline(kw.WHILE, " ", self.condition, " ", kw.DO)
-		if self.block:
-			pp.indented(pp.putline, self.block)
+		if self.body:
+			pp.indented(pp.putline, super())
 		pp.put(kw.END_WHILE)
 
 	def js(self, pp):
-		pp.putline("while", " ( ", self.condition, " )")
-		if self.block:
-			pp.indented(pp.putline, self.block)
+		pp.putline("while (", self.condition, ") {")
+		if self.body:
+			pp.indented(pp.putline, super())
+		pp.put("};")
 

@@ -50,7 +50,7 @@ RETURN         = Keyword("retourne")
 
 FOR            = Keyword("pour")
 FROM           = Keyword("de")
-TO             = Keyword("jusque")
+TO             = Keyword("jusque", "à")
 DO             = Keyword("faire")
 END_FOR        = Keyword("fpour")
 

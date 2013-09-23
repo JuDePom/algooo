@@ -9,7 +9,7 @@ class SyntaxError(Exception):
 
 	def __init__(self, pos, message):
 		self.pos = pos
-		message = "{} : erreur de syntaxe : {}".format(pos, message)
+		message = "{}: {}".format(pos, message)
 		super().__init__(message)
 
 class ExpectedItem(SyntaxError):
@@ -18,8 +18,10 @@ class ExpectedItem(SyntaxError):
 	something else.
 	'''
 
-	def __init__(self, pos, item_name):
+	def __init__(self, pos, item_name, found_instead=None):
 		message = item_name + " est attendu(e) ici"
+		if found_instead:
+			message = "{}, mais \"{}\" a été trouvé à la place".format(message, found_instead)
 		super().__init__(pos, message)
 
 class ExpectedKeyword(ExpectedItem):
@@ -28,14 +30,15 @@ class ExpectedKeyword(ExpectedItem):
 	something else.
 	'''
 
-	def __init__(self, pos, *expected_keywords):
+	def __init__(self, pos, *expected_keywords, found_instead=None):
+		self.expected_keywords = expected_keywords
 		if len(expected_keywords) == 1:
 			message = "mot-clé \"{}\"".format(
 					expected_keywords[0].default_spelling)
 		else:
 			message = "l'un des mot-clés suivants : {}".format(
 				", ".join('"{}"'.format(k) for k in expected_keywords))
-		super().__init__(pos, message)
+		super().__init__(pos, message, found_instead)
 
 class IllegalIdentifier(SyntaxError):
 	'''
@@ -44,7 +47,7 @@ class IllegalIdentifier(SyntaxError):
 	'''
 
 	def __init__(self, pos):
-		message = "mauvais format d'identifieur"
+		message = "mauvais format d'identificateur"
 		super().__init__(pos, message)
 
 class ReservedWord(SyntaxError):
@@ -70,7 +73,10 @@ class DiscardedExpression(SyntaxError):
 	Raised when the result of an expression is discarded.
 	'''
 
-	def __init__(self, pos):
-		super().__init__(pos, "le résultat de l'expression précédente "
-				"n'est pas conservé (peut-être devriez-vous l'affecter "
-				"à une variable ?)")
+	def __init__(self, expr):
+		if expr.compound:
+			super().__init__(expr.pos, "le résultat de cette expression n'est pas "
+					"conservé (peut-être devriez-vous l'affecter à une variable ?)")
+		else:
+			super().__init__(expr.pos, "lexème errant")
+

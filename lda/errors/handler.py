@@ -6,7 +6,8 @@ class Logger:
 		return bool(self.errors)
 
 	def log(self, error):
-		self.errors.append(error)
+		if error.relevant:
+			self.errors.append(error)
 
 class Raiser:
 	def log(self, error):
