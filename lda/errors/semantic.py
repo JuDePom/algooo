@@ -121,15 +121,23 @@ class NonCallable(TypeError):
 				"fonction (il est de type {})").format(given_type)
 		super().__init__(pos, message, given_type)
 
-class CountMismatch(SemanticError):
+class _CountMismatch(SemanticError):
 	"""
 	Raised when the number of items given does not match that which is expected.
-
 	Typically used with arglists.
+
+	This error class cannot be used as-is. Subclasses must provide the
+	following attributes:
+	- self_wants: introductory string (such as "this object requires")
+	- singular: tuple of two strings. String #0 contains the name of the
+	  expected item in singular form. String #1 is the phrase "was given" in
+	  singular form.
+	- plural: same as singular except that the phrases are in plural form.
 	"""
-	def __init__(self, pos, expected, given):
-		message = "{self_wants} {x} {things}, mais {only}{y} {were_given}".format(
+	def __init__(self, pos, expected, given, at_least=False):
+		message = "{self_wants} {at_least}{x} {things}, mais {only}{y} {were_given}".format(
 				self_wants = self.self_wants,
+				at_least = "au moins " if at_least else "",
 				x = expected,
 				things = self.singular[0] if expected < 2 else self.plural[0],
 				only = "seulement " if given < expected else "",
@@ -137,12 +145,12 @@ class CountMismatch(SemanticError):
 				were_given = self.singular[1] if given < 2 else self.plural[1])
 		super().__init__(pos, message)
 
-class DimensionCountMismatch(CountMismatch):
+class DimensionCountMismatch(_CountMismatch):
 	self_wants = "ce tableau possède"
 	singular = ("dimension", "est fournie")
 	plural = ("dimensions", "sont fournies")
 
-class ParameterCountMismatch(CountMismatch):
+class ParameterCountMismatch(_CountMismatch):
 	self_wants = "cette fonction requiert"
 	singular = ("paramètre", "est fourni")
 	plural = ("paramètres", "sont fournis")
