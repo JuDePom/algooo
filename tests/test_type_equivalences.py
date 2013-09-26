@@ -3,7 +3,7 @@ from lda import types
 from lda.errors import semantic
 from lda.identifier import PureIdentifier
 from lda.operators import LogicalOr
-from lda.module import Module, Function, Algorithm
+from lda.function import Function, Algorithm
 
 class TestTypeEquivalences(LDATestCase):
 	def _test_self_compatibility(self, a):
@@ -107,7 +107,7 @@ class TestTypeEquivalences(LDATestCase):
 		self._test_compatibility_both_ways(array1, array2)
 
 	def test_pass_real_to_function_expecting_integer(self):
-		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=Module, program="""\
+		self.assertLDAError(semantic.SpecificTypeExpected, self.check, program="""\
 				fonction f(a: entier)
 				lexique
 					a: entier
@@ -116,7 +116,7 @@ class TestTypeEquivalences(LDATestCase):
 				fin""")
 
 	def test_pass_integer_to_function_expecting_real(self):
-		self.check(cls=Module, program="""\
+		self.check(program="""\
 				fonction f(a: réel)
 				lexique
 					a: réel

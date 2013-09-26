@@ -1,7 +1,7 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 from lda.operators import IntegerRange
-from lda.symbols import Lexicon
+from lda.lexicon import Lexicon
 from lda.context import ContextStack
 
 class TestIntegerRangeSemantics(LDATestCase):

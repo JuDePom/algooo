@@ -1,7 +1,7 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import syntax
 from lda.types import Composite
-from lda.symbols import VarDecl
+from lda.vardecl import VarDecl
 
 class TestArglistSyntax(LDATestCase):
 	"""

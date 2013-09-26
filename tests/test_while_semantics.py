@@ -1,7 +1,7 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 from lda.statements import While
-from lda.module import Algorithm
+from lda.function import Algorithm
 
 class TestWhileSemantics(LDATestCase):
 	def test_while_literal_boolean_condition(self):

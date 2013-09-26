@@ -1,6 +1,6 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
-from lda.module import Module, Algorithm, Function
+from lda.function import Algorithm, Function
 from lda.types import Array
 
 class TestArraySemantics(LDATestCase):
@@ -30,7 +30,7 @@ class TestArraySemantics(LDATestCase):
 		# This has to be checked as a Module and not just as a Function,
 		# because we want to catch the error in the function's formal parameters.
 		# If we only checked the Function, the error would appear in its lexicon.
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Module,
+		self.assertLDAError(semantic.SemanticError, self.check,
 				program='''fonction f(a: tableau entier[0..(**)n], n: entier)
 				lexique a: tableau entier[0..n] n: entier début fin''')
 

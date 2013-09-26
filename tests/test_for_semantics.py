@@ -1,7 +1,7 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 from lda.statements import For
-from lda.module import Algorithm
+from lda.function import Algorithm
 
 class TestForSemantics(LDATestCase):
 	def test_for_simple(self):

@@ -5,10 +5,11 @@ from itertools import count
 from lda.errors import syntax, semantic, handler
 from lda import parser
 from lda import types
-from lda import symbols
+from lda import lexicon
 from lda import statements
 from lda import expression
 from lda import module
+from lda import function
 from lda import prettyprinter
 from lda.context import ContextStack
 
@@ -16,12 +17,12 @@ ERROR_MARKER = "(**)"
 
 PARSING_FUNCTIONS = {
 		module.Module:               'analyze_module',
-		module.Function:             'analyze_function',
-		module.Algorithm:            'analyze_algorithm',
+		function.Function:           'analyze_function',
+		function.Algorithm:          'analyze_algorithm',
 		list:                        'analyze_arglist',
 		types.Array:                 'analyze_array',
 		types.Composite:             'analyze_composite',
-		symbols.Lexicon:             'analyze_lexicon',
+		lexicon.Lexicon:             'analyze_lexicon',
 		statements.StatementBlock:   'analyze_statement_block',
 		statements.While:            'analyze_while',
 		statements.For:              'analyze_for',

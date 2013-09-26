@@ -1,6 +1,6 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import syntax
-from lda.module import Algorithm, Function
+from lda.function import Algorithm, Function
 from lda.types import Array
 
 class TestArraySyntax(LDATestCase):

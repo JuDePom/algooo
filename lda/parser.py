@@ -7,13 +7,15 @@ import re
 from .parsertools import BaseParser, Backtrack, CriticalItem, NotFoundHere, opening_keyword
 from .errors import syntax
 from . import kw
-from . import module
 from . import expression
 from . import operators
 from . import statements
-from . import symbols
 from . import types
 from . import identifier
+from .module import Module
+from .function import Algorithm, Function
+from .vardecl import VarDecl
+from .lexicon import Lexicon
 
 
 SCALARS_KW_TO_TYPE = {
@@ -72,7 +74,7 @@ class Parser(BaseParser):
 				continue
 			raise syntax.ExpectedItem(self.pos, "une fonction ou un algorithme",
 					self.last_good_match)
-		return module.Module(lexicon, functions, algorithms)
+		return Module(lexicon, functions, algorithms)
 
 	def analyze_lexicon_and_body(self):
 		# lexicon
@@ -93,7 +95,7 @@ class Parser(BaseParser):
 	@opening_keyword(kw.ALGORITHM)
 	def analyze_algorithm(self, kwpos):
 		lexicon, body, _ = self.analyze_lexicon_and_body()
-		return module.Algorithm(kwpos, lexicon, body)
+		return Algorithm(kwpos, lexicon, body)
 
 	@opening_keyword(kw.FUNCTION)
 	def analyze_function(self, kwpos):
@@ -110,7 +112,7 @@ class Parser(BaseParser):
 		else:
 			return_type = types.VOID
 		lexicon, body, end_pos = self.analyze_lexicon_and_body()
-		return module.Function(kwpos, end_pos, ident, params, return_type, lexicon, body)
+		return Function(kwpos, end_pos, ident, params, return_type, lexicon, body)
 
 	@opening_keyword(kw.ARRAY)
 	def analyze_array(self, kwpos):
@@ -156,7 +158,7 @@ class Parser(BaseParser):
 			self.hardskip(kw.COLON)
 		with CriticalItem(self, "le type de la variable"):
 			typedesc = self.analyze_type_descriptor()
-		return symbols.VarDecl(ident, typedesc, formal)
+		return VarDecl(ident, typedesc, formal)
 
 	@opening_keyword(kw.LT)
 	def analyze_composite(self, kwpos, ident):
@@ -176,7 +178,7 @@ class Parser(BaseParser):
 				variables.append(self.analyze_vardecl(ident=ident))
 			elif keyword == kw.EQ:
 				composites.append(self.analyze_composite(ident=ident))
-		return symbols.Lexicon(variables, composites)
+		return Lexicon(variables, composites)
 
 	def analyze_identifier(self, identifier_class=identifier.PureIdentifier, critical=False):
 		"""

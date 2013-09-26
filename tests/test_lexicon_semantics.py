@@ -1,6 +1,6 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic, handler
-from lda.module import Module, Algorithm, Function
+from lda.function import Algorithm, Function
 from lda import types
 from lda.context import ContextStack
 
@@ -10,16 +10,16 @@ class TestLexiconSemantics(LDATestCase):
 				program='algorithme lexique début (**)a <- 3 fin')
 
 	def test_composite_in_module_scope(self):
-		self.check(cls=Module, program='lexique Moule = <>')
+		self.check(program='lexique Moule = <>')
 
 	def test_variable_uses_type_descriptor_with_module_scope(self):
-		self.check(cls=Module, program='''\
+		self.check(program='''\
 				lexique
 					Moule = <>
 				algorithme lexique m : Moule début fin''')
 
 	def test_function_returns_composite(self):
-		self.check(cls=Module, program='''\
+		self.check(program='''\
 				lexique
 					Moule = <>
 				fonction f(): Moule lexique m: Moule début retourne m fin''')
@@ -49,7 +49,7 @@ class TestLexiconSemantics(LDATestCase):
 	def test_use_existing_function_name_inside_algorithm_lexicon(self):
 		# has to be analyzed as a whole module so that "f" is accounted for
 		# in the global lexicon
-		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Module, program='''\
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check, program='''\
 				fonction f() lexique début fin
 				algorithme
 				lexique (**)f: entier
@@ -69,33 +69,33 @@ class TestLexiconSemantics(LDATestCase):
 				fonction f() lexique (**)f: entier début fin''')
 
 	def test_function_defined_twice(self):
-		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Module, program='''\
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check, program='''\
 				fonction f() lexique début fin
 				fonction (**)f() lexique début fin''')
 
 	def test_function_and_global_composite_name_clash(self):
-		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Module,
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check,
 				program='''lexique f = <>
 				fonction (**)f() lexique début fin''')
 
 	def test_function_tries_using_function_name_as_return_type_alias(self):
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Module, program='''\
+		self.assertLDAError(semantic.SemanticError, self.check, program='''\
 				fonction f() lexique début fin
 				fonction g(): (**)f lexique début fin''')
 
 	def test_composite_tries_using_function_name_as_member_type_alias(self):
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Module, program='''\
+		self.assertLDAError(semantic.SemanticError, self.check, program='''\
 				lexique
 					Moule = <a: (**)f>
 				fonction f() lexique début fin''')
 
 	def test_variable_tries_using_function_name_as_type_alias(self):
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Module, program='''\
+		self.assertLDAError(semantic.SemanticError, self.check, program='''\
 				fonction wasabi() lexique début fin
 				algorithme lexique w: (**)wasabi début fin''')
 
 	def test_inout_non_formal_parameter(self):
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Module, program='''\
+		self.assertLDAError(semantic.SemanticError, self.check, program='''\
 				algorithme lexique (**)a: inout entier début fin''')
 
 	def test_formal_parameter_absent_from_lexicon(self):
@@ -123,7 +123,7 @@ class TestLexiconSemantics(LDATestCase):
 				program='fonction f(a: entier, (**)a:entier) lexique a: entier début fin')
 
 	def test_formal_parameter_uses_external_type_descriptor(self):
-		self.check(cls=Module, program='''\
+		self.check(program='''\
 				lexique
 					Moule = <>
 				fonction f(m: Moule) lexique m: Moule début fin''')

@@ -1,6 +1,6 @@
 from tests.ldatestcase import LDATestCase
-from lda import kw, module, expression, statements, operators, prettyprinter
-from lda.symbols import Lexicon
+from lda import kw, module, function, expression, statements, operators, prettyprinter
+from lda.lexicon import Lexicon
 
 class test_lda_output(LDATestCase):
 	def _assert_export(self, cls, program):
@@ -77,7 +77,7 @@ class test_lda_output(LDATestCase):
 				"{kw.BEGIN}\n"
 				"\ta {kw.ASSIGN} b\n"
 				"{kw.END}").format(kw=kw)
-		self._assert_export(module.Algorithm, program)
+		self._assert_export(function.Algorithm, program)
 
 	def test_function(self):
 		program = (
@@ -88,11 +88,11 @@ class test_lda_output(LDATestCase):
 				"{kw.BEGIN}\n"
 				"\ta {kw.ASSIGN} b\n"
 				"{kw.END}").format(kw=kw)
-		self._assert_export(module.Function, program)
+		self._assert_export(function.Function, program)
 
 	def test_empty_function(self):
 		program = "{kw.FUNCTION} vide()\n{kw.BEGIN}\n{kw.END}".format(kw=kw)
-		self._assert_export(module.Function, program)
+		self._assert_export(function.Function, program)
 
 	def test_empty_while(self):
 		program = "{kw.WHILE} {kw.TRUE} {kw.DO}\n{kw.END_WHILE}".format(kw=kw)

@@ -1,6 +1,5 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
-from lda.module import Algorithm
 
 class TestExpressionSemantics(LDATestCase):
 	def test_composite_arithmetic_with_other_composite_of_same_type(self):
