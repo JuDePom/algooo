@@ -56,6 +56,30 @@ test("unordered bounds must fail", function() {
 (function() {
 	var array;
 
+	module("1D array with custom filler [[-2, 3]]", {
+		setup: function() {
+			var counter = 0;
+			var filler = function() {
+				return new (function() {
+					this.id = counter;
+					counter++;
+				})();
+			};
+			array = new LDA.Array([[-2, 3]], filler);
+		}
+	});
+
+	test("default value of freshly initialized elements", function() {
+		for (var i = -2; i <= 3; i++) {
+			strictEqual(array.get([i]).id, i+2);
+		}
+	});
+})();
+
+
+(function() {
+	var array;
+
 	module("2D array [[0, 2], [4, 6]]", {
 		setup: function() {
 			array = new LDA.Array([[0, 2], [4, 6]]);
@@ -69,11 +93,11 @@ test("unordered bounds must fail", function() {
 
 	test("constructor initializes empty sub-arrays with correct bounds", function() {
 		for (var i = 0; i <= 2; i++) {
-			ok(array[i] !== undefined, "sub-array #" + i + " must be defined");
+			ok(array[i] !== null, "sub-array #" + i + " must not be null");
 			strictEqual(array[i].low, 4, "low bound of sub-array #" + i);
 			strictEqual(array[i].high, 6, "high bound of sub-array #" + i);
 			for (var j = 4; j <= 6; j++) {
-				strictEqual(array[i][j], undefined, "undefined element in innermost array");
+				strictEqual(array[i][j], null, "null element in innermost array");
 			}
 		}
 	});

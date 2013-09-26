@@ -138,7 +138,7 @@ class Scalar(TypeDescriptor):
 		pp.put(str(self.keyword))
 
 	def js_declare(self, pp):
-		pp.put("undefined")
+		pp.put("null")
 
 def _dual_scalar_compatibility(weak, strong):
 	def weak_equivalent(self, other):
@@ -357,13 +357,11 @@ class Array(TypeDescriptor):
 		# static. Otherwise we'll have to wait until the user calls the array
 		# allocation builtin function.
 		if self.static:
-			pp
-			Array.js_new(pp, ((dim.low, dim.high) for dim in self.dimensions))
+			self.js_new(pp, ((dim.low, dim.high) for dim in self.dimensions))
 		else:
-			pp.put("undefined")
+			pp.put("null")
 
-	@staticmethod
-	def js_new(pp, dimensions):
+	def js_new(self, pp, dimensions):
 		"""
 		Generate a `new` statement for an LDA.Array. `dimensions` is an
 		iterable of ranges; each range is represented by a tuple containing two
@@ -374,7 +372,9 @@ class Array(TypeDescriptor):
 		for dim in dimensions:
 			pp.put(prefix, "[", dim[0], ", ", dim[1], "]")
 			prefix = ", "
-		pp.put("])")
+		pp.put("], function(){return ")
+		self.resolved_element_type.js_declare(pp)
+		pp.put(";})")
 
 	def equivalent(self, other):
 		if not isinstance(other, Array):

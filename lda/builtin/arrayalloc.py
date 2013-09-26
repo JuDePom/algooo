@@ -37,5 +37,5 @@ def check_effective_parameters(context, logger, pos, args):
 
 def js_call(pp, params):
 	pp.put(params[0], " = ")
-	types.Array.js_new(pp, ((dim.lhs, dim.rhs) for dim in params[1:]))
+	params[0].resolved_type.js_new(pp, ((dim.lhs, dim.rhs) for dim in params[1:]))
 

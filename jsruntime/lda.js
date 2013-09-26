@@ -16,12 +16,14 @@ LDA.RuntimeError = function(message) {
  *
  * - dimensions: array of integer ranges. An integer range is represented
  *   by an array of two integers. Range bounds are inclusive.
+ * - filler: function that generates a value to fill the array with. If omitted, the
+ *   array will be filled with `null`.
  * - n: recursion level, i.e. current position within the `dimensions` array.
- *   If omitted, `n` is set to 0.
+ *   If null, `n` is set to 0.
  *
  * Runtime check: ordering of range bounds (low bound must be <= high bound).
  */
-LDA.Array = function(dimensions, n) {
+LDA.Array = function(dimensions, filler, n) {
 	if (n === undefined) {
 		n = 0;
 	}
@@ -38,7 +40,15 @@ LDA.Array = function(dimensions, n) {
 	// dimension.
 	if (n < dimensions.length - 1) {
 		for (var i = this.low; i <= this.high; i++) {
-			this[i] = new LDA.Array(dimensions, n+1);
+			this[i] = new LDA.Array(dimensions, filler, n+1);
+		}
+	} else if (filler === undefined) {
+		for (var i = this.low; i <= this.high; i++) {
+			this[i] = null;
+		}
+	} else {
+		for (var i = this.low; i <= this.high; i++) {
+			this[i] = filler();
 		}
 	}
 };
@@ -52,7 +62,7 @@ LDA.Array = function(dimensions, n) {
  *
  * Runtime checks:
  * - ensure the given indices lie within the bounds of the dimensions;
- * - ensure the value is not undefined.
+ * - ensure the value is not null.
  *
  * Note: This function does not check whether the number of indices
  * matches the number of dimensions, because this is done at compile time.
@@ -72,8 +82,8 @@ LDA.Array.prototype.get = function(indices, n) {
 		return this[i].get(indices, n+1);
 	} else {
 		var value = this[i];
-		if (LDA.pedantic && value === undefined) {
-			throw new LDA.RuntimeError("accessing undefined array element");
+		if (LDA.pedantic && value === null) {
+			throw new LDA.RuntimeError("accessing null array element");
 		}
 		return value;
 	}
