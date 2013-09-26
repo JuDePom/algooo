@@ -178,14 +178,18 @@ class LDATestCase(unittest.TestCase):
 			root.check(context, error_handler)
 		return root
 
-	def jseval(self, **kwargs):
+	def jseval(self, shutup=False, **kwargs):
 		"""
 		Compile a program to JavaScript, execute it, and return the output.
 		The input program's entry point is its Algorithm.
+
+		:param shutup: If True, stderr's output will be redirected to
+		subprocess.DEVNULL. This is useful if you are certain the test fails.
 		"""
 		pp = prettyprinter.JSPrettyPrinter()
 		self.check(**kwargs).js(pp)
 		code = "require('lda.js');\n\n{}\n\nMain();\n".format(pp)
 		return subprocess.check_output(["node", "-e", code],
+				stderr = shutup and subprocess.DEVNULL or None,
 				env={'NODE_PATH':'./jsruntime'}, universal_newlines=True)
 
