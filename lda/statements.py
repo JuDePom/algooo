@@ -234,7 +234,7 @@ class If:
 		intro = "if ("
 		for conditional in self.conditionals:
 			pp.putline(intro, conditional.condition, ") {")
-			pp.indented(pp.putline, conditional.block)
+			pp.indented(pp.putline, conditional)
 			intro = "} else if ("
 		if self.else_block:
 			pp.putline("} else {")
