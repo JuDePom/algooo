@@ -331,7 +331,7 @@ class FunctionCall(BinaryEncompassingOp):
 		self.resolved_type = self.function.resolved_return_type
 
 	def js(self, pp):
-		self.function.js_call(pp, self)
+		self.function.js_call(pp, self.rhs)
 
 class MemberSelect(BinaryOp):
 	"""

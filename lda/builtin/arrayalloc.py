@@ -35,7 +35,7 @@ def check_effective_parameters(context, logger, pos, args):
 		semantictools.enforce("une dimension de tableau dynamique",
 				types.RANGE, arg, logger)
 
-def js_call(pp, call_op):
-	pp.put(call_op.rhs[0], " = ")
-	types.Array.js_new(pp, ((dim.lhs, dim.rhs) for dim in call_op.rhs[1:]))
+def js_call(pp, params):
+	pp.put(params[0], " = ")
+	types.Array.js_new(pp, ((dim.lhs, dim.rhs) for dim in params[1:]))
 

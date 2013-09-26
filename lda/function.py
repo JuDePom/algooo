@@ -158,7 +158,7 @@ class Function:
 		if self.body:
 			pp.indented(pp.putline, self.body)
 		pp.put(kw.END)
-		
+
 	def js(self, pp):
 		pp.put("function ", self.ident, "(")
 		pp.join((item.ident for item in self.fp_list), pp.put, ", ")
@@ -169,8 +169,15 @@ class Function:
 			pp.indented(pp.putline, self.body)
 		pp.put("}")
 
-	def js_call(self, pp, call_op):
-		pp.put(call_op.lhs, "(")
-		pp.join(call_op.rhs, pp.put, ", ")
+	def js_call(self, pp, params):
+		"""
+		Translate an LDA function call to one JavaScript function call.
+
+		This method is intentionally delegated to Function, so that builtin
+		functions (which fake a Function interface but aren't actual Function
+		instances) can define a more complex `js_call()`.
+		"""
+		pp.put(self.ident, "(")
+		pp.join(params, pp.put, ", ")
 		pp.put(")")
 
