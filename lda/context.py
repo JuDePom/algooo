@@ -1,4 +1,4 @@
-from . import builtin
+from lda import builtin
 
 class ContextStack:
 	class Context:
