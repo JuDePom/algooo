@@ -61,6 +61,13 @@ class TestExpressionSemantics(LDATestCase):
 					(**)f <- g
 				fin""")
 
+	def test_reassign_builtin_function(self):
+		self.assertLDAError(semantic.TypeError, self.check, program="""\
+				algorithme
+				début
+					(**)écrire <- 30
+				fin""")
+
 	def test_assign_to_literal(self):
 		self.assertLDAError(semantic.TypeError, self.check, program="""\
 				algorithme
@@ -84,5 +91,14 @@ class TestExpressionSemantics(LDATestCase):
 				algorithme
 				début
 					3 (**)+ 2 <- 4
+				fin""")
+
+	def test_call_function_returning_void_in_the_middle_of_an_expression(self):
+		self.assertLDAError(semantic.TypeError, self.check, program="""\
+				algorithme
+				lexique
+					i: entier
+				début
+					i <- 2 (**)+ écrire("salut")
 				fin""")
 
