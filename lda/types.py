@@ -358,18 +358,25 @@ class Array(TypeDescriptor):
 		# "objects". We can make such an object right away if the array is
 		# static. Otherwise we'll have to wait until the user calls the array
 		# allocation builtin function.
-		pp.put("var ", var.ident, " = ")
+		pp.put("var ", var.ident)
 		if self.static:
-			pp.put("new LDA.Array([")
-			prefix = ""
-			for dim in self.dimensions:
-				pp.put(prefix, "[", dim.low, ", ", dim.high, "]")
-				prefix = ", "
-			pp.put("])")
-		else:
-			# nothing to do for now
-			raise NotImplementedError("implement builtin array allocation function!")
+			pp.put(" = ")
+			Array.js_new(pp, ((dim.low, dim.high) for dim in self.dimensions))
 		pp.put(";")
+
+	@staticmethod
+	def js_new(pp, dimensions):
+		"""
+		Generate a `new` statement for an LDA.Array. `dimensions` is an
+		iterable of ranges; each range is represented by a tuple containing two
+		expressions.
+		"""
+		pp.put("new LDA.Array([")
+		prefix = ""
+		for dim in dimensions:
+			pp.put(prefix, "[", dim[0], ", ", dim[1], "]")
+			prefix = ", "
+		pp.put("])")
 
 	def equivalent(self, other):
 		if not isinstance(other, Array):
