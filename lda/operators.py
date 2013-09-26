@@ -229,11 +229,21 @@ class BinaryEncompassingOp(BinaryOp):
 class UnaryPlus(UnaryNumberOp):
 	keyword_def = kw.PLUS
 
+	def js(self, pp):
+		self.rhs.js(pp)
+
 class UnaryMinus(UnaryNumberOp):
 	keyword_def = kw.MINUS
+	js_kw = "-"
 
 class LogicalNot(UnaryOp):
 	keyword_def = kw.NOT
+	resolved_type = types.BOOLEAN
+	js_kw = "!"
+
+	def check(self, context, logger):
+		self.rhs.check(context, logger)
+		semantictools.enforce("l'opérande du 'non'", types.BOOLEAN, self.rhs, logger)
 
 #######################################################################
 #
@@ -393,6 +403,7 @@ class Division(NumberArithmeticOp):
 class Modulo(NumberArithmeticOp):
 	keyword_def = kw.MODULO
 	js_kw = "%"
+	#TODO: entier? pas entier?
 
 class Addition(NumberArithmeticOp):
 	keyword_def = kw.PLUS
