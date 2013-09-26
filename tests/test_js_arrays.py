@@ -18,6 +18,23 @@ class TestJSArrays(LDATestCase):
 					fpour
 				fin"""))
 
+	def test_1d_static_array_of_composites(self):
+		output = '\n'.join(str(i) for i in range(1, 11)) + '\n'
+		self.assertEqual(output, self.jseval(program="""\
+				algorithme
+				lexique
+					i: entier
+					Moule = <a: entier>
+					t: tableau Moule[1..10]
+				début
+					pour i de 1 jusque 10 faire
+						t[i].a <- i
+					fpour
+					pour i de 1 jusque 10 faire
+						écrire(t[i])
+					fpour
+				fin"""))
+
 	def test_1d_static_integer_array_access_out_of_bounds(self):
 		self.assertRaises(CalledProcessError, self.jseval, shutup=True, program="""\
 				algorithme

@@ -37,5 +37,7 @@ class VarDecl:
 
 	def js(self, pp):
 		if not self.formal:
-			self.resolved_type.js_declare(pp, self)
+			pp.put("var ", self.ident , " = ")
+			self.resolved_type.js_declare(pp)
+			pp.put(";")
 

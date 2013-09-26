@@ -46,12 +46,10 @@ class TypeDescriptor:
 		"""
 		return self.__eq__(other.equivalent(self))
 
-	def js_declare(self, pp, var):
+	def js_declare(self, pp):
 		"""
 		Generate a JavaScript declaration of a variable whose resolved_type is
 		this LDA type descriptor.
-
-		`var` is a VarDecl instance representing the variable being declared.
 		"""
 		raise NotImplementedError
 
@@ -139,8 +137,8 @@ class Scalar(TypeDescriptor):
 	def lda(self, pp):
 		pp.put(str(self.keyword))
 
-	def js_declare(self, pp, var):
-		pp.put("var ", var.ident, ";")
+	def js_declare(self, pp):
+		pp.put("undefined")
 
 def _dual_scalar_compatibility(weak, strong):
 	def weak_equivalent(self, other):
@@ -353,16 +351,16 @@ class Array(TypeDescriptor):
 		pp.join(self.dimensions, pp.put, ", ")
 		pp.put(kw.RSBRACK)
 
-	def js_declare(self, pp, var):
+	def js_declare(self, pp):
 		# The JS runtime implementation requires LDA arrays to be LDA.Array
 		# "objects". We can make such an object right away if the array is
 		# static. Otherwise we'll have to wait until the user calls the array
 		# allocation builtin function.
-		pp.put("var ", var.ident)
 		if self.static:
-			pp.put(" = ")
+			pp
 			Array.js_new(pp, ((dim.low, dim.high) for dim in self.dimensions))
-		pp.put(";")
+		else:
+			pp.put("undefined")
 
 	@staticmethod
 	def js_new(pp, dimensions):
@@ -447,4 +445,15 @@ class Composite(TypeDescriptor):
 		pp.put(self.ident, " ", kw.EQ, " ", kw.LT)
 		pp.join(self.fields, pp.put, ", ")
 		pp.put(kw.GT)
+
+	def js(self, pp):
+		pp.putline("var ", self.ident, " = function() {")
+		for field in self.fields:
+			pp.indented(pp.put, "this.", field.ident, " = ");
+			pp.indented(field.resolved_type.js_declare, pp)
+			pp.indented(pp.putline, ";")
+		pp.put("};")
+
+	def js_declare(self, pp):
+		pp.put("new ", self.ident, "()")
 
