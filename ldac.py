@@ -32,6 +32,10 @@ ap.add_argument('--no-output', '-n', action='store_true',
 ap.add_argument('--case-insensitive', action='store_true',
 		help="""Ignorer la casse dans les identificateurs et les mot-clés""")
 
+ap.add_argument('--js-standalone', '-s', action='store_true',
+		help="""Si le format de sortie est `js`, faire que le script puisse
+		être exécuté tel quel.""")
+
 args = ap.parse_args()
 
 parser = lda.parser.Parser(args, path=args.path)
@@ -66,6 +70,8 @@ elif args.format == 'js':
 	pp = lda.prettyprinter.JSPrettyPrinter()
 	module.js(pp)
 	output = str(pp)
+	if args.js_standalone:
+		output = "require('lda.js');\n\n{}\n\nMain();\n".format(output)
 else:
 	raise Exception("Format de sortie inconnu : " + args.format)
 
