@@ -1,9 +1,0 @@
-algorithme
-lexique
-	i : entier
-	n : entier
-	ad : chaine
-	xi : tableau chaine [0..1,0..n,0..n-1]
-debut
-	ad <- "Hi"
-fin

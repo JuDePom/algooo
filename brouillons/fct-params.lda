@@ -1,9 +1,0 @@
-fonction test ( a : entier )
-lexique
-	double : entier
-	int : entier
-	string : chaine
-debut
-	double <- int
-	string <- "Le String"
-fin
