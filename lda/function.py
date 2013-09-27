@@ -169,10 +169,6 @@ class Function(_BaseFunction):
 					self.return_type),
 					self.return_type))
 
-	def put_node(self, cluster):
-		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
-		return self.body.put_node(function_cluster)
-
 	def lda_signature(self, pp):
 		pp.put(kw.FUNCTION, " ", self.ident, kw.LPAREN)
 		pp.join(self.fp_list, pp.put, ", ")

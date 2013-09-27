@@ -7,6 +7,7 @@ LDA compiler entry point.
 import lda.parser
 import lda.errors
 import lda.context
+import lda.prettyprinter
 import argparse
 import sys
 
@@ -57,16 +58,11 @@ if logger:
 if args.no_output:
 	sys.exit(0)
 
-if args.format == 'dot':
-	from lda import dot
-	output = lda.dot.format(module)
-elif args.format == 'lda':
-	from lda import prettyprinter
+if args.format == 'lda':
 	pp = lda.prettyprinter.LDAPrettyPrinter()
 	module.lda(pp)
 	output = str(pp)
 elif args.format == 'js':
-	from lda import prettyprinter
 	pp = lda.prettyprinter.JSPrettyPrinter()
 	module.js(pp)
 	output = str(pp)

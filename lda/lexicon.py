@@ -1,5 +1,4 @@
 from . import kw
-from . import dot
 from . import semantictools
 from .errors import semantic
 

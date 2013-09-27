@@ -1,7 +1,6 @@
 from .expression import Expression, surround
 from .errors import semantic
 from . import types
-from . import dot
 from . import kw
 from . import semantictools
 
@@ -58,12 +57,6 @@ class UnaryOp(Expression):
 	def __eq__(self, other):
 		return type(self) == type(other) and self.rhs == other.rhs
 
-	def put_node(self, cluster):
-		op_node = dot.Node(self.keyword_def.default_spelling,
-				cluster, self.rhs.put_node(cluster))
-		op_node.shape = "circle"
-		return op_node
-		
 	@surround
 	def lda(self, pp):
 		pp.put(self.keyword_def, " ", self.rhs)
@@ -104,14 +97,6 @@ class BinaryOp(Expression):
 	def part_of_rhs(cls, whose):
 		return cls.precedence > whose.precedence or \
 			(cls.right_ass and cls.precedence == whose.precedence)
-
-	def put_node(self, cluster):
-		op_node = dot.Node(self.keyword_def.default_spelling,
-				cluster,
-				self.lhs.put_node(cluster),
-				self.rhs.put_node(cluster))
-		op_node.shape = "circle"
-		return op_node
 
 	@surround
 	def lda(self, pp):

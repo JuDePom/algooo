@@ -1,5 +1,4 @@
 from . import kw
-from . import dot
 from . import types
 from .identifier import PureIdentifier
 from .errors import semantic
@@ -129,9 +128,6 @@ class Literal(Expression):
 
 	def __repr__(self):
 		return "littéral {}".format(self.resolved_type)
-
-	def put_node(self, cluster):
-		return dot.Node(str(self.value), cluster)
 
 	def check(self, context, logger):
 		pass

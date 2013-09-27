@@ -1,5 +1,4 @@
 from . import kw
-from . import dot
 from . import types
 from . import semantictools
 from .errors import semantic
@@ -21,24 +20,6 @@ class StatementBlock:
 
 	def __bool__(self):
 		return bool(self.body)
-
-	def put_node(self, cluster):
-		prev_outer_node = None
-		first_outer_node = None
-		rank_chain = []
-		for i, statement in enumerate(self):
-			ncluster = dot.Cluster("", cluster)
-			node = statement.put_node(ncluster)
-			outer_node = dot.Node("statement "+str(i), cluster)
-			outer_node.children.append(node)
-			if prev_outer_node is not None:
-				prev_outer_node.children.append(outer_node)
-			else:
-				first_outer_node = outer_node
-			prev_outer_node = outer_node
-			rank_chain.append(outer_node)
-		cluster.rank_chains.append(rank_chain)
-		return first_outer_node
 
 	def lda(self, pp):
 		pp.join(self.body, pp.newline)
@@ -198,27 +179,6 @@ class If:
 		else:
 			self.returns = False
 
-	def put_node(self, cluster):
-		rank_chain = []
-		prev_node = None
-		for i, conditional in enumerate(self.conditionals):
-			c_cluster = dot.Cluster("", cluster)
-			cond_node = conditional.condition.put_node(c_cluster)
-			then_cluster = dot.Cluster("alors", c_cluster)
-			then_node = conditional.block.put_node(then_cluster)
-			if_node = dot.Node("si" if i == 0 else "snsi", c_cluster, cond_node, then_node)
-			rank_chain.append(if_node)
-			if prev_node is not None:
-				prev_node.children.append(if_node)
-			prev_node = if_node
-		if self.else_block is not None:
-			else_cluster = dot.Cluster("sinon", cluster)
-			else_node = self.else_block.put_node(else_cluster)
-			prev_node.children.append(else_node)
-			rank_chain.append(else_node)
-		cluster.rank_chains.append(rank_chain)
-		return rank_chain[0]
-
 	def lda(self, pp):
 		intro = kw.IF
 		for conditional in self.conditionals:
@@ -265,15 +225,6 @@ class For(StatementBlock):
 					self.counter.resolved_type))
 		super().check(context, logger)
 
-	def put_node(self, cluster):
-		counter_node = self.counter.put_node(cluster)
-		initial_node = self.initial.put_node(cluster)
-		final_node = self.final.put_node(cluster)
-		block_cluster = dot.Cluster("faire", cluster)
-		block_node = super().put_node(block_cluster)
-		return dot.Node("pour", cluster, counter_node, initial_node,
-				final_node, block_node)
-
 	def lda(self, pp):
 		pp.putline(kw.FOR, " ", self.counter, " ", kw.FROM, " ", self.initial,
 				" ", kw.TO, " ", self.final, " ", kw.DO)
@@ -289,12 +240,6 @@ class For(StatementBlock):
 		pp.put("}")
 
 class While(Conditional):
-	def put_node(self, cluster):
-		cond_node = self.condition.put_node(cluster)
-		block_cluster = dot.Cluster("faire", cluster)
-		block_node = super().put_node(block_cluster)
-		return dot.Node("tantque", cluster, cond_node, block_node)
-
 	def lda(self, pp):
 		pp.putline(kw.WHILE, " ", self.condition, " ", kw.DO)
 		if self.body:

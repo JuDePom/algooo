@@ -1,4 +1,3 @@
-from . import dot
 from .lexicon import Lexicon
 from .errors import semantic
 from .statements import StatementBlock
@@ -26,13 +25,6 @@ class Module:
 			alg.check(context, logger)
 		# No need to check functions here, it was done by self.lexicon.check()
 		context.pop()
-
-	def put_node(self, cluster):
-		supercluster = dot.Cluster("module", cluster)
-		for f in self.functions:
-			f.put_node(supercluster)
-		if self.algorithms:
-			self.algorithms[0].put_node(supercluster)
 
 	def lda(self, pp):
 		if self.lexicon:
