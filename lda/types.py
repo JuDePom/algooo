@@ -412,12 +412,13 @@ class Composite(TypeDescriptor):
 
 	def resolve_type(self, supercontext, logger):
 		"""
-		Creates self.context: a mini-symbol table associating field name
+		Create `self.context`: a mini-symbol table associating field name
 		strings the fields themselves.
 
-		Also hunts down duplicate field names.
+		Also hunts down duplicate field names and sets the `parent` attribute.
 		"""
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
+		self.parent = supercontext.parent
 		semantictools.hunt_duplicates(self.fields, logger)
 		self.context = {field.ident.name: field for field in self.fields}
 		for field in self.fields:
@@ -447,7 +448,8 @@ class Composite(TypeDescriptor):
 		pp.put(kw.GT)
 
 	def js(self, pp):
-		pp.putline("var ", self.ident, " = function() {")
+		prefix = getattr(self.parent, 'js_namespace', "var ")
+		pp.putline(prefix, self.ident, " = function() {")
 		for field in self.fields:
 			pp.indented(pp.put, "this.", field.ident, " = ");
 			pp.indented(field.resolved_type.js_declare, pp)
@@ -455,5 +457,6 @@ class Composite(TypeDescriptor):
 		pp.put("};")
 
 	def js_declare(self, pp):
-		pp.put("new ", self.ident, "()")
+		prefix = getattr(self.parent, 'js_namespace', '')
+		pp.put("new ", prefix, self.ident, "()")
 

@@ -30,6 +30,8 @@ class VarDecl:
 		if not self.formal and isinstance(self.type_descriptor, Inout):
 			logger.log(semantic.SemanticError(self.ident.pos,
 					"\"inout\" n'est autorisé que dans un paramètre formel"))
+		# Save parent (will be useful to produce the correct ident in JS)
+		self.parent = context.parent
 		self.resolved_type = self.type_descriptor.resolve_type(context, logger)
 
 	def lda(self, pp):
@@ -37,7 +39,8 @@ class VarDecl:
 
 	def js(self, pp):
 		if not self.formal:
-			pp.put("var ", self.ident , " = ")
+			prefix = getattr(self.parent, 'js_namespace', "var ")
+			pp.put(self.ident, " = ")
 			self.resolved_type.js_declare(pp)
 			pp.put(";")
 

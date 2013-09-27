@@ -71,7 +71,7 @@ elif args.format == 'js':
 	module.js(pp)
 	output = str(pp)
 	if args.js_standalone:
-		output = "require('lda.js');\n\n{}\n\nMain();\n".format(output)
+		output = "require('lda.js');\n\n{}\n\nP.main();\n".format(output)
 else:
 	raise Exception("Format de sortie inconnu : " + args.format)
 

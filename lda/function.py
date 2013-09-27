@@ -23,7 +23,7 @@ class Algorithm:
 		pp.put(kw.END)
 
 	def js(self, pp):
-		pp.putline("function Main() {")
+		pp.putline("P.main = function() {")
 		if self.lexicon:
 			pp.indented(pp.putline, self.lexicon)
 		if self.body:
@@ -160,7 +160,7 @@ class Function:
 		pp.put(kw.END)
 
 	def js(self, pp):
-		pp.put("function ", self.ident, "(")
+		pp.put("P.", self.ident, " = function(")
 		pp.join((item.ident for item in self.fp_list), pp.put, ", ")
 		pp.putline(") {")
 		if self.lexicon:
@@ -177,7 +177,7 @@ class Function:
 		functions (which fake a Function interface but aren't actual Function
 		instances) can define a more complex `js_call()`.
 		"""
-		pp.put(self.ident, "(")
+		pp.put("P.", self.ident, "(")
 		pp.join(params, pp.put, ", ")
 		pp.put(")")
 

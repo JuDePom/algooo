@@ -4,6 +4,10 @@ from .errors import semantic
 from .statements import StatementBlock
 
 class Module:
+	# All identifiers at the module level will pertain
+	# to this "namespace" in the generated JS code.
+	js_namespace = "P."
+
 	def __init__(self, lexicon, functions, algorithms):
 		variables  = None if lexicon is None else lexicon.variables
 		composites = None if lexicon is None else lexicon.composites
@@ -41,6 +45,9 @@ class Module:
 			pp.putline(self.algorithms[0])
 
 	def js(self, pp):
+		pp.putline("// Compiled program namespace")
+		pp.putline("var P = {};")
+		pp.newline()
 		if self.lexicon:
 			pp.putline(self.lexicon)
 			pp.newline(2)
