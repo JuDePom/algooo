@@ -3,18 +3,37 @@ from . import types
 from . import semantictools
 from .errors import semantic
 
-class Algorithm:
+class _BaseFunction:
+	"""
+	Base class for a function with a lexicon and a statement block body.
+	"""
+
 	def __init__(self, pos, lexicon, body):
 		self.pos = pos
 		self.lexicon = lexicon
 		self.body = body
 
-	def put_node(self, cluster):
-		algorithm_cluster = dot.Cluster("algorithme", cluster)
-		return self.body.put_node(algorithm_cluster)
+	def check(self, context, logger):
+		# Push new context onto the context stack, i.e. enter function scope
+		context.push(self)
+		# Check lexicon
+		if self.lexicon is not None:
+			self.lexicon.check(context, logger)
+		# Check statements
+		self.body.check(context, logger)
+		# Exit function scope
+		context.pop()
+
+	def lda_signature(self, pp):
+		"""
+		Generate LDA signature for the function. This signature will be output
+		right before the function's LDA code block.
+		"""
+		raise NotImplementedError
 
 	def lda(self, pp):
-		pp.putline(kw.ALGORITHM)
+		self.lda_signature(pp)
+		pp.newline()
 		if self.lexicon:
 			pp.putline(self.lexicon)
 		pp.putline(kw.BEGIN)
@@ -22,20 +41,34 @@ class Algorithm:
 			pp.indented(pp.putline, self.body)
 		pp.put(kw.END)
 
+	def js_signature(self, pp):
+		"""
+		Generate JS signature for the function. This signature will be output
+		right before the function's JS code block.
+		"""
+		raise NotImplementedError
+
 	def js(self, pp):
-		pp.putline("P.main = function() {")
+		self.js_signature(pp)
+		pp.putline(" {")
 		if self.lexicon:
 			pp.indented(pp.putline, self.lexicon)
 		if self.body:
 			pp.indented(pp.putline, self.body)
 		pp.put("}")
 
-	def check(self, context, logger):
-		context.push(self)
-		if self.lexicon is not None:
-			self.lexicon.check(context, logger)
-		self.body.check(context, logger)
-		context.pop()
+
+class Algorithm(_BaseFunction):
+	"""
+	Entry point function that takes no parameters and does not return a value.
+	There can only be one algorithm per module.
+	"""
+
+	def lda_signature(self, pp):
+		pp.put(kw.ALGORITHM)
+
+	def js_signature(self, pp):
+		pp.put("P.main = function()")
 
 	def check_return(self, logger, return_statement):
 		"""
@@ -47,15 +80,18 @@ class Algorithm:
 					"un algorithme ne peut pas retourner une valeur"))
 
 
-class Function:
+class Function(_BaseFunction):
+	"""
+	Callable function that has a name, takes zero or more parameters, and may
+	return a value. The number of functions in a module is unlimited.
+	"""
+
 	def __init__(self, pos, end_pos, ident, fp_list, return_type, lexicon, body):
-		self.pos         = pos
+		super().__init__(pos, lexicon, body)
 		self.end_pos     = end_pos
 		self.ident       = ident
 		self.fp_list     = fp_list
 		self.return_type = return_type
-		self.lexicon     = lexicon
-		self.body        = body
 
 	def check_signature(self, context, logger):
 		"""
@@ -90,19 +126,11 @@ class Function:
 					"et dans le lexique de la fonction",
 					fp_lexicon.type_descriptor, fp.type_descriptor))
 			fp_lexicon.formal = True
-		# Push new context onto the context stack, i.e. enter the function scope
-		context.push(self)
-		# Check lexicon
-		if self.lexicon is not None:
-			self.lexicon.check(context, logger)
-		# Check statements
-		self.body.check(context, logger)
+		super().check(context, logger)
 		# Ensure a return statement can be reached if the signature says the
 		# function returns non-VOID
 		if self.return_type is not types.VOID and not self.body.returns:
 			logger.log(semantic.MissingReturnStatement(self.end_pos))
-		# Exit function scope
-		context.pop()
 
 	def check_effective_parameters(self, context, logger, pos, params):
 		"""
@@ -145,29 +173,17 @@ class Function:
 		function_cluster = dot.Cluster("fonction " + str(self.ident), cluster)
 		return self.body.put_node(function_cluster)
 
-	def lda(self, pp):
+	def lda_signature(self, pp):
 		pp.put(kw.FUNCTION, " ", self.ident, kw.LPAREN)
 		pp.join(self.fp_list, pp.put, ", ")
 		pp.put(kw.RPAREN)
 		if self.return_type is not types.VOID:
 			pp.put(kw.COLON, " ", self.return_type)
-		pp.newline()
-		if self.lexicon:
-			pp.putline(self.lexicon)
-		pp.putline(kw.BEGIN)
-		if self.body:
-			pp.indented(pp.putline, self.body)
-		pp.put(kw.END)
 
-	def js(self, pp):
+	def js_signature(self, pp):
 		pp.put("P.", self.ident, " = function(")
 		pp.join((item.ident for item in self.fp_list), pp.put, ", ")
-		pp.putline(") {")
-		if self.lexicon:
-			pp.indented(pp.putline, self.lexicon)
-		if self.body:
-			pp.indented(pp.putline, self.body)
-		pp.put("}")
+		pp.put(")")
 
 	def js_call(self, pp, params):
 		"""
