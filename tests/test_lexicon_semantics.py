@@ -146,3 +146,13 @@ class TestLexiconSemantics(LDATestCase):
 					a.b <- 3
 				fin''')
 
+	def test_modify_global_variable_in_algorithm(self):
+		self.check(program="""\
+				lexique globale: entier
+				algorithme début globale <- 6 fin""")
+
+	def test_modify_global_variable_in_function(self):
+		self.check(program="""\
+				lexique globale: entier
+				fonction f() début globale <- 6 fin""")
+

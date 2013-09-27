@@ -46,22 +46,23 @@ class Lexicon:
 		# augment context with the contents of the lexicon so that items can
 		# refer to other items in the lexicon
 		context.update(self.symbol_dict)
-		# refine composites
+		# Composite check pass 1: check fields (create mini symbol table).
 		for composite in self.composites:
 			composite.resolve_type(context, logger)
-		# resolve function signatures before checking function bodies, so that the
-		# functions can call functions defined within this lexicon
-		for function in self.functions:
-			function.check_signature(context, logger)
-		# check function bodies
-		for function in self.functions:
-			function.check(context, logger)
-		# resolve variable types
-		for variable in self.variables:
-			variable.check(context, logger)
-		# detect infinite recursion in composites
+		# Composite check pass 2: detect infinite recursion.
 		for composite in self.composites:
 			composite.detect_loops(composite, logger)
+		# Resolve variable types.
+		for variable in self.variables:
+			variable.check(context, logger)
+		# Resolve function signatures before checking function bodies, so that the
+		# functions can call functions defined within this lexicon.
+		for function in self.functions:
+			function.check_signature(context, logger)
+		# Check function bodies at the very end, so that they can use
+		# composites and variables in this lexicon.
+		for function in self.functions:
+			function.check(context, logger)
 
 	def __bool__(self):
 		"""

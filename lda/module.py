@@ -20,6 +20,7 @@ class Module:
 						"il ne peut y avoir qu'un seul algorithme par module"))
 		for alg in self.algorithms:
 			alg.check(context, logger)
+		# No need to check functions here, it was done by self.lexicon.check()
 		context.pop()
 
 	def put_node(self, cluster):
