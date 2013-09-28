@@ -39,7 +39,7 @@ class Lexicon:
 			try:
 				existing = context[name]
 				logger.log(semantic.DuplicateDeclaration(
-						self.symbol_dict[name].ident, existing.ident))
+						self[name].ident, existing.ident))
 			except KeyError:
 				pass
 		# augment context with the contents of the lexicon so that items can
@@ -69,6 +69,12 @@ class Lexicon:
 		Please note that functions are not accounted for by __bool__!
 		"""
 		return bool(self.composites) or bool(self.variables)
+
+	def __getitem__(self, k):
+		return self.symbol_dict[k]
+
+	def __contains__(self, k):
+		return k in self.symbol_dict
 
 	def lda(self, pp):
 		if not self:
