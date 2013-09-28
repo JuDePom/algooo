@@ -1,5 +1,5 @@
 from . import kw
-from .types import Inout
+from .types import Inout, Composite, Array
 from .errors import semantic
 
 class VarDecl:
@@ -43,4 +43,9 @@ class VarDecl:
 			pp.put(self.ident, " = ")
 			self.resolved_type.js_declare(pp)
 			pp.put(";")
+		elif isinstance(self.resolved_type, (Composite, Array)):
+			# The variable will be translated to a JS *object* (not a JS
+			# *scalar*), and JS won't pass it by copy. Clone the object to
+			# fake pass-by-copy.
+			pp.put(self.ident, " = LDA.clone(", self.ident, "); /* fake pass by copy */")
 

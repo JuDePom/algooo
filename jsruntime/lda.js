@@ -12,6 +12,26 @@ LDA.RuntimeError = function(message) {
 };
 
 /**
+ * Clone an object. This is used to fake pass-by-copy.
+ *
+ * A clone of an object is an empty object with a prototype reference to the
+ * original. As such, you can access the current properties of the original
+ * through the clone. If you set a clone's property, it will override the
+ * original's property, and not affect the original. You can use the delete
+ * operator on the clone's overridden property to return to the earlier lookup
+ * behavior.
+ *
+ * (From owl_util.js; see http://oranlooney.com/functional-javascript)
+ */
+LDA.clone = (function() {
+	function Clone() {}
+	return function(obj) {
+		Clone.prototype = obj;
+		return new Clone();
+	};
+}());
+
+/**
  * Construct an array and its sub-arrays recursively.
  *
  * - dimensions: array of integer ranges. An integer range is represented
