@@ -178,17 +178,19 @@ class LDATestCase(unittest.TestCase):
 			root.check(context, error_handler)
 		return root
 
-	def jseval(self, shutup=False, **kwargs):
+	def jseval(self, shutup=False, extracode="P.main();", **kwargs):
 		"""
 		Compile a program to JavaScript, execute it, and return the output.
 		The input program's entry point is its Algorithm.
 
 		:param shutup: If True, stderr's output will be redirected to
 		subprocess.DEVNULL. This is useful if you are certain the test fails.
+		:param extracode: Extra JavaScript code executed at the very end of the
+		generated code. By default, `extracode` calls `P.main()`.
 		"""
 		pp = prettyprinter.JSPrettyPrinter()
 		self.check(**kwargs).js(pp)
-		code = "require('lda.js');\n\n{}\n\nP.main();\n".format(pp)
+		code = "require('lda.js');\n\n{}\n\n{}\n".format(pp, extracode)
 		return subprocess.check_output(["node", "-e", code],
 				stderr = shutup and subprocess.DEVNULL or None,
 				env={'NODE_PATH':'./jsruntime'}, universal_newlines=True)

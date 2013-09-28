@@ -40,7 +40,7 @@ class VarDecl:
 	def js(self, pp):
 		if not self.formal:
 			prefix = getattr(self.parent, 'js_namespace', "var ")
-			pp.put(self.ident, " = ")
+			pp.put(prefix, self.ident, " = ")
 			self.resolved_type.js_declare(pp)
 			pp.put(";")
 		elif isinstance(self.resolved_type, (Composite, Array)):
