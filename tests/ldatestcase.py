@@ -168,7 +168,7 @@ class LDATestCase(unittest.TestCase):
 		:param kwargs : Arguments to pass to the analysis function.
 		"""
 		if context is None:
-			context = ContextStack()
+			context = ContextStack(self.options)
 		if error_handler is None:
 			error_handler = handler.Raiser()
 		root = self.analyze(**kwargs)

@@ -6,7 +6,8 @@ class ContextStack:
 			self.symbols = symbols
 			self.parent = parent
 
-	def __init__(self, symbols=None, parent=None):
+	def __init__(self, options, symbols=None, parent=None):
+		self.options = options
 		if symbols is None:
 			symbols = builtin.SYMBOLS.copy()
 		self.stack = [ContextStack.Context(symbols, parent)]

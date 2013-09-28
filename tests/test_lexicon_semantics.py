@@ -27,7 +27,7 @@ class TestLexiconSemantics(LDATestCase):
 	def test_undefined_type_alias(self):
 		alg = self.analyze(cls=Algorithm,
 				program='algorithme lexique m: (**)TypeMysterieux début fin')
-		alg.check(ContextStack(), handler.DummyHandler())
+		alg.check(ContextStack(self.options), handler.DummyHandler())
 		self.assertIs(types.ERRONEOUS, alg.lexicon.symbol_dict['m'].resolved_type)
 
 	def test_variable_declared_twice(self):

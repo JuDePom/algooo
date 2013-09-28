@@ -48,7 +48,7 @@ except lda.errors.syntax.SyntaxError as e:
 	sys.exit(1)
 
 logger = lda.errors.handler.Logger()
-module.check(lda.context.ContextStack(), logger)
+module.check(lda.context.ContextStack(args), logger)
 
 if logger:
 	for e in logger.errors:
