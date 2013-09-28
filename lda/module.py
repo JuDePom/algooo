@@ -44,8 +44,10 @@ class Module:
 			pp.putline(self.lexicon)
 			pp.newline(2)
 		for function in self.functions:
-			pp.putline(function)
-			pp.newline(2)
+			function.js(pp)
+			pp.putline(";")
+			pp.newline()
 		if self.algorithms:
-			pp.putline(self.algorithms[0])
+			self.algorithms[0].js(pp)
+			pp.putline(";")
 
