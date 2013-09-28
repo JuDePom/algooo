@@ -193,6 +193,14 @@ class Function(_BaseFunction):
 		instances) can define a more complex `js_call()`.
 		"""
 		pp.put("P.", self.ident, "(")
-		pp.join(params, pp.put, ", ")
+		prefix = ""
+		for formal, effective in zip(self.fp_list, params):
+			pp.put(prefix)
+			if formal.js_fakeptr:
+				pp.put("LDA.ptr(function(){return ", effective,
+						";},function(v){", effective, "=v;})")
+			else:
+				pp.put(effective)
+			prefix = ", "
 		pp.put(")")
 

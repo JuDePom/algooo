@@ -12,6 +12,19 @@ LDA.RuntimeError = function(message) {
 };
 
 /**
+ * Make a fake pointer. Useful when passing `inout` parameters.
+ *
+ * The pointed-to value can be read and written through the `v` property of
+ * the returned pointer object.
+ *
+ * - getter: a function that returns the pointed-to value
+ * - setter: a function that assigns its sole argument to the pointed-to value
+ */
+LDA.ptr = function(getter, setter) {
+	return Object.defineProperty({}, "v", {get: getter, set: setter});
+};
+
+/**
  * Clone an object. This is used to fake pass-by-copy.
  *
  * A clone of an object is an empty object with a prototype reference to the
