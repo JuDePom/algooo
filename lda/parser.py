@@ -407,7 +407,10 @@ class Parser(BaseParser):
 			except NotFoundHere:
 				raise syntax.SyntaxError(pos, "argument vide")
 			has_next = self.softskip(kw.COMMA)
-		self.hardskip(closing_kw)
+		# Even though there cannot be a comma here (since has_next went False),
+		# we're hardskipping kw.COMMA anyway. That way, in case of an error,
+		# the user knows they could've used a comma here.
+		self.hardskip(closing_kw, kw.COMMA)
 		return arglist
 
 	def analyze_literal_integer(self):
