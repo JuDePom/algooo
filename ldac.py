@@ -30,7 +30,7 @@ ap.add_argument('--no-output', '-n', action='store_true',
 		help="""vérifie uniquement la cohérence syntaxique et sémantique
 		sans générer de code""")
 
-ap.add_argument('--case-insensitive', action='store_true',
+ap.add_argument('--ignore-case', '-c', action='store_true',
 		help="""Ignorer la casse dans les identificateurs et les mot-clés""")
 
 ap.add_argument('--js-standalone', '-s', action='store_true',

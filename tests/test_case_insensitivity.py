@@ -5,7 +5,7 @@ from lda.errors import semantic
 class TestCaseInsensitivity(LDATestCase):
 	def setUp(self):
 		super().setUp()
-		self.options.case_insensitive = True
+		self.options.ignore_case = True
 	
 	def test_case_insensitive_1(self):
 		self.check(cls=Module, program="""\

@@ -149,8 +149,7 @@ class BaseParser:
 		# raw_buf is only used to parse strings and characters, and buf is used
 		# for everything else. This separation allows for case insensitivity
 		# while retaining the case in literal strings/characters.
-		self.options = options
-		if self.options.case_insensitive:
+		if options.ignore_case:
 			self.buf = self.raw_buf.lower()
 		else:
 			self.buf = self.raw_buf

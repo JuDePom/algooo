@@ -30,7 +30,7 @@ PARSING_FUNCTIONS = {
 }
 
 class DefaultOptions:
-	case_insensitive = False
+	ignore_case = False
 
 class LDATestCase(unittest.TestCase):
 	"""
