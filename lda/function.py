@@ -13,17 +13,6 @@ class _BaseFunction:
 		self.lexicon = lexicon
 		self.body = body
 
-	def check(self, context, logger):
-		# Push new context onto the context stack, i.e. enter function scope
-		context.push(self)
-		# Check lexicon
-		if self.lexicon is not None:
-			self.lexicon.check(context, logger)
-		# Check statements
-		self.body.check(context, logger)
-		# Exit function scope
-		context.pop()
-
 	def lda_signature(self, pp):
 		"""
 		Generate LDA signature for the function. This signature will be output
@@ -79,6 +68,16 @@ class Algorithm(_BaseFunction):
 			logger.log(semantic.SemanticError(return_statement.expression.pos,
 					"un algorithme ne peut pas retourner une valeur"))
 
+	def check(self, context, logger):
+		# Push new context onto the context stack, i.e. enter function scope
+		context.push(self)
+		# Check lexicon
+		if self.lexicon is not None:
+			self.lexicon.check(context, logger)
+		# Check statements
+		self.body.check(context, logger)
+		# Exit function scope
+		context.pop()
 
 class Function(_BaseFunction):
 	"""
@@ -102,6 +101,46 @@ class Function(_BaseFunction):
 		for fp in self.fp_list:
 			fp.check(context, logger)
 
+	def check_formal_parameters(self, context, logger):
+		# Hunt duplicates among formal parameters
+		semantictools.hunt_duplicates(self.fp_list, logger)
+		lexicon = self.lexicon if self.lexicon is not None else {}
+		if context.options.formals_in_lexicon:
+			# Ensure each formal parameter matches its declaration in the lexicon,
+			# and set the formal flag in the relevant lexicon declarations.
+			for fp in self.fp_list:
+				try:
+					fp_lexicon = lexicon[fp.ident.name]
+				except KeyError:
+					logger.log(semantic.FormalParameterMissingInLexicon(fp.ident))
+					continue
+				if fp != fp_lexicon:
+					logger.log(semantic.TypeMismatch(fp_lexicon.ident.pos, "le type de ce "
+						"paramètre formel doit rester le même dans l'en-tête de la fonction "
+						"et dans le lexique de la fonction",
+						fp_lexicon.type_descriptor, fp.type_descriptor))
+				fp_lexicon.formal = True
+		else:
+			for fp in self.fp_list:
+				fp.formal = True
+				try:
+					fp_lexicon = lexicon[fp.ident.name]
+					err = semantic.SemanticError(fp_lexicon.ident.pos,
+						"inutile de re-définir les paramètres formels "
+						"dans le lexique")
+					err.hint = ("si c'est vraiment ce que vous voulez, essayez l'option "
+						"--formals-in-lexicon")
+					logger.log(err)
+					continue
+				except KeyError:
+					pass
+			# Augment context with formal parameters that are NOT in the
+			# lexicon (otherwise, during the analysis of the lexicon, the user
+			# will get a redundant warning saying the name was taken by the
+			# formal parameter)
+			context.update({fp.ident.name: fp for fp in self.fp_list
+				if fp.ident.name not in lexicon})
+
 	def check(self, context, logger):
 		"""
 		Ensure the function's lexicon and body are semantically correct.
@@ -110,27 +149,18 @@ class Function(_BaseFunction):
 		therefore `check_signature()` must have been called prior to calling
 		this method.
 		"""
-		# Hunt duplicates among formal parameters
-		semantictools.hunt_duplicates(self.fp_list, logger)
-		# Ensure each formal parameter matches its declaration in the lexicon,
-		# and set the formal flag in the relevant lexicon declarations.
-		for fp in self.fp_list:
-			try:
-				fp_lexicon = self.lexicon.symbol_dict[fp.ident.name]
-			except (AttributeError, KeyError):
-				logger.log(semantic.FormalParameterMissingInLexicon(fp.ident))
-				continue
-			if fp != fp_lexicon:
-				logger.log(semantic.TypeMismatch(fp_lexicon.ident.pos, "le type de ce "
-					"paramètre formel doit rester le même dans l'en-tête de la fonction "
-					"et dans le lexique de la fonction",
-					fp_lexicon.type_descriptor, fp.type_descriptor))
-			fp_lexicon.formal = True
-		super().check(context, logger)
+		context.push(self)
+		self.check_formal_parameters(context, logger)
+		# Check lexicon
+		if self.lexicon is not None:
+			self.lexicon.check(context, logger)
+		# Check statements
+		self.body.check(context, logger)
 		# Ensure a return statement can be reached if the signature says the
 		# function returns non-VOID
 		if self.return_type is not types.VOID and not self.body.returns:
 			logger.log(semantic.MissingReturnStatement(self.end_pos))
+		context.pop()
 
 	def check_effective_parameters(self, context, logger, pos, params):
 		"""
