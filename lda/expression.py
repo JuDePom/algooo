@@ -109,6 +109,12 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 		except AttributeError:
 			self.writable = False
 
+	def js(self, pp):
+		if self.bound.js_fakeptr:
+			pp.put("ptr", super(), ".v")
+		else:
+			super().js(pp)
+
 class Literal(Expression):
 	"""
 	Value hard-coded into the program.

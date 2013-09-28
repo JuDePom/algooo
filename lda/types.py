@@ -17,6 +17,9 @@ class TypeDescriptor:
 
 	Type descriptors may need to be refined through semantic analysis (via the
 	check() method) to be complete.
+
+	All type descriptors shall provide the `js_object` boolean; set it to True
+	if this TypeDescriptor translates to an `object` type in JavaScript.
 	"""
 
 	def __eq__(self, other):
@@ -70,6 +73,8 @@ class BlackHole(TypeDescriptor):
 	an expression doesn't have a type.
 	"""
 
+	js_object = False
+
 	def __init__(self, human_name):
 		self.human_name = human_name
 
@@ -116,6 +121,9 @@ class Scalar(TypeDescriptor):
 	such, the Scalar class is not meant to be instantiated (besides the
 	pre-defined Scalar instances in this module: INTEGER, REAL, etc.).
 	"""
+
+	# `number`, `boolean`, `string` are not objects in JavaScript
+	js_object = False
 
 	def __init__(self, keyword, name=None):
 		super().__init__()
@@ -197,6 +205,8 @@ class Array(TypeDescriptor):
 	Array type declaration. The array must contain at least one dimension. Each
 	dimension can be static or dynamic.
 	"""
+
+	js_object = True
 
 	class StaticDimension:
 		"""
@@ -362,6 +372,8 @@ class Composite(TypeDescriptor):
 	Composite type declaration. Contains an identifier (the name of the
 	composite type) and a list of member fields.
 	"""
+
+	js_object = True
 
 	def __init__(self, ident, fields):
 		super().__init__()

@@ -178,7 +178,10 @@ class Function(_BaseFunction):
 
 	def js_signature(self, pp):
 		pp.put("P.", self.ident, " = function(")
-		pp.join((item.ident for item in self.fp_list), pp.put, ", ")
+		prefix = ""
+		for formal in self.fp_list:
+			pp.put(prefix, "ptr" if formal.js_fakeptr else "", formal.ident)
+			prefix = ", "
 		pp.put(")")
 
 	def js_call(self, pp, params):
