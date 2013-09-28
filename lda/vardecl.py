@@ -1,5 +1,5 @@
 from . import kw
-from .types import Inout, Composite, Array
+from .types import Composite, Array
 from .errors import semantic
 
 class VarDecl:
@@ -15,10 +15,11 @@ class VarDecl:
 
 	writable = True
 
-	def __init__(self, ident, type_descriptor, formal=False):
+	def __init__(self, ident, type_descriptor, formal, inout):
 		self.ident = ident
 		self.type_descriptor = type_descriptor
 		self.formal = formal
+		self.inout = inout
 
 	def __eq__(self, other):
 		if self is other:
@@ -27,7 +28,7 @@ class VarDecl:
 				self.type_descriptor == other.type_descriptor
 
 	def check(self, context, logger):
-		if not self.formal and isinstance(self.type_descriptor, Inout):
+		if not self.formal and self.inout:
 			logger.log(semantic.SemanticError(self.ident.pos,
 					"\"inout\" n'est autorisé que dans un paramètre formel"))
 		# Save parent (will be useful to produce the correct ident in JS)
@@ -35,7 +36,10 @@ class VarDecl:
 		self.resolved_type = self.type_descriptor.resolve_type(context, logger)
 
 	def lda(self, pp):
-		pp.put(self.ident, kw.COLON, " ", self.type_descriptor)
+		pp.put(self.ident, kw.COLON, " ")
+		if self.inout:
+			pp.put(kw.INOUT)
+		pp.put(self.type_descriptor)
 
 	def js(self, pp):
 		if not self.formal:

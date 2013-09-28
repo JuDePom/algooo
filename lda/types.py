@@ -168,38 +168,6 @@ _dual_scalar_compatibility(weak=CHARACTER, strong=STRING)
 #
 #######################################################################
 
-class Inout(TypeDescriptor):
-	"""
-	Inout wrapper around a core type.
-	"""
-
-	def __init__(self, core):
-		super().__init__()
-		self.core = core
-
-	def __repr__(self):
-		return "inout {}".format(self.core)
-
-	def __eq__(self, other):
-		return isinstance(other, Inout) and self.core.__eq__(other.core)
-
-	def resolve_type(self, context, logger):
-		self.resolved_core = self.core.resolve_type(context, logger)
-		return self.resolved_core
-
-	def equivalent(self, other):
-		if isinstance(other, Inout):
-			return self.core.equivalent(other.core)
-		else:
-			return self.core.equivalent(other)
-
-	def compatible(self, other):
-		if isinstance(other, Inout):
-			return self.core.compatible(other.core)
-		else:
-			return self.core.compatible(other)
-
-
 class TypeAlias(PureIdentifier, TypeDescriptor):
 	"""
 	Identifier that can only refer to a Composite.

@@ -136,14 +136,10 @@ class Parser(BaseParser):
 		return types.Array.DynamicDimension(kwpos)
 
 	def analyze_type_descriptor(self):
-		inout = self.softskip(kw.INOUT)
 		typedesc = Backtrack(self).give(self.analyze_array)
 		if typedesc is None:
 			typedesc = self.analyze_non_array_type_descriptor()
-		if not inout:
-			return typedesc
-		else:
-			return types.Inout(typedesc)
+		return typedesc
 
 	def analyze_non_array_type_descriptor(self):
 		keyword = self.softskip(*SCALARS_KW_TO_TYPE.keys())
@@ -156,9 +152,10 @@ class Parser(BaseParser):
 		if ident is None:
 			ident = self.analyze_identifier(critical=True)
 			self.hardskip(kw.COLON)
+		inout = self.softskip(kw.INOUT)
 		with CriticalItem(self, "le type de la variable"):
 			typedesc = self.analyze_type_descriptor()
-		return VarDecl(ident, typedesc, formal)
+		return VarDecl(ident, typedesc, formal, inout)
 
 	@opening_keyword(kw.LT)
 	def analyze_composite(self, kwpos, ident):
