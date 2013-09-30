@@ -32,16 +32,3 @@ class TestForSyntax(LDATestCase):
 		test("pour i de 1 jusque 3(**)fessée(toto) fpour", kw.DO)
 		test("pour i de 1 jusque 3 faire fessée(toto)(**)", kw.END_FOR)
 
-	def test_for_wrong_ending_keyword(self):
-		self.assertMissingKeywords(kw.END_FOR,
-				program="""\
-						algorithme
-						lexique
-							i: entier
-						début
-							pour i de 1 jusque 3 faire
-								écrire("youpi")
-								(**)fpou
-							fpour
-						fin""")
-

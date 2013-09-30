@@ -4,6 +4,7 @@ from lda.errors import syntax, semantic
 from lda.context import ContextStack
 from lda.errors.handler import Logger
 from lda import prettyprinter
+from lda import kw
 from fnmatch import fnmatch
 from itertools import count
 import subprocess
@@ -13,7 +14,7 @@ SNIPPETSDIR = os.path.join(os.path.dirname(__file__), "snippets")
 
 
 # (*#ErrorClassExpectedRightAfterThisCommentEnds#*)
-ERROR_REGEXP = re.compile(r"\(\*\#(\w+)(\#\*\))")
+ERROR_REGEXP = re.compile(r"\(\*\#(.+?)(\#\*\))")
 
 # (*% directive0, directive1 arg0 arg1 arg2, directive2 arg0 %*)
 DIRECTIVE_REGEXP = re.compile(r"^\(\*\%\ (.*?)\ \%\*\)", re.DOTALL|re.MULTILINE)
@@ -67,13 +68,20 @@ class TestSnippets(unittest.TestCase):
 		start = 0
 		for i, error, match in zip(count(), logged_errors, snippet_errors):
 			classname = match.group(1)
-			class_ = getattr(syntax, classname, None) or getattr(semantic, classname)
-			self.assertIsNotNone(class_, "unknown error class: '{}'".format(classname))
+			if classname.startswith('kw:'):
+				class_ = syntax.ExpectedKeyword
+			else:
+				class_ = getattr(syntax, classname, None) or getattr(semantic, classname)
+				self.assertIsNotNone(class_, "unknown error class: '{}'".format(classname))
 			self.assertIsInstance(error, class_,
 					"wrong error found at error marker #{}".format(i))
 			self.assertEqual(error.pos.char, match.end(2),
 					"error #{} wasn't reported at expected position (raised: {})"
 					.format(i, error))
+			if class_ is syntax.ExpectedKeyword:
+				raw_kws = classname[1+classname.find(':'):].split(',')
+				expected_keywords = set(getattr(kw, r) for r in raw_kws)
+				self.assertSetEqual(expected_keywords, set(error.expected_keywords))
 		# ---- stop there if there were any errors -------------
 		if snippet_errors:
 			return

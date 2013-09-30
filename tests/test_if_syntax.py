@@ -42,14 +42,6 @@ class TestIfSyntax(LDATestCase):
 		self.assertEqual(3, len(stmt.conditionals))
 		self.assertIsNotNone(stmt.else_block)
 
-	def test_multiple_elses(self):
-		stmt = self.assertMissingKeywords(kw.END_IF, cls=If,
-				program="""\
-				si x alors y()
-				sinon z()
-				(**)sinon w()
-				fsi""")
-
 	def test_if_missing_keyword(self):
 		def test(p, *args):
 			self.assertMissingKeywords(*args, cls=If, program=p)

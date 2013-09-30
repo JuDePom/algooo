@@ -1,0 +1,8 @@
+algorithme
+début
+	si x alors y()
+	sinon z()
+	(*#kw:END_IF#*)sinon w()
+	fsi
+fin
+

@@ -1,0 +1,9 @@
+algorithme
+lexique
+	i: entier
+début
+	pour i de 1 jusque 3 faire
+		écrire("youpi")
+		(*#kw:END_FOR#*)fpou
+	fpour
+fin
