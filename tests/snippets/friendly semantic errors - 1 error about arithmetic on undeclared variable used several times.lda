@@ -1,0 +1,7 @@
+algorithme
+lexique
+	j: entier
+début
+	j <- -(*#MissingDeclaration#*)i
+	j <- i + i
+fin

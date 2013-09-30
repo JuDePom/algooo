@@ -122,41 +122,6 @@ class LDATestCase(unittest.TestCase):
 		self.assertSetEqual(set(error.expected_keywords), set(expected_keywords))
 		return error
 
-	def assertMultipleSemanticErrors(self, error_classes, program):
-		"""
-		Ensure that multiple LDA semantic errors are raised at specific points
-		in the input program.
-
-		In the unit test's LDA source code, mark expected error occurences with
-		an empty comment like so:
-			tableau entier[(**)'a', (**)'b']
-
-		Please note that non-relevant errors are ignored by this method. Refer
-		to errors/semantic.py to learn how the compiler deems a semantic error
-		relevant or not.
-
-		:param error_classes: List of error classes expected to be raised
-			during the semantic analysis of the program, in the order in which they
-			appear in the program.
-		:param program: Source code to analyze.
-		"""
-		logger = handler.Logger()
-		self.check(program=program, error_handler=logger)
-		# make sure the analysis raised as many errors as expected
-		expected_count, reported_count = len(error_classes), len(logger.errors)
-		self.assertEqual(expected_count, reported_count,
-				"we expected {} errors but {} were reported".format(
-				expected_count, reported_count))
-		# check each error
-		start = 0
-		for i, error, class_ in zip(count(), logger.errors, error_classes):
-			start = self._assertSingleLDAError(program, error, start, i)
-			self.assertIsInstance(error, class_,
-					"wrong error found at error marker #{}".format(i))
-		# make sure there are no leftover markers in the source code
-		self.assertEqual(-1, program.find(ERROR_MARKER, start),
-				"too many error markers!")
-
 	def check(self, context=None, error_handler=None, **kwargs):
 		"""
 		Perform syntactic and semantic analysis of a program.

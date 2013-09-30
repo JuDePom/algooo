@@ -1,0 +1,5 @@
+algorithme
+lexique
+	t: tableau entier[(*#TypeError#*)"xxx", (*#TypeError#*)'a', (*#TypeError#*)5.123]
+début
+fin
