@@ -145,7 +145,7 @@ class LDATestCase(unittest.TestCase):
 		# make sure the analysis raised as many errors as expected
 		expected_count, reported_count = len(error_classes), len(logger.errors)
 		self.assertEqual(expected_count, reported_count,
-				"we expected {} errors but only {} were reported".format(
+				"we expected {} errors but {} were reported".format(
 				expected_count, reported_count))
 		# check each error
 		start = 0
