@@ -175,7 +175,6 @@ RANGE     = Scalar(None, "<intervalle>")
 _dual_scalar_compatibility(weak=INTEGER,   strong=REAL)
 _dual_scalar_compatibility(weak=CHARACTER, strong=STRING)
 
-
 #######################################################################
 #
 # TYPES THAT NEED TO BE RESOLVED
@@ -243,12 +242,13 @@ class Array(TypeDescriptor):
 				self.expression.check({}, handler.Raiser())
 			except semantic.MissingDeclaration as e:
 				logger.log(semantic.SemanticError(e.pos,
-						"une borne de tableau statique doit être construite à partir "
-						"d'une expression constante"))
+						"il est interdit d'introduire des variables dans la définition "
+						"d'une borne de tableau statique; les bornes d'un tableau statique "
+						"doivent être définies sous forme d'intervalle d'entiers littéraux"))
 				return False
 			if self.expression.resolved_type is not RANGE:
 				logger.log(semantic.TypeError(self.expression.pos,
-						"les bornes d'un tableau statique doivent être données "
+						"les bornes d'un tableau statique doivent être définies "
 						"sous forme d'intervalle d'entiers littéraux",
 						self.expression.resolved_type))
 				return False
