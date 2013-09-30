@@ -1,6 +1,5 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import syntax
-from lda.function import Algorithm, Function
 from lda.types import Array
 
 class TestArraySyntax(LDATestCase):
@@ -14,7 +13,7 @@ class TestArraySyntax(LDATestCase):
 		# token encountered by the parser. By parsing an entire algorithm, the
 		# unknown token will be passed back to the algorithm, which won't know
 		# what to do with it, and will raise a syntax error.
-		self.assertLDAError(syntax.SyntaxError, self.analyze, cls=Algorithm,
+		self.assertLDAError(syntax.SyntaxError, self.analyze,
 				program="""\
 				algorithme
 				lexique

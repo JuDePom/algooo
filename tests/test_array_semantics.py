@@ -1,6 +1,5 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
-from lda.function import Algorithm, Function
 from lda.types import Array
 
 class TestArraySemantics(LDATestCase):
@@ -17,11 +16,11 @@ class TestArraySemantics(LDATestCase):
 	def test_1d_variable_intrange(self):
 		# see test_illegal_nested_array_syntax for why this is parsed as an
 		# algorithm and not just a lexicon
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm,
+		self.assertLDAError(semantic.SemanticError, self.check,
 				program='algorithme lexique i:entier j:entier t:tableau entier[(**)i..(**)j] début fin')
 
 	def test_wacky_recursive_variable_intrange(self):
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm,
+		self.assertLDAError(semantic.SemanticError, self.check,
 				program='''algorithme
 				lexique t: tableau entier[0..(**)t]
 				début fin''')
@@ -35,7 +34,7 @@ class TestArraySemantics(LDATestCase):
 				lexique a: tableau entier[0..n] n: entier début fin''')
 
 	def test_composite_containing_array_type_using_function_level_variable_in_its_dimensions(self):
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm,
+		self.assertLDAError(semantic.SemanticError, self.check,
 				program='''algorithme
 				lexique Moule=<t:tableau entier[0..(**)n]> n:entier
 				début fin''')

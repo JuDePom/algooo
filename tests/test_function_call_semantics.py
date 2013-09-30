@@ -1,18 +1,17 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
-from lda.module import Module
 
 class TestFunctionCallSemantics(LDATestCase):
 	def test_wrong_effective_parameter_count_1_instead_of_0(self):
-		self.assertLDAError(semantic.ParameterCountMismatch, self.check, cls=Module,
+		self.assertLDAError(semantic.ParameterCountMismatch, self.check,
 			program='fonction f0() lexique début (**)f0(1) fin')
 
 	def test_wrong_effective_parameter_count_0_instead_of_1(self):
-		self.assertLDAError(semantic.ParameterCountMismatch, self.check, cls=Module,
+		self.assertLDAError(semantic.ParameterCountMismatch, self.check,
 			program='fonction f1(a:entier) lexique a:entier début (**)f1() fin')
 
 	def test_assignment_using_function_call_returning_wrong_type(self):
-		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Module,
+		self.assertLDAError(semantic.TypeMismatch, self.check,
 				program='''fonction f(): entier
 				lexique
 					Moule = <>
@@ -66,7 +65,7 @@ class TestFunctionCallSemantics(LDATestCase):
 				fin''')
 
 	def test_parameter_type_mismatch_1(self):
-		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=Module,
+		self.assertLDAError(semantic.SpecificTypeExpected, self.check,
 				program='''fonction f(a: entier)
 				lexique
 					Moule = <>
@@ -77,7 +76,7 @@ class TestFunctionCallSemantics(LDATestCase):
 				fin''')
 
 	def test_parameter_type_mismatch_3(self):
-		self.assertLDAError(semantic.SpecificTypeExpected, self.check, cls=Module,
+		self.assertLDAError(semantic.SpecificTypeExpected, self.check,
 				program='''fonction f(a: entier, b: chaîne, c: caractère)
 				lexique
 					Moule = <>
@@ -90,7 +89,7 @@ class TestFunctionCallSemantics(LDATestCase):
 				fin''')
 
 	def test_call_non_function_identifier(self):
-		self.assertLDAError(semantic.NonCallable, self.check, cls=Module,
+		self.assertLDAError(semantic.NonCallable, self.check,
 				program='''algorithme
 				lexique
 					a: entier
@@ -99,7 +98,7 @@ class TestFunctionCallSemantics(LDATestCase):
 				fin''')
 
 	def test_call_non_function_literal(self):
-		self.assertLDAError(semantic.NonCallable, self.check, cls=Module,
+		self.assertLDAError(semantic.NonCallable, self.check,
 				program='''algorithme
 				début
 					(**)3()

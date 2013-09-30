@@ -1,6 +1,5 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import syntax
-from lda.module import Module
 from lda.statements import While
 from lda import kw
 

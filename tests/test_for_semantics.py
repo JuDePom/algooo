@@ -1,7 +1,6 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 from lda.statements import For
-from lda.function import Algorithm
 
 class TestForSemantics(LDATestCase):
 	def test_for_simple(self):
@@ -48,7 +47,7 @@ class TestForSemantics(LDATestCase):
 					début
 						pour (**)a de 1 jusque 5 faire fpour
 					fin'''.format(raw_counter_type)
-			self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm, program=program)
+			self.assertLDAError(semantic.SemanticError, self.check, program=program)
 		test('chaîne')
 		test('réel')
 		test('caractère')
@@ -68,7 +67,7 @@ class TestForSemantics(LDATestCase):
 					début
 						pour i de {} jusque {} faire fpour
 					fin'''.format(raw_initial, raw_final)
-			self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm, program=program)
+			self.assertLDAError(semantic.SemanticError, self.check, program=program)
 		test('(**)"abc"', '5')
 		test('(**)vrai', '5')
 		test('(**)1.234', '5')

@@ -1,5 +1,4 @@
 from tests.ldatestcase import LDATestCase
-from lda.module import Module
 from lda.errors import semantic
 
 class TestCaseInsensitivity(LDATestCase):
@@ -8,7 +7,7 @@ class TestCaseInsensitivity(LDATestCase):
 		self.options.ignore_case = True
 	
 	def test_case_insensitive_1(self):
-		self.check(cls=Module, program="""\
+		self.check(program="""\
 				LEXIQUE
 					MOULe = <A: ENTIER>
 				ALGORITHME
@@ -19,7 +18,7 @@ class TestCaseInsensitivity(LDATestCase):
 				FIN""")
 	
 	def test_case_insensitive_name_clash(self):
-		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Module,
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check,
 				program="""lexique
 					bonjour: entier
 					(**)Bonjour: entier""")

@@ -1,12 +1,11 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic, handler
-from lda.function import Algorithm, Function
 from lda import types
 from lda.context import ContextStack
 
 class TestLexiconSemantics(LDATestCase):
 	def test_variable_absent_from_lexicon(self):
-		self.assertLDAError(semantic.MissingDeclaration, self.check, cls=Algorithm,
+		self.assertLDAError(semantic.MissingDeclaration, self.check,
 				program='algorithme lexique début (**)a <- 3 fin')
 
 	def test_composite_in_module_scope(self):
@@ -25,25 +24,30 @@ class TestLexiconSemantics(LDATestCase):
 				fonction f(): Moule lexique m: Moule début retourne m fin''')
 
 	def test_undefined_type_alias(self):
-		alg = self.analyze(cls=Algorithm,
-				program='algorithme lexique m: (**)TypeMysterieux début fin')
-		alg.check(ContextStack(self.options), handler.DummyHandler())
-		self.assertIs(types.ERRONEOUS, alg.lexicon.symbol_dict['m'].resolved_type)
+		module = self.analyze(program="""\
+				algorithme
+				lexique
+					a: entier
+					m: (**)TypeMysterieux
+				début
+				fin""")
+		module.check(ContextStack(self.options), handler.DummyHandler())
+		self.assertIs(types.ERRONEOUS, module.algorithms[0].lexicon['m'].resolved_type)
 
 	def test_variable_declared_twice(self):
-		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Algorithm,
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check,
 				program='algorithme lexique a:entier (**)a:entier début fin')
 
 	def test_variable_uses_its_own_name_as_type(self):
-		self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm,
+		self.assertLDAError(semantic.SemanticError, self.check,
 				program='algorithme lexique a:(**)a début fin')
 
 	def test_composite_declared_twice(self):
-		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Algorithm,
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check,
 				program='algorithme lexique M=<> (**)M=<> début fin')
 
 	def test_composite_and_variable_with_same_name(self):
-		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Algorithm,
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check,
 				program='algorithme lexique a=<> (**)a:entier début fin')
 
 	def test_use_existing_function_name_inside_algorithm_lexicon(self):
@@ -100,26 +104,25 @@ class TestLexiconSemantics(LDATestCase):
 
 	def test_formal_parameter_absent_from_lexicon(self):
 		self.assertLDAError(semantic.FormalParameterMissingInLexicon, self.check,
-				cls=Function, program='fonction f((**)a: entier) lexique début fin')
+				program='fonction f((**)a: entier) lexique début fin')
 
 	def test_formal_parameter_absent_from_missing_lexicon(self):
 		self.assertLDAError(semantic.FormalParameterMissingInLexicon, self.check,
-				cls=Function, program='fonction f((**)a: entier) début fin')
+				program='fonction f((**)a: entier) début fin')
 
 	def test_scalar_formal_parameter_present_in_lexicon(self):
-		self.check(cls=Function,
-				program='fonction f(a: entier) lexique a: entier début fin')
+		self.check(program='fonction f(a: entier) lexique a: entier début fin')
 
 	def test_static_array_formal_parameter_present_in_lexicon(self):
-		self.check(cls=Function, program='''fonction f(a: tableau entier[0..5])
+		self.check(program='''fonction f(a: tableau entier[0..5])
 				lexique a: tableau entier[0..5] début fin''')
 
 	def test_formal_parameter_different_type_in_lexicon(self):
-		self.assertLDAError(semantic.TypeMismatch, self.check, cls=Function,
+		self.assertLDAError(semantic.TypeMismatch, self.check,
 				program='fonction f(a: entier) lexique (**)a: réel début fin')
 
 	def test_duplicate_formal_parameter_inside_parentheses(self):
-		self.assertLDAError(semantic.DuplicateDeclaration, self.check, cls=Function,
+		self.assertLDAError(semantic.DuplicateDeclaration, self.check,
 				program='fonction f(a: entier, (**)a:entier) lexique a: entier début fin')
 
 	def test_formal_parameter_uses_external_type_descriptor(self):
