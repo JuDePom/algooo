@@ -17,7 +17,14 @@ class TestArraySemantics(LDATestCase):
 		# see test_illegal_nested_array_syntax for why this is parsed as an
 		# algorithm and not just a lexicon
 		self.assertLDAError(semantic.SemanticError, self.check,
-				program='algorithme lexique i:entier j:entier t:tableau entier[(**)i..(**)j] début fin')
+				program='''\
+				algorithme
+				lexique
+					i: entier
+					j: entier
+					t: tableau entier[(**)i..j]
+				début
+				fin''')
 
 	def test_wacky_recursive_variable_intrange(self):
 		self.assertLDAError(semantic.SemanticError, self.check,
@@ -31,7 +38,7 @@ class TestArraySemantics(LDATestCase):
 		# If we only checked the Function, the error would appear in its lexicon.
 		self.assertLDAError(semantic.SemanticError, self.check,
 				program='''fonction f(a: tableau entier[0..(**)n], n: entier)
-				lexique a: tableau entier[0..n] n: entier début fin''')
+				lexique a: tableau entier[0..(**)n] n: entier début fin''')
 
 	def test_composite_containing_array_type_using_function_level_variable_in_its_dimensions(self):
 		self.assertLDAError(semantic.SemanticError, self.check,

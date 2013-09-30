@@ -29,8 +29,7 @@ class TestJSExpressions(LDATestCase):
 				fin"""))
 
 	def test_array_member_in_composite(self):
-		output = '\n'.join(str(i) for i in range(1, 11)) + '\n'
-		self.assertEqual(output, self.jseval(program="""\
+		self.assertEqual("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n", self.jseval(program="""\
 				algorithme
 				lexique
 					i: entier
@@ -49,8 +48,7 @@ class TestJSExpressions(LDATestCase):
 	def test_1d_static_array_of_composites(self):
 		# Composites are interesting because they require a special `filler` in
 		# the Array constructor.
-		output = '\n'.join(str(i) for i in range(1, 11)) + '\n'
-		self.assertEqual(output, self.jseval(program="""\
+		self.assertEqual("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n", self.jseval(program="""\
 				algorithme
 				lexique
 					i: entier
@@ -66,32 +64,28 @@ class TestJSExpressions(LDATestCase):
 				fin"""))
 
 	def test_2d_static_array_of_composites(self):
-		output = '100\n' * 100
-		self.assertEqual(output, self.jseval(program="""\
+		self.assertEqual("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n", self.jseval(program="""\
 				algorithme
 				lexique
 					i: entier
 					j: entier
 					Moule = <a: entier>
-					t: tableau Moule[1..10, 1..10]
+					t: tableau Moule[1..5, 1..2]
 				début
-					pour i de 1 jusque 10 faire
-						pour j de 1 jusque 10 faire
-							t[i,j].a <- 100
+					pour i de 1 jusque 5 faire
+						pour j de 1 jusque 2 faire
+							t[i, j].a <- (i - 1) * 2 + j
 						fpour
 					fpour
-					pour i de 1 jusque 10 faire
-						pour j de 1 jusque 10 faire
-							écrire(t[i,j].a)
+					pour i de 1 jusque 5 faire
+						pour j de 1 jusque 2 faire
+							écrire(t[i, j].a)
 						fpour
 					fpour
 				fin"""))
 
 	def test_complex_weave_of_composites_and_1d_dynamic_arrays(self):
-		palme = ("palme\n"*i for i in range(1, 51))
-		output = ''.join("{}\n{}".format(number, string)
-				for number, string in zip(range(1,51), palme))
-		self.assertEqual(output, self.jseval(program="""\
+		self.assertEqual("1\npalme\n2\npalme\npalme\n3\npalme\npalme\npalme\n", self.jseval(program="""\
 				algorithme
 				lexique
 					Moule = <viscosité: entier, tabfrites: tableau Frite[?]>
@@ -100,15 +94,15 @@ class TestJSExpressions(LDATestCase):
 					i: entier
 					j: entier
 				début
-					tailletab(tabdélice, 1..50)
-					pour i de 1 à 50 faire
+					tailletab(tabdélice, 1..3)
+					pour i de 1 à 3 faire
 						tabdélice[i].viscosité <- i
 						tailletab(tabdélice[i].tabfrites, 1..i)
 						pour j de 1 à i faire
 							tabdélice[i].tabfrites[j].huile <- "palme"
 						fpour
 					fpour
-					pour i de 1 à 50 faire
+					pour i de 1 à 3 faire
 						écrire(tabdélice[i].viscosité)
 						pour j de 1 à i faire
 							écrire(tabdélice[i].tabfrites[j].huile)

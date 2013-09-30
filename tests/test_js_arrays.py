@@ -3,17 +3,16 @@ from subprocess import CalledProcessError
 
 class TestJSArrays(LDATestCase):
 	def test_1d_static_integer_array_assignments(self):
-		output = '\n'.join(str(i) for i in range(100, 110)) + '\n'
-		self.assertEqual(output, self.jseval(program="""\
+		self.assertEqual("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n", self.jseval(program="""\
 				algorithme
 				lexique
 					i: entier
-					t: tableau entier[1..10]
+					t: tableau entier[101..110]
 				début
-					pour i de 1 jusque 10 faire
-						t[i] <- 100 + i - 1
+					pour i de 101 jusque 110 faire
+						t[i] <- i - 100
 					fpour
-					pour i de 1 jusque 10 faire
+					pour i de 101 jusque 110 faire
 						écrire(t[i])
 					fpour
 				fin"""))
@@ -28,23 +27,20 @@ class TestJSArrays(LDATestCase):
 				fin""")
 
 	def test_2d_static_integer_array_assignments(self):
-		output = '\n'.join(str(i) for i in range(1, 51)) + '\n'
-		self.assertEqual(output, self.jseval(program="""\
+		self.assertEqual("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n", self.jseval(program="""\
 				algorithme
 				lexique
 					c: entier
 					i: entier
 					j: entier
-					t: tableau entier[1..10, 1..5]
+					t: tableau entier[0..1, 1..5]
 				début
-					c <- 1
-					pour i de 1 à 10 faire
+					pour i de 0 à 1 faire
 						pour j de 1 à 5 faire
-							t[i, j] <- c
-							c <- c + 1
+							t[i, j] <- i * 5 + j
 						fpour
 					fpour
-					pour i de 1 à 10 faire
+					pour i de 0 à 1 faire
 						pour j de 1 à 5 faire
 							écrire(t[i, j])
 						fpour
@@ -52,36 +48,39 @@ class TestJSArrays(LDATestCase):
 				fin"""))
 
 	def test_1d_dynamic_integer_array_assignments_and_retrievals(self):
-		output = '\n'.join(str(i) for i in range(100, 111)) + '\n'
-		self.assertEqual(output, self.jseval(program="""\
+		self.assertEqual("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n", self.jseval(program="""\
 				algorithme
 				lexique
 					i: entier
 					t: tableau entier[?]
 				début
-					tailletab(t, 100..110)
-					pour i de 100 jusque 110 faire
-						t[i] <- i
+					tailletab(t, 101..110)
+					pour i de 101 jusque 110 faire
+						t[i] <- i - 100
 					fpour
-					pour i de 100 jusque 110 faire
+					pour i de 101 jusque 110 faire
 						écrire(t[i])
 					fpour
 				fin"""))
 
 	def test_2d_dynamic_integer_array_assignments_and_retrievals(self):
-		output = '\n'.join(str(i) for i in range(100, 111)) + '\n'
-		self.assertEqual(output, self.jseval(program="""\
+		self.assertEqual("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n", self.jseval(program="""\
 				algorithme
 				lexique
 					i: entier
-					t: tableau entier[?]
+					j: entier
+					t: tableau entier[?, ?]
 				début
-					tailletab(t, 100..110)
-					pour i de 100 jusque 110 faire
-						t[i] <- i
+					tailletab(t, 0..1, 1..5)
+					pour i de 0 jusque 1 faire
+						pour j de 1 jusque 5 faire
+							t[i, j] <- i * 5 + j
+						fpour
 					fpour
-					pour i de 100 jusque 110 faire
-						écrire(t[i])
+					pour i de 0 jusque 1 faire
+						pour j de 1 jusque 5 faire
+							écrire(t[i, j])
+						fpour
 					fpour
 				fin"""))
 

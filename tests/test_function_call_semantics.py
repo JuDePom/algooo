@@ -18,6 +18,7 @@ class TestFunctionCallSemantics(LDATestCase):
 					m: Moule
 				début
 					m (**)<- f()
+					retourne 42
 				fin''')
 
 	def test_matching_return_type_integer(self):
@@ -34,6 +35,7 @@ class TestFunctionCallSemantics(LDATestCase):
 		self.check(program='''\
 				lexique
 					Moule = <>
+
 				fonction f(): Moule
 				lexique
 					m: Moule
@@ -46,22 +48,27 @@ class TestFunctionCallSemantics(LDATestCase):
 		self.assertLDAError(semantic.TypeMismatch, self.check, program='''\
 				lexique
 					Moule = <>
+
 				fonction f(): Moule
 				lexique
 					a: entier
+					m: Moule
 				début
 					a (**)<- f()
+					retourne m
 				fin''')
 
 	def test_mismatching_return_type_composite_2(self):
 		self.assertLDAError(semantic.TypeMismatch, self.check, program='''\
 				lexique
 					Moule = <>
+
 				fonction f(): entier
 				lexique
 					a: Moule
 				début
 					a (**)<- f()
+					retourne 42
 				fin''')
 
 	def test_parameter_type_mismatch_1(self):
@@ -106,8 +113,11 @@ class TestFunctionCallSemantics(LDATestCase):
 
 	def test_function_call_within_function_call(self):
 		self.check(program="""\
+				(*|3|*)
 				fonction trois(): entier
-				début retourne 3 fin
+				début
+					retourne 3
+				fin
 
 				algorithme
 				début

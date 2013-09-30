@@ -84,8 +84,13 @@ class TestLexiconSemantics(LDATestCase):
 
 	def test_function_tries_using_function_name_as_return_type_alias(self):
 		self.assertLDAError(semantic.SemanticError, self.check, program='''\
-				fonction f() lexique début fin
-				fonction g(): (**)f lexique début fin''')
+				fonction f()
+				début
+				fin
+
+				fonction g(): (**)f
+				début
+				fin''')
 
 	def test_composite_tries_using_function_name_as_member_type_alias(self):
 		self.assertLDAError(semantic.SemanticError, self.check, program='''\

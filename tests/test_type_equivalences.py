@@ -160,8 +160,13 @@ class TestTypeEquivalences(LDATestCase):
 	def test_assign_integer_variable_to_real(self):
 		self.check(program="""\
 				algorithme
-				lexique r:réel e:entier
-				début e<-3   r<-e fin""")
+				lexique
+					r: réel
+					e: entier
+				début
+					e <- 3
+					r <- e
+				fin""")
 
 	def test_assign_real_literal_to_integer(self):
 		self.assertLDAError(semantic.TypeMismatch, self.check,
@@ -178,14 +183,20 @@ class TestTypeEquivalences(LDATestCase):
 	def test_assign_integer_to_inout_integer(self):
 		self.check(program="""\
 				fonction f(a: inout entier)
-				lexique a: inout entier
-				début a <- 3 fin""")
+				lexique
+					a: inout entier
+				début
+					a <- 3
+				fin""")
 
 	def test_assign_integer_to_inout_real(self):
 		self.check(program="""\
 				fonction f(a: inout réel)
-				lexique a: inout réel
-				début a <- 3 fin""")
+				lexique
+					a: inout réel
+				début
+					a <- 3
+				fin""")
 
 	def test_assign_function_to_integer(self):
 		self.assertLDAError(semantic.TypeError, self.check, program="""\
@@ -194,6 +205,7 @@ class TestTypeEquivalences(LDATestCase):
 					a: entier
 				début
 					a (**)<- f
+					retourne a
 				fin""")
 
 	def test_arithmetic_with_inout_integer(self):

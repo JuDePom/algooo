@@ -2,8 +2,7 @@ from tests.ldatestcase import LDATestCase
 
 class TestJSStatements(LDATestCase):
 	def test_for_iteration_count(self):
-		output = '\n'.join(str(i) for i in range(1, 11)) + '\n'
-		self.assertEqual(output, self.jseval(program="""\
+		self.assertEqual("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n", self.jseval(program="""\
 				algorithme
 				lexique
 					i: entier
@@ -14,8 +13,7 @@ class TestJSStatements(LDATestCase):
 				fin"""))
 
 	def test_while_iteration_count(self):
-		output = '\n'.join(str(i) for i in range(1, 11)) + '\n'
-		self.assertEqual(output, self.jseval(program="""\
+		self.assertEqual("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n", self.jseval(program="""\
 				algorithme
 				lexique
 					i: entier

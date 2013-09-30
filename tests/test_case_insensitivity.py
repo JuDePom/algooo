@@ -8,6 +8,7 @@ class TestCaseInsensitivity(LDATestCase):
 	
 	def test_case_insensitive_1(self):
 		self.check(program="""\
+				(*% ignore_case True %*)
 				LEXIQUE
 					MOULe = <A: ENTIER>
 				ALGORITHME
@@ -19,7 +20,9 @@ class TestCaseInsensitivity(LDATestCase):
 	
 	def test_case_insensitive_name_clash(self):
 		self.assertLDAError(semantic.DuplicateDeclaration, self.check,
-				program="""lexique
+				program="""\
+				(*% ignore_case True %*)
+				lexique
 					bonjour: entier
 					(**)Bonjour: entier""")
 

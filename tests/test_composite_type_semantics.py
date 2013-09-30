@@ -27,5 +27,12 @@ class TestCompositeTypeSemantics(LDATestCase):
 				lexique
 					MouleRecursive1 = <m: MouleRecursive2>
 					MouleRecursive2 = <(**)m: MouleRecursive1>
-				début fin''')
+					m1: MouleRecursive1
+					m2: MouleRecursive2
+				début
+					(* no errors should be raised by the following statements *)
+					m1.m <- m2
+					m2.m <- m1
+				fin''')
+
 

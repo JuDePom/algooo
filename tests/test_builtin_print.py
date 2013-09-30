@@ -3,10 +3,19 @@ from lda.errors import semantic
 
 class TestBuiltinPrint(LDATestCase):
 	def test_print_call_with_string(self):
-		self.check(program="algorithme début écrire(\"bonjour\") fin")
+		self.check(program="""\
+				(*|bonjour|*)
+				algorithme
+				début
+					écrire("bonjour")
+				fin""")
 
 	def test_print_call_with_nothing(self):
-		self.check(program="algorithme début écrire() fin")
+		self.check(program="""\
+				algorithme
+				début
+					écrire()
+				fin""")
 
 	def test_print_call_with_void_argument(self):
 		self.assertLDAError(semantic.TypeError, self.check, program="""\

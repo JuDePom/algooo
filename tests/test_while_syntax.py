@@ -12,8 +12,22 @@ class TestWhileSyntax(LDATestCase):
 		self.assertIsInstance(stmt.body, list)
 	
 	def test_while_alternative_keywords(self):
-		self.analyze(cls=While,
-				program="tantque toto.gentil faire bisou(toto) ftantque")
+		self.analyze(program="""\
+				(*|
+				1
+				2
+				3
+				*|)
+				algorithme
+				lexique
+					i: entier
+				début
+					i <- 3
+					tantque i <= 3 faire
+						écrire(i)
+						i <- i + 1
+					ftantque
+				fin""")
 	
 	def test_while_missing_keyword(self):
 		def test(program, *keywords):

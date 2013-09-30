@@ -70,6 +70,7 @@ class TestUnreachableStatement(LDATestCase):
 
 	def test_still_reachable_statement_after_one_if_clause_doesnt_return(self):
 		self.check(program="""\
+				(*|bidon|*)
 				algorithme
 				début
 					si 1+1=2 alors
