@@ -5,6 +5,12 @@ from . import semantictools
 from .identifier import PureIdentifier
 from types import MethodType
 
+def nonvoid(t):
+	"""
+	Return True if t is not VOID nor a BlackHole type.
+	"""
+	return t != VOID and not isinstance(t, BlackHole)
+
 #######################################################################
 #
 # BASE TYPE DESCRIPTOR CLASS

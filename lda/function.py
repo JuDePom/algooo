@@ -158,7 +158,7 @@ class Function(_BaseFunction):
 		self.body.check(context, logger)
 		# Ensure a return statement can be reached if the signature says the
 		# function returns non-VOID
-		if self.return_type is not types.VOID and not self.body.returns:
+		if types.nonvoid(self.resolved_return_type) and not self.body.returns:
 			logger.log(semantic.MissingReturnStatement(self.end_pos))
 		context.pop()
 
@@ -192,12 +192,12 @@ class Function(_BaseFunction):
 		if return_statement.expression is not None:
 			semantictools.enforce_compatible("l'expression retournée",
 					self.resolved_return_type, return_statement.expression, logger)
-		elif self.return_type is not types.VOID:
+		elif types.nonvoid(self.resolved_return_type):
 			logger.log(semantic.TypeError(return_statement.pos,
 					"cette instruction 'retourne' ne renvoit rien alors que la "
 					"fonction est censée renvoyer une valeur de type {}".format(
-					self.return_type),
-					self.return_type))
+					self.resolved_return_type),
+					self.resolved_return_type))
 
 	def lda_signature(self, pp):
 		pp.put(kw.FUNCTION, " ", self.ident, kw.LPAREN)
