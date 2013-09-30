@@ -423,6 +423,8 @@ class Composite(TypeDescriptor):
 		for field in self.fields:
 			if field.resolved_type is composite:
 				logger.log(semantic.RecursiveDeclaration(field.ident.pos))
+				# Prevent raising multiple errors about this particular recursion
+				field.resolved_type = ERRONEOUS
 				continue
 			try:
 				field.resolved_type.detect_loops(composite, logger)
