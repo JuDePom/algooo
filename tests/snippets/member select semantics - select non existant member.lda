@@ -1,0 +1,7 @@
+algorithme
+lexique
+	Moule = <a: entier>
+	m: Moule
+début
+	m.(*#MissingDeclaration#*)b <- 3
+fin

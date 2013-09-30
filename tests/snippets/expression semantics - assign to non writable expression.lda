@@ -1,0 +1,4 @@
+algorithme
+début
+	3 (*#TypeError#*)+ 2 <- 4
+fin

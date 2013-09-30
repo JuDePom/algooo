@@ -1,0 +1,15 @@
+(*|
+0.96
+tournesol
+|*)
+algorithme
+lexique
+	Moule = <viscosité: réel, f: Frite>
+	Frite = <huile: chaîne>
+	délicieux: Moule
+début
+	délicieux.viscosité <- .96
+	délicieux.f.huile <- "tournesol"
+	écrire(délicieux.viscosité)
+	écrire(délicieux.f.huile)
+fin

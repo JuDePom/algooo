@@ -1,0 +1,9 @@
+algorithme
+lexique
+	i: entier
+début
+	pour i de 1 jusque 10 faire
+		retourne
+	fpour
+	(*#UnreachableStatement#*)retourne
+fin

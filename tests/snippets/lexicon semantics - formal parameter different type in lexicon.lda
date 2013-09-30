@@ -1,0 +1,1 @@
+fonction f(a: entier) lexique (*#TypeMismatch#*)a: réel début fin

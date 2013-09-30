@@ -1,0 +1,16 @@
+(*|remplacement|*)
+fonction f(t: inout tableau chaîne[0..9])
+lexique
+	t: inout tableau chaîne[0..9]
+début
+	t[5] <- "remplacement"
+fin
+
+algorithme
+lexique
+	t: tableau chaîne[0..9]
+début
+	t[5] <- "original"
+	f(t)
+	écrire(t[5])
+fin

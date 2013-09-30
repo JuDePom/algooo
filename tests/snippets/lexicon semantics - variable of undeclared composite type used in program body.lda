@@ -1,0 +1,6 @@
+algorithme
+lexique
+	a: (*#UnresolvableTypeAlias#*)UnMystérieuxCompositeInexistant
+début
+	a.b <- 3
+fin

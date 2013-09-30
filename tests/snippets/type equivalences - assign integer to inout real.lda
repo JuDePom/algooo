@@ -1,0 +1,6 @@
+fonction f(a: inout réel)
+lexique
+	a: inout réel
+début
+	a <- 3
+fin

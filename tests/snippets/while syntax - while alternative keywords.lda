@@ -1,0 +1,15 @@
+(*|
+1
+2
+3
+*|)
+algorithme
+lexique
+	i: entier
+début
+	i <- 3
+	tantque i <= 3 faire
+		écrire(i)
+		i <- i + 1
+	ftantque
+fin

@@ -1,0 +1,6 @@
+fonction f(a: inout entier)
+lexique
+	a: inout entier
+début
+	a <- 3
+fin

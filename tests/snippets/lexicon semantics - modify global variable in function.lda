@@ -1,0 +1,2 @@
+lexique globale: entier
+fonction f() début globale <- 6 fin

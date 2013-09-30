@@ -1,0 +1,3 @@
+algorithme
+lexique Moule=<t:tableau entier[0..(*#SemanticError#*)n]> n:entier
+début fin

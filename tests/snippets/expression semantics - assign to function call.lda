@@ -1,0 +1,8 @@
+fonction f(): entier
+début
+	retourne 1337
+fin
+algorithme
+début
+	(*#TypeError#*)f() <- 3
+fin

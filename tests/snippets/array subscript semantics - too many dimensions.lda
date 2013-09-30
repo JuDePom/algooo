@@ -1,0 +1,2 @@
+algorithme lexique a: tableau entier[0..5, 0..5]
+début a(*#DimensionCountMismatch#*)[0,0,0] <- 3 fin

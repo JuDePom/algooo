@@ -1,0 +1,1 @@
+fonction f0() lexique début (*#ParameterCountMismatch#*)f0(1) fin

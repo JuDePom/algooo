@@ -1,0 +1,6 @@
+algorithme
+lexique
+	t: chaîne
+début
+	tailletab((*#TypeError#*)t, 0..5)
+fin

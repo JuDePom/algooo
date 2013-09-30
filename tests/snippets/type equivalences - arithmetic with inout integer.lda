@@ -1,0 +1,3 @@
+fonction f(a: inout entier)
+lexique a: inout entier    b: entier
+début b <- a * 2 fin

@@ -1,0 +1,7 @@
+algorithme
+lexique
+	Moule = <>
+	Huitre = <>
+début
+	(*#TypeError#*)Moule <- Huitre
+fin

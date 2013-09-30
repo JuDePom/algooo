@@ -1,0 +1,1 @@
+fonction f() lexique (*#DuplicateDeclaration#*)f: entier début fin

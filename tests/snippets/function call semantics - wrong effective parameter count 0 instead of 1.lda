@@ -1,0 +1,1 @@
+fonction f1(a:entier) lexique a:entier début (*#ParameterCountMismatch#*)f1() fin

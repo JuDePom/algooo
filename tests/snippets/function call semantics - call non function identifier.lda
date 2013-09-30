@@ -1,0 +1,6 @@
+algorithme
+lexique
+	a: entier
+début
+	(*#NonCallable#*)a()
+fin

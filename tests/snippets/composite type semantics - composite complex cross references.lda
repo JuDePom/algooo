@@ -1,0 +1,7 @@
+algorithme
+lexique
+	Niveau3 = <a: Niveau2>
+	Niveau1 = <a: entier>
+	Niveau2 = <a: tableau Niveau1[0..2, 0..3]>
+	n3 : Niveau3
+début fin

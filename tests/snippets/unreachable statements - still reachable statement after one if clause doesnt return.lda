@@ -1,0 +1,12 @@
+(*|bidon|*)
+algorithme
+début
+	si 1+1=2 alors
+		écrire("bidon")
+	snsi 2+2=4 alors
+		retourne
+	sinon
+		retourne
+	fsi
+	retourne
+fin

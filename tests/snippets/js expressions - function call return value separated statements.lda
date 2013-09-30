@@ -1,0 +1,11 @@
+(*|1234|*)
+fonction f(): entier
+début
+	retourne 1234
+fin
+algorithme
+lexique a: entier
+début
+	a <- f()
+	écrire(a)
+fin

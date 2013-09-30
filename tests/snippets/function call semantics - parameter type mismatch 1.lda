@@ -1,0 +1,8 @@
+fonction f(a: entier)
+lexique
+	Moule = <>
+	a: entier
+	m: Moule
+début
+	f((*#SpecificTypeExpected#*)m)
+fin

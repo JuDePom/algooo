@@ -1,0 +1,2 @@
+fonction f() début retourne fin
+algorithme début écrire((*#TypeError#*)f()) fin

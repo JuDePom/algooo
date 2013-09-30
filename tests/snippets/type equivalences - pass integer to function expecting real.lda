@@ -1,0 +1,6 @@
+fonction f(a: réel)
+lexique
+	a: réel
+début
+	f(3)
+fin

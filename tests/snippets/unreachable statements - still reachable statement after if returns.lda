@@ -1,0 +1,7 @@
+algorithme
+début
+	si 1+1=2 alors
+		retourne
+	fsi
+	retourne
+fin

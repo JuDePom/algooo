@@ -1,0 +1,3 @@
+lexique
+	Moule = <a: (*#SemanticError#*)f>
+fonction f() lexique début fin

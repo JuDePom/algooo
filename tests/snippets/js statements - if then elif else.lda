@@ -1,0 +1,23 @@
+(*|
+-
++
+0
+|*)
+fonction f(x: entier)
+lexique x: entier
+début
+	si x < 0 alors
+		écrire("-")
+	snsi x > 0 alors
+		écrire("+")
+	sinon
+		écrire("0")
+	fsi
+fin
+
+algorithme
+début
+	f(-100)
+	f(+100)
+	f(0)
+fin

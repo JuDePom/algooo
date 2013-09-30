@@ -1,0 +1,7 @@
+fonction f()
+début
+fin
+
+fonction g(): (*#SemanticError#*)f
+début
+fin

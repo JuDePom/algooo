@@ -1,0 +1,8 @@
+(*% formals_in_lexicon False %*)
+fonction f(a: entier)
+lexique
+	b: entier
+début
+	a <- 3
+	b <- 3
+fin

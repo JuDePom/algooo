@@ -1,0 +1,6 @@
+fonction f(a: entier)
+lexique
+	a: entier
+début
+	f((*#SpecificTypeExpected#*)3.00)
+fin

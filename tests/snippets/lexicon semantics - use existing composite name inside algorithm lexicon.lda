@@ -1,0 +1,6 @@
+lexique
+	M = <>
+fonction f() lexique début fin
+algorithme
+lexique (*#DuplicateDeclaration#*)M = <>
+début fin

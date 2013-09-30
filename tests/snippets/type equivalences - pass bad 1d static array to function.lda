@@ -1,0 +1,11 @@
+fonction f(t: tableau entier[0..5])
+lexique
+	t: tableau entier[0..5]
+début fin
+
+algorithme
+lexique
+	t: tableau entier[1..5]
+début
+	f((*#TypeError#*)t)
+fin

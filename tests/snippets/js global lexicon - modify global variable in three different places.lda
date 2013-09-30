@@ -1,0 +1,20 @@
+(*|42|*)
+lexique
+	globale: entier
+
+fonction ajouter3()
+début globale <- globale + 3 fin
+
+fonction doubler()
+début globale <- globale * 2 fin
+
+algorithme
+début
+	globale <- 6
+	ajouter3()
+	doubler()
+	doubler()
+	ajouter3()
+	ajouter3()
+	écrire(globale)
+fin

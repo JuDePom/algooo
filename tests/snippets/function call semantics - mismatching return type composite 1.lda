@@ -1,0 +1,11 @@
+lexique
+	Moule = <>
+
+fonction f(): Moule
+lexique
+	a: entier
+	m: Moule
+début
+	a (*#TypeMismatch#*)<- f()
+	retourne m
+fin

@@ -1,0 +1,7 @@
+fonction f(): entier
+lexique
+	a: entier
+début
+	a (*#TypeError#*)<- f
+	retourne a
+fin

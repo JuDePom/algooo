@@ -1,0 +1,6 @@
+algorithme
+lexique
+	Moule = <>
+début
+	(*#TypeError#*)Moule <- Moule
+fin

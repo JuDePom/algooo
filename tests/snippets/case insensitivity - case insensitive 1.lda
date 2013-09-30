@@ -1,0 +1,9 @@
+(*% ignore_case True %*)
+LEXIQUE
+	MOULe = <A: ENTIER>
+ALGORITHME
+LeXiQuE
+	M: mOULE
+DÉBuT
+	m.a <- 290382432
+FIN

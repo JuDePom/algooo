@@ -1,0 +1,4 @@
+fonction f(): entier
+début
+	retourne (*#SpecificTypeExpected#*)3.141593
+fin

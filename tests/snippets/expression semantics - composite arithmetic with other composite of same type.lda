@@ -1,0 +1,8 @@
+algorithme
+lexique
+	Moule = <>
+	m1: Moule
+	m2: Moule
+début
+	m1 <- m1 (*#SemanticError#*)+ m2
+fin
