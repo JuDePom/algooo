@@ -19,9 +19,6 @@ class TestFriendlySyntaxErrors(LDATestCase):
 				fin""")
 		self.assertTrue(hasattr(error, 'tip'))
 
-	def test_stray_integer_in_module(self):
-		self.assertLDAError(syntax.ExpectedItem, self.analyze, program="(**)3")
-
 	def test_eof_after_algorithm_lexicon(self):
 		self.assertMissingKeywords(kw.BEGIN, program="algorithme lexique(**)")
 

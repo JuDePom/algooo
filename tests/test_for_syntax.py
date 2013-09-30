@@ -45,19 +45,3 @@ class TestForSyntax(LDATestCase):
 							fpour
 						fin""")
 
-	def test_for_alternative_from_keyword(self):
-		self.analyze(program="""\
-				(*|
-				youpi
-				youpi
-				youpi
-				|*)
-				algorithme
-				lexique
-					i: entier
-				début
-					pour i de 1 à 3 faire
-						écrire("youpi")
-					fpour
-				fin""")
-

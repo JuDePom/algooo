@@ -6,10 +6,6 @@ class TestJSExpressions(LDATestCase):
 				program="algorithme début écrire({}) fin".format(lda_expression_string))
 		self.assertEqual(result, expected_result_string)
 
-	def test_println(self):
-		self.assertEqual("hello\n", self.jseval(program="""\
-				algorithme début écrire("hello") fin"""))
-
 	def test_literal_arithmetic(self):
 		self._test("1+1", "2\n")
 		self._test("1-1", "0\n")
@@ -23,24 +19,6 @@ class TestJSExpressions(LDATestCase):
 		self._test("+123", "123\n")
 		self._test("+123.456", "123.456\n")
 		self._test("-(1+1)", "-2\n")
-
-	def test_function_call_return_value_separated_statements(self):
-		self.assertEqual("1234\n", self.jseval(program="""\
-				fonction f(): entier
-				début
-					retourne 1234
-				fin
-				algorithme
-				lexique a: entier
-				début
-					a <- f()
-					écrire(a)
-				fin"""))
-
-	def test_function_call_return_value_combined_statement(self):
-		self.assertEqual("1234\n", self.jseval(program="""\
-				fonction f(): entier début retourne 1234 fin
-				algorithme début écrire(f()) fin"""))
 
 	def test_function_call_return_nothing(self):
 		self.jseval(program="""\
