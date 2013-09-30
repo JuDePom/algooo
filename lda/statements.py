@@ -219,9 +219,11 @@ class For(StatementBlock):
 		for comp, name in zip(components, For._COMPONENT_NAMES):
 			comp.check(context, logger)
 			semantictools.enforce(name, types.INTEGER, comp, logger)
-		if not self.counter.writable:
+		# If the counter is an integer, ensure the counter is writable;
+		# otherwise don't bother since an error was already raised
+		if self.counter.resolved_type == types.INTEGER and not self.counter.writable:
 			logger.log(semantic.TypeError(self.counter.pos,
-					"le compteur doit être une variable",
+					"le compteur doit être une variable, pas le résultat d'une expression",
 					self.counter.resolved_type))
 		super().check(context, logger)
 
