@@ -417,6 +417,7 @@ class Composite(TypeDescriptor):
 		for field in self.fields:
 			if field.resolved_type is composite:
 				logger.log(semantic.RecursiveDeclaration(field.ident.pos))
+				continue
 			try:
 				field.resolved_type.detect_loops(composite, logger)
 			except AttributeError:
