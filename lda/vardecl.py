@@ -66,7 +66,7 @@ class VarDecl:
 	def lda(self, pp):
 		pp.put(self.ident, kw.COLON, " ")
 		if self.inout:
-			pp.put(kw.INOUT)
+			pp.put(kw.INOUT, " ")
 		pp.put(self.type_descriptor)
 
 	def js(self, pp):

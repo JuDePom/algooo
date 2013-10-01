@@ -147,7 +147,7 @@ class FunctionCallWrapper:
 		self.call_op = call_op
 
 	def lda(self, pp):
-		self.call_op.put(pp)
+		pp.put(self.call_op)
 
 	def js(self, pp):
 		pp.put(self.call_op, ";")

@@ -325,6 +325,11 @@ class FunctionCall(BinaryEncompassingOp):
 		param_checker(context, logger, self.pos, self.rhs)
 		self.resolved_type = self.function.resolved_return_type
 
+	def lda(self, pp):
+		pp.put(self.lhs, "(")
+		pp.join(self.rhs, pp.put, ", ")
+		pp.put(")")
+
 	def js(self, pp):
 		self.function.js_call(pp, self.rhs)
 

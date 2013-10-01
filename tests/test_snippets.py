@@ -86,9 +86,12 @@ class TestSnippets(unittest.TestCase):
 		if snippet_errors:
 			return
 		# ---- compile to LDA -----------------------
-		#TODO pp = prettyprinter.LDAPrettyPrinter()
-		#module.lda(pp)
-		# TODO check for LDA equality with original snippet string
+		pp = prettyprinter.LDAPrettyPrinter()
+		module.lda(pp)
+		# The test below is skipped for now because we need to find a way to
+		# ignore unsignificant whitespace differences, extra parentheses and
+		# alt. keyword spellings
+		# TODO - self.assertEqual(str(pp).strip(), snippet.strip())
 		# ---- compile to JS -----------------------
 		pp = prettyprinter.JSPrettyPrinter()
 		module.js(pp)
