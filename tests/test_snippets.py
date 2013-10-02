@@ -14,13 +14,13 @@ SNIPPETSDIR = os.path.join(os.path.dirname(__file__), "snippets")
 
 
 # (*#ErrorClassExpectedRightAfterThisCommentEnds#*)
-ERROR_REGEXP = re.compile(r"\(\*\#(.+?)(\#\*\))")
+ERROR_REGEXP = re.compile(r"\(\*#(.+?)(#\*\))")
 
 # (*% directive0, directive1 arg0 arg1 arg2, directive2 arg0 %*)
-DIRECTIVE_REGEXP = re.compile(r"^\(\*\%\ (.*?)\ \%\*\)", re.DOTALL|re.MULTILINE)
+DIRECTIVE_REGEXP = re.compile(r"^\(\*% ?(.*?) ?%\*\)", re.DOTALL | re.MULTILINE)
 
 # (%|expected output when running translated javascript %|)
-OUTPUT_REGEXP = re.compile(r"^\(\*\|(?P<output>.*?)\|\*\)", re.DOTALL|re.MULTILINE)
+OUTPUT_REGEXP = re.compile(r"^\(\*\|(?P<output>.*?)\|\*\)", re.DOTALL | re.MULTILINE)
 
 
 class DefaultOptions:
@@ -44,17 +44,15 @@ class TestSnippets(unittest.TestCase):
 				else:
 					v = vtype(v)
 				setattr(options, k, v)
-		# ---- parse ------------------------------
+		# ---- parse & check ----------------------
 		parser = Parser(options, raw_buf=snippet)
-		logged_errors = []
 		try:
 			module = parser.analyze_module()
 			self.assertTrue(parser.eof(), ("program couldn't be parsed entirely"
 					" -- stopped at {}").format(parser.pos))
 		except syntax.SyntaxError as e:
 			logged_errors = [e]
-		# ---- check ------------------------------
-		if not logged_errors:
+		else:
 			logger = Logger()
 			module.check(ContextStack(options), logger)
 			logged_errors = list(logger.errors)
@@ -102,7 +100,8 @@ class TestSnippets(unittest.TestCase):
 		shutup = False
 		gotten_output = subprocess.check_output(["node", "-e", code],
 				stderr = shutup and subprocess.DEVNULL or None,
-				env={'NODE_PATH':'./jsruntime'}, universal_newlines=True
+				env = {'NODE_PATH':'./jsruntime'},
+				universal_newlines = True
 				).strip()
 		output_match = OUTPUT_REGEXP.match(snippet)
 		if output_match:
