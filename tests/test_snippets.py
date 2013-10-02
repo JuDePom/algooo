@@ -45,8 +45,8 @@ class TestSnippets(unittest.TestCase):
 					v = vtype(v)
 				setattr(options, k, v)
 		# ---- parse & check ----------------------
-		parser = Parser(options, raw_buf=snippet)
 		try:
+			parser = Parser(options, raw_buf=snippet)
 			module = parser.analyze_module()
 			self.assertTrue(parser.eof(), ("program couldn't be parsed entirely"
 					" -- stopped at {}").format(parser.pos))

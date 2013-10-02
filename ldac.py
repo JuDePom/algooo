@@ -44,9 +44,8 @@ ap.add_argument('--formals-in-lexicon', '-F', action='store_true',
 
 args = ap.parse_args()
 
-parser = lda.parser.Parser(args, path=args.path)
-
 try:
+	parser = lda.parser.Parser(args, path=args.path)
 	module = parser.analyze_module()
 except lda.errors.syntax.SyntaxError as e:
 	print(e.pretty(parser.raw_buf), file=sys.stderr)
