@@ -1,4 +1,4 @@
-from . import ldatestcase
+from tests import ldatestcase
 
 class TestJSInout(ldatestcase.LDATestCase):
 	def _scalar_inout(self, ldatype, tempval, finalval, expected_output):

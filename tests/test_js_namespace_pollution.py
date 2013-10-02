@@ -1,4 +1,4 @@
-from . import ldatestcase
+from tests import ldatestcase
 
 class TestJSNamespacePollution(ldatestcase.LDATestCase):
 	def test_js_global_namespace_pollution(self):

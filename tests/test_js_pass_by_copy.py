@@ -1,4 +1,4 @@
-from . import ldatestcase
+from tests import ldatestcase
 
 class TestJSPassByCopy(ldatestcase.LDATestCase):
 	def _scalar_pbc(self, ldatype, tempval, finalval, expected_output):
