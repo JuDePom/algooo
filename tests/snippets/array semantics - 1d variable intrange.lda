@@ -1,7 +1,0 @@
-algorithme
-lexique
-	i: entier
-	j: entier
-	t: tableau entier[(*#SemanticError#*)i..j]
-début
-fin

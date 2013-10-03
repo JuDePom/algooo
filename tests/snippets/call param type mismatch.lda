@@ -1,0 +1,15 @@
+fonction f(a: entier)
+début
+fin
+
+fonction g(a: entier, b: chaîne, c: caractère)
+début
+fin
+
+algorithme
+lexique
+	r: réel
+début
+	f((*#SpecificTypeExpected#*)r)
+	g((*#SpecificTypeExpected#*)r, (*#SpecificTypeExpected#*)r, (*#SpecificTypeExpected#*)r)
+fin

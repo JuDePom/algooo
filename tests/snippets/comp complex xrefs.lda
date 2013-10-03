@@ -1,0 +1,11 @@
+(*|42|*)
+algorithme
+lexique
+	Niveau1 = <c: entier>
+	Niveau2 = <b: tableau Niveau1[0..2, 0..3]>
+	Niveau3 = <a: Niveau2>
+	n3 : Niveau3
+début
+	n3.a.b[2,3].c <- 42
+	écrire(n3.a.b[2,3].c)
+fin

@@ -1,0 +1,5 @@
+algorithme
+début
+	tantque (*#MissingDeclaration#*)i <= 5 faire
+	ftant
+fin

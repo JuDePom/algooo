@@ -1,0 +1,8 @@
+fonction f(a: inout entier)
+début
+fin
+
+algorithme
+début
+	f((*#TypeError#*)1234)
+fin

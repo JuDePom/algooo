@@ -1,4 +1,0 @@
-fonction f(a: entier)
-début
-	a <- 3
-fin

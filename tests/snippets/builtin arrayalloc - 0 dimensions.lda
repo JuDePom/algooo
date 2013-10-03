@@ -1,6 +1,0 @@
-algorithme
-lexique
-	t: tableau entier[?, ?, ?]
-début
-	(*#ParameterCountMismatch#*)tailletab(t)
-fin

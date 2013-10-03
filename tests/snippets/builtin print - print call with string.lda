@@ -1,5 +1,0 @@
-(*|bonjour|*)
-algorithme
-début
-	écrire("bonjour")
-fin

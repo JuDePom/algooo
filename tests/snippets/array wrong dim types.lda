@@ -1,0 +1,8 @@
+algorithme
+lexique
+	t: tableau entier[(*#TypeError#*)"xxx", (*#TypeError#*)'a', (*#TypeError#*)5.123]
+début
+	(* no errors in statements because t's type must be ERRONEOUS *)
+	t[0] <- 40
+	t[1,2,3] <- 6
+fin

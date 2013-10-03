@@ -1,8 +1,0 @@
-fonction f(a: entier)
-lexique
-	(*#SemanticError#*)a: entier
-	b: entier
-début
-	a <- 3
-	b <- 3
-fin

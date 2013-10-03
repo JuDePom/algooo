@@ -1,7 +1,0 @@
-fonction f(a: entier, b: chaîne, c: caractère)
-lexique
-	Moule = <>
-	m: Moule
-début
-	f((*#SpecificTypeExpected#*)m, (*#SpecificTypeExpected#*)a, (*#SpecificTypeExpected#*)m)
-fin

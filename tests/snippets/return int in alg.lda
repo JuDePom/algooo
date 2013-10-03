@@ -1,0 +1,5 @@
+(* algorithms can't return a value *)
+algorithme
+début
+	retourne (*#SemanticError#*)3
+fin

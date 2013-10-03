@@ -1,6 +1,0 @@
-fonction f(a: inout entier)
-lexique
-	b : entier
-début
-	b <- a
-fin

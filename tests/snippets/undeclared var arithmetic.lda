@@ -1,0 +1,8 @@
+(* Several uses of undeclared variable i must only trigger one error *)
+algorithme
+lexique
+	j: entier
+début
+	j <- -(*#MissingDeclaration#*)i
+	j <- i + i
+fin

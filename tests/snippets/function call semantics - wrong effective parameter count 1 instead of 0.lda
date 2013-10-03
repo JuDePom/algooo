@@ -1,4 +1,0 @@
-fonction f0()
-début
-	(*#ParameterCountMismatch#*)f0(1)
-fin

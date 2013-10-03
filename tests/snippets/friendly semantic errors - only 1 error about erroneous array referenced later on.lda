@@ -1,7 +1,0 @@
-algorithme
-lexique
-	t: tableau entier[(*#TypeError#*)"xxx"]
-	u: tableau entier[0..3]
-début
-	t <- u
-fin

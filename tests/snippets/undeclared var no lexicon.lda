@@ -1,0 +1,4 @@
+algorithme
+début
+	(*#MissingDeclaration#*)a <- 3
+fin

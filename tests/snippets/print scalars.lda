@@ -1,0 +1,13 @@
+(*|
+hello
+1
+1.23
+c
+|*)
+algorithme
+début
+	écrire("hello")
+	écrire(1)
+	écrire(1.23)
+	écrire('c')
+fin

@@ -1,6 +1,0 @@
-algorithme
-début
-	si (*#MissingDeclaration#*)i alors
-	snsi (*#MissingDeclaration#*)j alors
-	fsi
-fin

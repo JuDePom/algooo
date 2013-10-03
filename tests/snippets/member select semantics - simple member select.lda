@@ -1,7 +1,0 @@
-algorithme
-lexique
-	Moule = <a: entier>
-	m: Moule
-début
-	m.a <- 3
-fin

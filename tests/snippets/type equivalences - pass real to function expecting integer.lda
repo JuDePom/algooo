@@ -1,4 +1,0 @@
-fonction f(a: entier)
-début
-	f((*#SpecificTypeExpected#*)3.00)
-fin

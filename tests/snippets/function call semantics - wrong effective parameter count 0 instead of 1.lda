@@ -1,4 +1,0 @@
-fonction f1(a:entier)
-début
-	(*#ParameterCountMismatch#*)f1()
-fin

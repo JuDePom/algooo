@@ -1,3 +1,0 @@
-(*|1234|*)
-fonction f(): entier début retourne 1234 fin
-algorithme début écrire(f()) fin
