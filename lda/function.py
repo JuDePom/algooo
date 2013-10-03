@@ -1,6 +1,7 @@
 from . import kw
 from . import types
 from . import semantictools
+from .types import ERRONEOUS
 from .errors import semantic
 
 class _BaseFunction:
@@ -101,46 +102,6 @@ class Function(_BaseFunction):
 		for fp in self.fp_list:
 			fp.check(context, logger)
 
-	def check_formal_parameters(self, context, logger):
-		# Hunt duplicates among formal parameters
-		semantictools.hunt_duplicates(self.fp_list, logger)
-		lexicon = self.lexicon if self.lexicon is not None else {}
-		if context.options.formals_in_lexicon:
-			# Ensure each formal parameter matches its declaration in the lexicon,
-			# and set the formal flag in the relevant lexicon declarations.
-			for fp in self.fp_list:
-				try:
-					fp_lexicon = lexicon[fp.ident.name]
-				except KeyError:
-					logger.log(semantic.FormalParameterMissingInLexicon(fp.ident))
-					continue
-				if fp != fp_lexicon:
-					logger.log(semantic.TypeMismatch(fp_lexicon.ident.pos, "le type de ce "
-						"paramètre formel doit rester le même dans l'en-tête de la fonction "
-						"et dans le lexique de la fonction",
-						fp_lexicon.type_descriptor, fp.type_descriptor))
-				fp_lexicon.formal = True
-		else:
-			for fp in self.fp_list:
-				fp.formal = True
-				try:
-					fp_lexicon = lexicon[fp.ident.name]
-					err = semantic.SemanticError(fp_lexicon.ident.pos,
-						"inutile de re-définir les paramètres formels "
-						"dans le lexique")
-					err.hint = ("si c'est vraiment ce que vous voulez, essayez l'option "
-						"--formals-in-lexicon")
-					logger.log(err)
-					continue
-				except KeyError:
-					pass
-			# Augment context with formal parameters that are NOT in the
-			# lexicon (otherwise, during the analysis of the lexicon, the user
-			# will get a redundant warning saying the name was taken by the
-			# formal parameter)
-			context.update({fp.ident.name: fp for fp in self.fp_list
-				if fp.ident.name not in lexicon})
-
 	def check(self, context, logger):
 		"""
 		Ensure the function's lexicon and body are semantically correct.
@@ -150,7 +111,9 @@ class Function(_BaseFunction):
 		this method.
 		"""
 		context.push(self)
-		self.check_formal_parameters(context, logger)
+		# Hunt duplicates among formal params and add them to the context
+		fp_dict = semantictools.hunt_duplicates(self.fp_list, logger, ERRONEOUS)
+		context.update(fp_dict)
 		# Check lexicon
 		if self.lexicon is not None:
 			self.lexicon.check(context, logger)
@@ -234,3 +197,13 @@ class Function(_BaseFunction):
 			prefix = ", "
 		pp.put(")")
 
+	def js(self, pp):
+		self.js_signature(pp)
+		pp.putline(" {")
+		for param in self.fp_list:
+			pp.indented(pp.putline, param)
+		if self.lexicon:
+			pp.indented(pp.putline, self.lexicon)
+		if self.body:
+			pp.indented(pp.putline, self.body)
+		pp.put("}")

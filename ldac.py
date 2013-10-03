@@ -37,11 +37,6 @@ ap.add_argument('--js-standalone', '-s', action='store_true',
 		help="""Si le format de sortie est `js`, faire que le script puisse
 		être exécuté tel quel.""")
 
-ap.add_argument('--formals-in-lexicon', '-F', action='store_true',
-		help="""Forcer la double définition des paramètres formels d'une
-		fonction dans l'en-tête de la fonction *et* dans le lexique. Par
-		défaut, la définition dans l'en-tête suffit.""")
-
 args = ap.parse_args()
 
 try:

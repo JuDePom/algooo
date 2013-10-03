@@ -9,7 +9,7 @@ def nonvoid(t):
 	"""
 	Return True if t is not VOID nor a BlackHole type.
 	"""
-	return t != VOID and not isinstance(t, BlackHole)
+	return t is not VOID and not isinstance(t, BlackHole)
 
 #######################################################################
 #
@@ -405,8 +405,7 @@ class Composite(TypeDescriptor):
 		"""
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
 		self.parent = supercontext.parent
-		semantictools.hunt_duplicates(self.fields, logger)
-		self.context = {field.ident.name: field for field in self.fields}
+		self.context = semantictools.hunt_duplicates(self.fields, logger, ERRONEOUS)
 		for field in self.fields:
 			field.check(supercontext, logger)
 		return self

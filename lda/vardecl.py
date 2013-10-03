@@ -1,5 +1,5 @@
 from . import kw
-from .types import Composite, Array
+from .types import ERRONEOUS
 from .errors import semantic
 
 class VarDecl:
@@ -58,10 +58,12 @@ class VarDecl:
 		if not self.formal and self.inout:
 			logger.log(semantic.SemanticError(self.ident.pos,
 					"\"inout\" n'est autorisé que dans un paramètre formel"))
-		self.resolved_type = self.type_descriptor.resolve_type(context, logger)
-		self.parent = context.parent
-		self.js_fakeptr = self.inout and not self.resolved_type.js_object
-		self.js_fakepbc = not self.inout and self.resolved_type.js_object
+			self.resolved_type = ERRONEOUS
+		else:
+			self.resolved_type = self.type_descriptor.resolve_type(context, logger)
+			self.parent = context.parent
+			self.js_fakeptr = self.inout and not self.resolved_type.js_object
+			self.js_fakepbc = not self.inout and self.resolved_type.js_object
 
 	def lda(self, pp):
 		pp.put(self.ident, kw.COLON, " ")

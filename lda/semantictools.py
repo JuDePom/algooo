@@ -4,19 +4,34 @@ Utility functions to aid semantic analysis
 
 from .errors import semantic
 
-def hunt_duplicates(item_list, logger):
+
+def hunt_duplicates(symbol_list, logger, clash_type):
 	"""
-	Log DuplicateDeclaration for any item using a name already used by another
-	item in the list.
+	Return a string-symbol dictionary mapped to symbols with unique names.
+
+	Any name used more than once is mapped to `clash_type` in the dictionary
+	(typically, types.ERRONEOUS).
+
+	Additionally, log `DuplicateDeclaration` for any symbol using a name
+	already used by another symbol in the list.
 	"""
-	seen = {}
-	for item in item_list:
+	symbol_dict = {}
+	dupe_dict = {}
+	for item in symbol_list:
 		name = item.ident.name
 		try:
-			pioneer = seen[name]
-			logger.log(semantic.DuplicateDeclaration(item.ident, pioneer.ident))
+			dupe_dict[name].append(item)
 		except KeyError:
-			seen[name] = item
+			dupe_dict[name] = [item]
+			symbol_dict[item.ident.name] = item
+	for dupelist in dupe_dict.values():
+		if len(dupelist) > 1:
+			pioneer = dupelist[0]
+			symbol_dict[pioneer.ident.name] = clash_type
+			for dupe in dupelist[1:]:
+				logger.log(semantic.DuplicateDeclaration(dupe.ident, pioneer.ident))
+	return symbol_dict
+
 
 def _enforce(name, expected_type, typed_object, logger, cmpfunc):
 	given_type = typed_object.resolved_type

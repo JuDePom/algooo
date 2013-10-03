@@ -31,7 +31,6 @@ PARSING_FUNCTIONS = {
 
 class DefaultOptions:
 	ignore_case = False
-	formals_in_lexicon = True
 
 class LDATestCase(unittest.TestCase):
 	"""

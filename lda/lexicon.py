@@ -1,5 +1,6 @@
 from . import kw
 from . import semantictools
+from .types import ERRONEOUS
 from .errors import semantic
 
 class Lexicon:
@@ -24,7 +25,6 @@ class Lexicon:
 		self.functions  = functions  if functions  is not None else []
 		self.all_items = sorted(self.variables + self.composites + self.functions,
 				key = lambda item: item.ident.pos)
-		self.symbol_dict = {item.ident.name: item for item in self.all_items}
 
 	def check(self, context, logger):
 		"""
@@ -33,18 +33,18 @@ class Lexicon:
 		"""
 		# Hunt duplicates. Note that all_items is sorted by declaration
 		# position, which is important to report errors correctly.
-		semantictools.hunt_duplicates(self.all_items, logger)
+		symbol_dict = semantictools.hunt_duplicates(self.all_items, logger, ERRONEOUS)
 		# prevent overwriting existing names in context
-		for name in self.symbol_dict:
+		for name in symbol_dict:
 			try:
 				existing = context[name]
 				logger.log(semantic.DuplicateDeclaration(
-						self[name].ident, existing.ident))
+						symbol_dict[name].ident, existing.ident))
 			except KeyError:
 				pass
 		# augment context with the contents of the lexicon so that items can
 		# refer to other items in the lexicon
-		context.update(self.symbol_dict)
+		context.update(symbol_dict)
 		# Composite check pass 1: check fields (create mini symbol table).
 		for composite in self.composites:
 			composite.resolve_type(context, logger)
@@ -69,12 +69,6 @@ class Lexicon:
 		Please note that functions are not accounted for by __bool__!
 		"""
 		return bool(self.composites) or bool(self.variables)
-
-	def __getitem__(self, k):
-		return self.symbol_dict[k]
-
-	def __contains__(self, k):
-		return k in self.symbol_dict
 
 	def lda(self, pp):
 		if not self:

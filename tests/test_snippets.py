@@ -25,7 +25,6 @@ OUTPUT_REGEXP = re.compile(r"^\(\*\|(?P<output>.*?)\|\*\)", re.DOTALL | re.MULTI
 
 class DefaultOptions:
 	ignore_case        = False
-	formals_in_lexicon = True
 
 
 class TestSnippets(unittest.TestCase):

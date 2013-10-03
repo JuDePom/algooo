@@ -89,7 +89,7 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 			context[self.name] = None
 			self.bound = None
 			logger.log(semantic.MissingDeclaration(self))
-		if self.bound is None:
+		if self.bound is None or self.bound is types.ERRONEOUS:
 			# Bound to an undeclared symbol.
 			self.resolved_type = types.ERRONEOUS
 			self.writable = False
