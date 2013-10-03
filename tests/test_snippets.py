@@ -62,7 +62,6 @@ class TestSnippets(unittest.TestCase):
 		self.assertEqual(sc, lc, "expected {} errors but {} were reported: {}"
 				.format(sc, lc, logged_errors))
 		# check each error
-		start = 0
 		for i, error, match in zip(count(), logged_errors, snippet_errors):
 			classname = match.group(1)
 			if classname.startswith('kw:'):
@@ -95,13 +94,11 @@ class TestSnippets(unittest.TestCase):
 		# ---- run JS -------------------------
 		if not module.algorithms:
 			return
-		code = "require('lda.js');\n\n{}\n\nP.main();\n".format(pp)
+		code = "load('jsruntime/lda.js');\n\n{}\n\nP.main();\n".format(pp)
 		shutup = False
-		gotten_output = subprocess.check_output(["node", "-e", code],
-				stderr = shutup and subprocess.DEVNULL or None,
-				env = {'NODE_PATH':'./jsruntime'},
-				universal_newlines = True
-				).strip()
+		gotten_output = subprocess.check_output(["js", "-w", "-s", "-e", code],
+				stderr=shutup and subprocess.DEVNULL or None,
+				universal_newlines=True).strip()
 		output_match = OUTPUT_REGEXP.match(snippet)
 		if output_match:
 			snippet_output = output_match.group('output').strip()

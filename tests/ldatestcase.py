@@ -155,8 +155,8 @@ class LDATestCase(unittest.TestCase):
 		"""
 		pp = prettyprinter.JSPrettyPrinter()
 		self.check(**kwargs).js(pp)
-		code = "require('lda.js');\n\n{}\n\n{}\n".format(pp, extracode)
-		return subprocess.check_output(["node", "-e", code],
-				stderr = shutup and subprocess.DEVNULL or None,
-				env={'NODE_PATH':'./jsruntime'}, universal_newlines=True)
+		code = "load('jsruntime/lda.js');\n\n{}\n\n{}\n".format(pp, extracode)
+		return subprocess.check_output(["js", "-w", "-s", "-e", code],
+				stderr=shutup and subprocess.DEVNULL or None,
+				universal_newlines=True)
 
