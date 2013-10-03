@@ -18,7 +18,6 @@ class TestJSNamespacePollution(ldatestcase.LDATestCase):
 
 				fonction f(a: entier)
 				lexique
-					a: entier
 					b: entier
 				début
 				fin

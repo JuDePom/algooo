@@ -1,3 +1,0 @@
-lexique
-	Moule = <>
-fonction f(m: Moule) lexique m: Moule début fin

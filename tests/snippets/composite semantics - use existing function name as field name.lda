@@ -1,0 +1,14 @@
+(*|42|*)
+fonction f(): entier
+début
+	retourne 42
+fin
+
+algorithme
+lexique
+	Moule = <f: entier>
+	m: Moule
+début
+	m.f <- f()
+	écrire(m.f)
+fin

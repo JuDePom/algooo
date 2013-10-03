@@ -1,4 +1,3 @@
-(*% formals_in_lexicon False %*)
 fonction f(a: entier)
 début
 	a <- 3

@@ -1,7 +1,6 @@
 fonction f(t: tableau entier[0..5])
-lexique
-	t: tableau entier[0..5]
-début fin
+début
+fin
 
 algorithme
 lexique

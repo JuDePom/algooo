@@ -4,8 +4,6 @@ class TestJSInout(ldatestcase.LDATestCase):
 	def _scalar_inout(self, ldatype, tempval, finalval, expected_output):
 		self.assertEqual(expected_output, self.jseval(program="""\
 				fonction f(a: inout {ldatype})
-				lexique
-					a: inout {ldatype}
 				début
 					a <- {finalval}
 				fin

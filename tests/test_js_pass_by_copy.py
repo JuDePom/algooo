@@ -4,8 +4,6 @@ class TestJSPassByCopy(ldatestcase.LDATestCase):
 	def _scalar_pbc(self, ldatype, tempval, finalval, expected_output):
 		self.assertEqual(expected_output, self.jseval(program="""\
 				fonction f(a: {ldatype})
-				lexique
-					a: {ldatype}
 				début
 					a <- {tempval}
 				fin

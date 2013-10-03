@@ -3,8 +3,6 @@ lexique
 	Moule = <a: chaîne>
 
 fonction f(m: Moule)
-lexique
-	m: Moule
 début
 	m.a <- "remplacement"
 fin

@@ -1,0 +1,15 @@
+(* same types *)
+fonction f(a: entier, (*#DuplicateDeclaration#*)a: entier)
+début
+	(* no error should be raised below,
+	because the compiler can't resolve the type of `a` *)
+	a <- 'c'
+fin
+
+(* different types *)
+fonction g(a: entier, (*#DuplicateDeclaration#*)a: réel)
+début
+	(* no error should be raised below,
+	because the compiler can't resolve the type of `a` *)
+	a <- 'c'
+fin

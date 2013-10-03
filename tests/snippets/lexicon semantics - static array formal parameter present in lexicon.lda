@@ -1,2 +1,0 @@
-fonction f(a: tableau entier[0..5])
-lexique a: tableau entier[0..5] début fin

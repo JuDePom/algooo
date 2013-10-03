@@ -1,9 +1,6 @@
 fonction f(a: entier, b: chaîne, c: caractère)
 lexique
 	Moule = <>
-	a: entier
-	b: chaîne
-	c: caractère
 	m: Moule
 début
 	f((*#SpecificTypeExpected#*)m, (*#SpecificTypeExpected#*)a, (*#SpecificTypeExpected#*)m)

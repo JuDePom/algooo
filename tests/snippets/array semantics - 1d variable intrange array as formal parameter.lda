@@ -1,2 +1,3 @@
 fonction f(a: tableau entier[0..(*#SemanticError#*)n], n: entier)
-lexique a: tableau entier[0..(*#SemanticError#*)n] n: entier début fin
+début
+fin

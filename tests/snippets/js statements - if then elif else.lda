@@ -4,7 +4,6 @@
 0
 |*)
 fonction f(x: entier)
-lexique x: entier
 début
 	si x < 0 alors
 		écrire("-")

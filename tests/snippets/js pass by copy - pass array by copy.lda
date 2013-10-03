@@ -1,7 +1,5 @@
 (*|original|*)
 fonction f(t: tableau chaîne[0..9])
-lexique
-	t: tableau chaîne[0..9]
 début
 	t[5] <- "remplacement"
 fin
