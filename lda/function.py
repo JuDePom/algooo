@@ -144,6 +144,10 @@ class Function(_BaseFunction):
 		for effective, formal in zip(params, self.fp_list):
 			semantictools.enforce_compatible("ce paramètre effectif",
 					formal.resolved_type, effective, logger)
+			if formal.inout and not effective.writable:
+				logger.log(semantic.TypeError(effective.pos,
+						"une variable doit être obligatoirement passée "
+						"comme paramètre inout", effective.resolved_type))
 
 	def check_return(self, logger, return_statement):
 		"""
