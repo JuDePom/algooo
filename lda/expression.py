@@ -163,7 +163,7 @@ class LiteralString(Literal):
 		pp.put(kw.QUOTE2, self.value, kw.QUOTE2)
 	
 	def js(self, pp):
-		pp.put('\"', self.value, '\"')
+		pp.put('"', self.value.encode('unicode-escape').decode(), '"')
 
 class LiteralCharacter(Literal):
 	resolved_type = types.CHARACTER
@@ -176,7 +176,7 @@ class LiteralCharacter(Literal):
 		pp.put(kw.QUOTE1, self.value, kw.QUOTE1)
 		
 	def js(self, pp):
-		pp.put("\'", self.value, "\'")
+		pp.put('"', self.value.encode('unicode-escape').decode(), '"')
 
 class LiteralBoolean(Literal):
 	resolved_type = types.BOOLEAN

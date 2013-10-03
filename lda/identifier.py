@@ -20,5 +20,5 @@ class PureIdentifier:
 		pp.put(self.name)
 
 	def js(self, pp):
-		pp.put("$" + self.name)
+		pp.put("$" + self.name.encode('unicode-escape').decode().replace('\\', '$'))
 
