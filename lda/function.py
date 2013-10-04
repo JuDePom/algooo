@@ -125,7 +125,7 @@ class Function(_BaseFunction):
 			logger.log(semantic.MissingReturnStatement(self.end_pos))
 		context.pop()
 
-	def check_effective_parameters(self, context, logger, pos, params):
+	def check_effective_parameters(self, logger, pos, params):
 		"""
 		Ensure the given effective parameters can be used in a call to this
 		function.

@@ -4,7 +4,7 @@ from lda.errors import semantic
 
 resolved_return_type = types.VOID
 
-def check_effective_parameters(context, logger, pos, params):
+def check_effective_parameters(logger, pos, params):
 	# at least 2 params
 	count = len(params)
 	if count < 2:

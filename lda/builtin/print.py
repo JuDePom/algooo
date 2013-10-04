@@ -3,7 +3,7 @@ from lda.errors import semantic
 
 resolved_return_type = types.VOID
 
-def check_effective_parameters(context, logger, pos, args):
+def check_effective_parameters(logger, pos, args):
 	"""
 	Allow all parameters except VOID and BlackHole types.
 	"""
