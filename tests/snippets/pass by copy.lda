@@ -1,0 +1,32 @@
+(*|
+faux
+z 0 999 qwertyasdfzxc
+|*)
+
+fonction pass_by_copy(b: booléen, c: caractère, i: entier, r: réel, s: chaîne)
+début
+	b <- vrai
+	c <- 'a'
+	i <- 1
+	r <- .1
+	s <- "azertyqsdfwxc"
+fin
+
+algorithme
+lexique
+	b: booléen
+	c: caractère
+	i: entier
+	r: réel
+	s: chaîne
+début
+	b <- faux
+	c <- 'z'
+	i <- 0
+	r <- 999.
+	s <- "qwertyasdfzxc"
+	pass_by_copy(b, c, i, r, s)
+	si b alors écrire("vrai") sinon écrire("faux") fsi
+	écrire(c, i, r, s)
+fin
+
