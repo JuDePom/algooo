@@ -7,18 +7,18 @@ class TestJSExpressions(LDATestCase):
 		self.assertEqual(result, expected_result_string)
 
 	def test_literal_arithmetic(self):
-		self._test("1+1", "2\n")
-		self._test("1-1", "0\n")
-		self._test("3./2", "1.5\n")
-		self._test("2**9", "512\n")
-		self._test("6 mod 4", "2\n")
+		self._test("1+1", "2")
+		self._test("1-1", "0")
+		self._test("3./2", "1.5")
+		self._test("2**9", "512")
+		self._test("6 mod 4", "2")
 
 	def test_unary_number_operators(self):
-		self._test("-123", "-123\n")
-		self._test("-123.456", "-123.456\n")
-		self._test("+123", "123\n")
-		self._test("+123.456", "123.456\n")
-		self._test("-(1+1)", "-2\n")
+		self._test("-123", "-123")
+		self._test("-123.456", "-123.456")
+		self._test("+123", "123")
+		self._test("+123.456", "123.456")
+		self._test("-(1+1)", "-2")
 
 	def test_function_call_return_nothing(self):
 		self.jseval(program="""\
@@ -26,18 +26,18 @@ class TestJSExpressions(LDATestCase):
 				algorithme début f() fin""")
 
 	def test_unary_not(self):
-		self._test("non vrai", "false\n")
-		self._test("non faux", "true\n")
+		self._test("non vrai", "false")
+		self._test("non faux", "true")
 
 	def test_logical_ops(self):
-		self._test("vrai et vrai", "true\n")
-		self._test("vrai et faux", "false\n")
-		self._test("faux et vrai", "false\n")
-		self._test("faux et faux", "false\n")
-		self._test("vrai ou vrai", "true\n")
-		self._test("vrai ou faux", "true\n")
-		self._test("faux ou vrai", "true\n")
-		self._test("non faux ou faux", "true\n")
-		self._test("faux ou non faux", "true\n")
-		self._test("non faux et non faux", "true\n")
+		self._test("vrai et vrai", "true")
+		self._test("vrai et faux", "false")
+		self._test("faux et vrai", "false")
+		self._test("faux et faux", "false")
+		self._test("vrai ou vrai", "true")
+		self._test("vrai ou faux", "true")
+		self._test("faux ou vrai", "true")
+		self._test("non faux ou faux", "true")
+		self._test("faux ou non faux", "true")
+		self._test("non faux et non faux", "true")
 

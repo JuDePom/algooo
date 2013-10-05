@@ -1,7 +1,4 @@
 import unittest
-import subprocess
-from io import StringIO
-from itertools import count
 from lda.errors import syntax, semantic, handler
 from lda import parser
 from lda import types
@@ -12,6 +9,7 @@ from lda import module
 from lda import function
 from lda import prettyprinter
 from lda.context import ContextStack
+from tests import jsshell
 
 ERROR_MARKER = "(**)"
 
@@ -155,8 +153,5 @@ class LDATestCase(unittest.TestCase):
 		"""
 		pp = prettyprinter.JSPrettyPrinter()
 		self.check(**kwargs).js(pp)
-		code = "load('jsruntime/lda.js');\n\n{}\n\n{}\n".format(pp, extracode)
-		return subprocess.check_output(["js", "-w", "-s", "-e", code],
-				stderr=shutup and subprocess.DEVNULL or None,
-				universal_newlines=True)
+		return jsshell.run(str(pp), shutup=shutup, extracode=extracode)
 
