@@ -2,6 +2,6 @@ algorithme
 lexique
 	a: entier
 début
-	si a (*#SyntaxError#*)<- 3 alors
+	si a (*#kw:THEN#*)<- 3 alors
 	fsi
 fin

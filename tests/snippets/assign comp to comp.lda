@@ -2,6 +2,7 @@ algorithme
 lexique
 	Moule = <>
 	m1: Moule
+	m2: Moule
 début
-	m1 <- m1 (*#SemanticError#*)+ m1
+	m1 <- m2
 fin

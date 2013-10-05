@@ -2,5 +2,5 @@ fonction f() début fin
 fonction g() début fin
 algorithme
 début
-	(*#TypeError#*)f <- g
+	(*#NonWritable#*)f <- g
 fin

@@ -1,1 +1,1 @@
-algorithme lexique a: (*#SemanticError#*)a début fin
+algorithme lexique a: (*#SpecificTypeExpected#*)a début fin

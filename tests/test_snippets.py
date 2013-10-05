@@ -67,7 +67,7 @@ class TestSnippets(unittest.TestCase):
 		# TODO this is a hellish monstrosity
 		# ---- apply all directives ---------------
 		options = DefaultOptions()
-		directives_match = DIRECTIVE_REGEXP.match(snippet)
+		directives_match = DIRECTIVE_REGEXP.search(snippet)
 		if directives_match:
 			for directive in directives_match.group(1).split(','):
 				tokens = directive.split()
@@ -105,7 +105,7 @@ class TestSnippets(unittest.TestCase):
 			else:
 				class_ = getattr(syntax, classname, None) or getattr(semantic, classname)
 				self.assertIsNotNone(class_, "unknown error class: '{}'".format(classname))
-			self.assertIsInstance(error, class_,
+			self.assertIs(error.__class__, class_,
 					"wrong error found at error marker #{}".format(i))
 			self.assertEqual(error.pos.char, match.end(2),
 					"error #{} wasn't reported at expected position (raised: {})"
@@ -139,7 +139,7 @@ class TestSnippets(unittest.TestCase):
 		# ---- run JS -------------------------
 		if not module.algorithms:
 			return
-		session_match = SESSION_REGEXP.match(snippet)
+		session_match = SESSION_REGEXP.search(snippet)
 		if session_match:
 			fragments = session_match.group('session').strip().split('|')
 			snippet_output = ' '.join(f.strip() for f in fragments[0::2])

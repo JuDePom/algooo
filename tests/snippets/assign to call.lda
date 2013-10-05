@@ -4,5 +4,5 @@ début
 fin
 algorithme
 début
-	(*#TypeError#*)f() <- 3
+	(*#NonWritable#*)f() <- 3
 fin

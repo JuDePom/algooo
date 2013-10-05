@@ -2,5 +2,5 @@ algorithme
 lexique
 	Moule = <>
 début
-	(*#TypeError#*)Moule <- Moule
+	(*#NonWritable#*)Moule <- Moule
 fin

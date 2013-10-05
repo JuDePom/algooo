@@ -1,4 +1,4 @@
 algorithme
 début
-	(*#TypeError#*)écrire <- 30
+	(*#NonWritable#*)écrire <- 30
 fin

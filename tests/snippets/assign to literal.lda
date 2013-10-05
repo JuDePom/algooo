@@ -1,4 +1,4 @@
 algorithme
 début
-	(*#TypeError#*)3 <- 4
+	(*#NonWritable#*)3 <- 4
 fin

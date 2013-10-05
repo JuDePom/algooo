@@ -2,6 +2,6 @@ fonction f()
 début
 fin
 
-fonction g(): (*#SemanticError#*)f
+fonction g(): (*#SpecificTypeExpected#*)f
 début
 fin

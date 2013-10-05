@@ -4,5 +4,6 @@ lexique
 	m1: Moule
 	m2: Moule
 début
-	m1 <- m1 (*#SemanticError#*)+ m2
+	m1 <- m1 (*#TypeError#*)+ m2
+	m1 <- m1 (*#TypeError#*)+ m1
 fin

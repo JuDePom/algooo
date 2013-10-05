@@ -2,5 +2,5 @@ algorithme
 lexique
 	i: entier
 début
-	i <- 2 (*#TypeError#*)+ écrire("salut")
+	i <- 2 (*#TypeMismatch#*)+ écrire("salut")
 fin

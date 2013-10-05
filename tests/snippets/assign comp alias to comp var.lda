@@ -3,5 +3,5 @@ lexique
 	Moule = <>
 	m1: Moule
 début
-	m1 (*#TypeError#*)<- Moule
+	m1 (*#TypeMismatch#*)<- Moule
 fin

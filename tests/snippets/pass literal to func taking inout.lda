@@ -4,5 +4,5 @@ fin
 
 algorithme
 début
-	f((*#TypeError#*)1234)
+	f((*#NonWritable#*)1234)
 fin

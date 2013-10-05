@@ -6,5 +6,5 @@ algorithme
 lexique
 	t: tableau entier[1..5]
 début
-	f((*#TypeError#*)t)
+	f((*#SpecificTypeExpected#*)t)
 fin
