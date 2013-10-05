@@ -31,22 +31,6 @@ class _BaseFunction:
 			pp.indented(pp.putline, self.body)
 		pp.put(kw.END)
 
-	def js_signature(self, pp):
-		"""
-		Generate JS signature for the function. This signature will be output
-		right before the function's JS code block.
-		"""
-		raise NotImplementedError
-
-	def js(self, pp):
-		self.js_signature(pp)
-		pp.putline(" {")
-		if self.lexicon:
-			pp.indented(pp.putline, self.lexicon)
-		if self.body:
-			pp.indented(pp.putline, self.body)
-		pp.put("}")
-
 
 class Algorithm(_BaseFunction):
 	"""
@@ -57,8 +41,13 @@ class Algorithm(_BaseFunction):
 	def lda_signature(self, pp):
 		pp.put(kw.ALGORITHM)
 
-	def js_signature(self, pp):
-		pp.put("P.main = function()")
+	def js(self, pp):
+		pp.putline("P.main = function() {")
+		if self.lexicon:
+			pp.indented(pp.putline, self.lexicon)
+		if self.body:
+			pp.indented(pp.putline, self.body)
+		pp.put("}")
 
 	def check_return(self, logger, return_statement):
 		"""
@@ -80,6 +69,7 @@ class Algorithm(_BaseFunction):
 		# Exit function scope
 		context.pop()
 
+
 class Function(_BaseFunction):
 	"""
 	Callable function that has a name, takes zero or more parameters, and may
@@ -98,9 +88,11 @@ class Function(_BaseFunction):
 		Run semantic analysis of the function's return type and formal parameters.
 		This method sets the `resolved_return_type` attribute.
 		"""
+		context.push(self)
 		self.resolved_return_type = self.return_type.resolve_type(context, logger)
 		for fp in self.fp_list:
 			fp.check(context, logger)
+		context.pop()
 
 	def check(self, context, logger):
 		"""
@@ -171,14 +163,6 @@ class Function(_BaseFunction):
 		if self.return_type is not types.VOID:
 			pp.put(kw.COLON, " ", self.return_type)
 
-	def js_signature(self, pp):
-		pp.put("P.", self.ident, " = function(")
-		prefix = ""
-		for formal in self.fp_list:
-			pp.put(prefix, "ptr" if formal.js_fakeptr else "", formal.ident)
-			prefix = ", "
-		pp.put(")")
-
 	def js_call(self, pp, params):
 		"""
 		Translate an LDA function call to one JavaScript function call.
@@ -200,10 +184,20 @@ class Function(_BaseFunction):
 		pp.put(")")
 
 	def js(self, pp):
-		self.js_signature(pp)
-		pp.putline(" {")
+		pp.put("P.", self.ident, " = function(")
+		prefix = ""
+		for formal in self.fp_list:
+			pp.put(prefix)
+			formal.js_ident(pp, access=False)
+			prefix = ", "
+		pp.putline(") {")
 		for param in self.fp_list:
-			pp.indented(pp.putline, param)
+			if param.js_fakepbc:
+				# The variable will be translated to a JS *object* (not a JS
+				# *scalar*), and JS won't pass it by copy. Clone the object to
+				# fake pass-by-copy.
+				pp.putline(param.ident, " = LDA.clone(", param.ident,
+						"); /* fake pass by copy */")
 		if self.lexicon:
 			pp.indented(pp.putline, self.lexicon)
 		if self.body:

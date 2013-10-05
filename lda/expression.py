@@ -110,10 +110,8 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 			self.writable = False
 
 	def js(self, pp):
-		if self.bound.js_fakeptr:
-			pp.put("ptr", super(), ".v")
-		else:
-			super().js(pp)
+		self.bound.js_ident(pp, access=True)
+
 
 class Literal(Expression):
 	"""

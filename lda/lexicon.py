@@ -31,6 +31,7 @@ class Lexicon:
 		Augment context with lexicon components
 		and run a semantic analysis on all lexicon components.
 		"""
+		self.parent = context.parent
 		# Hunt duplicates. Note that all_items is sorted by declaration
 		# position, which is important to report errors correctly.
 		symbol_dict = semantictools.hunt_duplicates(self.all_items, logger, ERRONEOUS)
@@ -54,6 +55,7 @@ class Lexicon:
 		# Resolve variable types.
 		for variable in self.variables:
 			variable.check(context, logger)
+			assert not variable.formal
 		# Resolve function signatures before checking function bodies, so that the
 		# functions can call functions defined within this lexicon.
 		for function in self.functions:
@@ -79,5 +81,17 @@ class Lexicon:
 	def js(self, pp):
 		if not self:
 			return
-		pp.join((self.composites + self.variables), pp.newline)
+		prefix = getattr(self.parent, 'js_namespace', "var ")
+		for composite in self.composites:
+			pp.putline(prefix, composite.ident, " = function() {")
+			for field in composite.fields:
+				pp.indented(pp.put, "this.", field.ident, " = ");
+				pp.indented(field.resolved_type.js_declare, pp)
+				pp.indented(pp.putline, ";")
+			pp.putline("};")
+		for variable in self.variables:
+			pp.put(prefix, variable.ident, " = ")
+			variable.resolved_type.js_declare(pp)
+			pp.putline(";")
+
 

@@ -71,15 +71,15 @@ class VarDecl:
 			pp.put(kw.INOUT, " ")
 		pp.put(self.type_descriptor)
 
-	def js(self, pp):
-		if not self.formal:
-			prefix = getattr(self.parent, 'js_namespace', "var ")
-			pp.put(prefix, self.ident, " = ")
-			self.resolved_type.js_declare(pp)
-			pp.put(";")
-		elif self.js_fakepbc:
-			# The variable will be translated to a JS *object* (not a JS
-			# *scalar*), and JS won't pass it by copy. Clone the object to
-			# fake pass-by-copy.
-			pp.put(self.ident, " = LDA.clone(", self.ident, "); /* fake pass by copy */")
-
+	def js_ident(self, pp, access):
+		"""
+		Generate JS identifier for this variable.
+		`access` must be True if the variable's value is being accessed.
+		"""
+		prefix = getattr(self.parent, 'js_namespace', '')
+		pp.put(prefix)
+		if self.js_fakeptr:
+			pp.put("ptr")
+		pp.put(self.ident)
+		if access and self.js_fakeptr:
+			pp.put(".v")

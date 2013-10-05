@@ -406,8 +406,13 @@ class Composite(TypeDescriptor):
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
 		self.parent = supercontext.parent
 		self.context = semantictools.hunt_duplicates(self.fields, logger, ERRONEOUS)
+		# Push this composite as the parent of a new context, so that the fields
+		# know they belong to it. Among other things, this will come in handy to
+		# find the right JS namespace for the fields.
+		supercontext.push(self)
 		for field in self.fields:
 			field.check(supercontext, logger)
+		supercontext.pop()
 		return self
 
 	def detect_loops(self, composite, logger):
@@ -434,15 +439,6 @@ class Composite(TypeDescriptor):
 		pp.put(self.ident, " ", kw.EQ, " ", kw.LT)
 		pp.join(self.fields, pp.put, ", ")
 		pp.put(kw.GT)
-
-	def js(self, pp):
-		prefix = getattr(self.parent, 'js_namespace', "var ")
-		pp.putline(prefix, self.ident, " = function() {")
-		for field in self.fields:
-			pp.indented(pp.put, "this.", field.ident, " = ");
-			pp.indented(field.resolved_type.js_declare, pp)
-			pp.indented(pp.putline, ";")
-		pp.put("};")
 
 	def js_declare(self, pp):
 		prefix = getattr(self.parent, 'js_namespace', '')
