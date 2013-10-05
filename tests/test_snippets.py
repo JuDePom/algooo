@@ -2,6 +2,10 @@
 LDA code snippet torture test. Run a number of tests on every *.lda file
 in the `snippets` directory.
 
+You can also call this script from the command line in the following fashion to
+test one snippet at a time:
+	python -m tests.test_snippets SNIPPETNAME
+
 The snippets may either be:
 - incorrect, to test the compiler's error reporting system; the expected errors
 must be specified as specially-formatted comments in the snippet; or
@@ -153,4 +157,7 @@ for fn in sorted(os.listdir(SNIPPETSDIR)):
 	test = lambda self, snippet=fbuf: self.c(snippet)
 	test.__name__ = "test snippet '{}'".format(snipname)
 	setattr(TestSnippets, test.__name__, test)
+
+if __name__ == '__main__':
+	getattr(TestSnippets(), "test snippet '{}'".format(sys.argv[1]))()
 
