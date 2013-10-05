@@ -1,13 +1,39 @@
-import os, re, unittest
+"""
+LDA code snippet torture test. Run a number of tests on every *.lda file
+in the `snippets` directory.
+
+The snippets may either be:
+- incorrect, to test the compiler's error reporting system; the expected errors
+must be specified as specially-formatted comments in the snippet; or
+- correct, to test the compiler's compliance with a specific language construct,
+and/or to ensure a snippet behaves correctly; the expected output of the program
+must be specified as a specially-formatted comment in the snippet.
+
+Each snippet is subjected to the following tests:
+- Preprocess snippet file by reading directives in comments (options, expected
+output, expected errors...).
+- Parse (lexical/syntactic analysis) and Check (semantic analysis); ensure the
+raised errors match those specified in the comments; if there are no errors and
+we weren't expecting any, keep going.
+- Compile to JS.
+- Compile to LDA and then back to JS; ensure this JS version is identical to
+the one obtained above.
+- Run JS and ensure the JS output matches that defined in the snippet's comments
+"""
+
+import os
+import re
+import unittest
+import subprocess
+from fnmatch import fnmatch
+from itertools import count
+
 from lda.parser import Parser
 from lda.errors import syntax, semantic
 from lda.context import ContextStack
 from lda.errors.handler import Logger
 from lda import prettyprinter
 from lda import kw
-from fnmatch import fnmatch
-from itertools import count
-import subprocess
 
 
 SNIPPETSDIR = os.path.join(os.path.dirname(__file__), "snippets")
@@ -29,6 +55,7 @@ class DefaultOptions:
 
 class TestSnippets(unittest.TestCase):
 	def c(self, snippet):
+		# TODO this is a hellish monstrosity
 		# ---- apply all directives ---------------
 		options = DefaultOptions()
 		directives_match = DIRECTIVE_REGEXP.match(snippet)
@@ -81,16 +108,25 @@ class TestSnippets(unittest.TestCase):
 		# ---- stop there if there were any errors -------------
 		if snippet_errors:
 			return
-		# ---- compile to LDA -----------------------
-		pp = prettyprinter.LDAPrettyPrinter()
-		module.lda(pp)
-		# The test below is skipped for now because we need to find a way to
-		# ignore unsignificant whitespace differences, extra parentheses and
-		# alt. keyword spellings
-		# TODO - self.assertEqual(str(pp).strip(), snippet.strip())
-		# ---- compile to JS -----------------------
-		pp = prettyprinter.JSPrettyPrinter()
-		module.js(pp)
+		# ---- compile to JS directly ----------------
+		jspp = prettyprinter.JSPrettyPrinter()
+		module.js(jspp)
+		js1 = str(jspp)
+		# ---- compile to JS through regenerated LDA -----------
+		ldapp = prettyprinter.LDAPrettyPrinter()
+		module.lda(ldapp)
+		regenerated = str(ldapp)
+		jspp = prettyprinter.JSPrettyPrinter()
+		module2 = Parser(options, raw_buf=regenerated).analyze_module()
+		module2.check(ContextStack(options), logger)
+		module2.js(jspp)
+		js2 = str(jspp)
+		# ---- both JS versions of the same program must end up identical
+		# Instead of jumping through these hoops (LDA->LDA->JS), we could've
+		# compared the original program with the regenerated LDA code, but then
+		# we'd have to keep track of comments, whitespace, etc. In other words,
+		# a ton of work for very little benefit.
+		self.assertEqual(js1, js2)
 		# ---- run JS -------------------------
 		if not module.algorithms:
 			return
