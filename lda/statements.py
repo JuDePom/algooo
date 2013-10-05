@@ -75,9 +75,7 @@ class Assignment:
 		self.lhs.check(context, logger)
 		self.rhs.check(context, logger)
 		if not self.lhs.writable:
-			logger.log(semantic.TypeError(self.lhs.pos,
-					"l'opérande de gauche ne peut pas être affectée",
-					self.lhs.resolved_type))
+			logger.log(semantic.NonWritable(self.lhs))
 			return
 		ltype = self.lhs.resolved_type
 		rtype = self.rhs.resolved_type
@@ -222,9 +220,7 @@ class For(StatementBlock):
 		# If the counter is an integer, ensure the counter is writable;
 		# otherwise don't bother since an error was already raised
 		if self.counter.resolved_type == types.INTEGER and not self.counter.writable:
-			logger.log(semantic.TypeError(self.counter.pos,
-					"le compteur doit être une variable, pas le résultat d'une expression",
-					self.counter.resolved_type))
+			logger.log(semantic.NonWritable(self.counter))
 		super().check(context, logger)
 
 	def lda(self, pp):

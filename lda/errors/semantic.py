@@ -112,6 +112,17 @@ class NonCallable(TypeError):
 				"fonction (il est de type {})").format(given_type)
 		super().__init__(pos, message, given_type)
 
+class NonWritable(TypeError):
+	"""
+	Raised when a non-writable expression is used in place of a variable
+	identifier.
+	"""
+	def __init__(self, expression):
+		super().__init__(expression.pos,
+				"une variable est attendue à la place de cette expression, car "
+				"elle doit pouvoir être modifiée (or, le résultat de cette "
+				"expression est figé)", expression.resolved_type)
+
 class _CountMismatch(SemanticError):
 	"""
 	Raised when the number of items given does not match that which is expected.
