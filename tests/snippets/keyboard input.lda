@@ -1,0 +1,48 @@
+(*|
+Comment t'appelles-tu ?
+chaîne>
+|
+Jacqueline
+|
+Quel âge as-tu ?
+entier>
+|
+90
+|
+Es-tu une femme ? (oui/non)
+booléen>
+|
+oui
+|
+Quel est ton caractère préféré ?
+caractère>
+|
+A
+|
+Ma chère Jacqueline tu as 90 ans et tu aimes le A
+|*)
+
+algorithme
+lexique
+	nom: chaîne
+	âge: entier
+	femme: booléen
+	cara: caractère
+	cher: chaîne
+début
+	écrire("Comment t'appelles-tu ?")
+	lire(nom)
+	écrire("Quel âge as-tu ?")
+	lire(âge)
+	écrire("Es-tu une femme ? (oui/non)")
+	lire(femme)
+	écrire("Quel est ton caractère préféré ?")
+	lire(cara)
+	si femme alors
+		cher <- "Ma chère"
+	sinon
+		cher <- "Mon cher"
+	fsi
+	écrire(cher, nom, "tu as", âge, "ans et tu aimes le", cara)
+fin
+

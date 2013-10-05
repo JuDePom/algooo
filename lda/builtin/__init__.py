@@ -27,11 +27,12 @@ See Function's docstrings for more info about the contract of the functions
 mentioned above.
 """
 
-from . import print, arrayalloc
+from . import print, arrayalloc, inputmagic
 
 SYMBOLS = {
 	"écrire": print,
 	"ecrire": print,
 	"tailletab": arrayalloc,
+	"lire": inputmagic,
 }
 

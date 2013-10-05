@@ -28,9 +28,11 @@ the one obtained above.
 import os
 import re
 import unittest
-import subprocess
+import sys
 from fnmatch import fnmatch
 from itertools import count
+
+from tests import jsshell
 
 from lda.parser import Parser
 from lda.errors import syntax, semantic
@@ -49,8 +51,11 @@ ERROR_REGEXP = re.compile(r"\(\*#(.+?)(#\*\))")
 # (*% directive0, directive1 arg0 arg1 arg2, directive2 arg0 %*)
 DIRECTIVE_REGEXP = re.compile(r"^\(\*% ?(.*?) ?%\*\)", re.DOTALL | re.MULTILINE)
 
-# (%|expected output when running translated javascript %|)
-OUTPUT_REGEXP = re.compile(r"^\(\*\|(?P<output>.*?)\|\*\)", re.DOTALL | re.MULTILINE)
+# Non-interactive program:
+#     (*|expected output when running translated javascript|*)
+# Interactive program:
+#     (*|output 1 | keyboard input 1 | output2 | keyboard input 2 | output 3 |*)
+SESSION_REGEXP = re.compile(r"^\(\*\|(?P<session>.*?)\|\*\)", re.DOTALL | re.MULTILINE)
 
 
 class DefaultOptions:
@@ -134,18 +139,16 @@ class TestSnippets(unittest.TestCase):
 		# ---- run JS -------------------------
 		if not module.algorithms:
 			return
-		code = "load('jsruntime/lda.js');\n\n{}\n\nP.main();\n".format(pp)
-		shutup = False
-		gotten_output = subprocess.check_output(["js", "-w", "-s", "-e", code],
-				stderr=shutup and subprocess.DEVNULL or None,
-				universal_newlines=True).strip()
-		output_match = OUTPUT_REGEXP.match(snippet)
-		if output_match:
-			snippet_output = output_match.group('output').strip()
+		session_match = SESSION_REGEXP.match(snippet)
+		if session_match:
+			fragments = session_match.group('session').strip().split('|')
+			snippet_output = ' '.join(f.strip() for f in fragments[0::2])
+			snippet_input = '\n'.join(f.strip() for f in fragments[1::2])
 		else:
 			snippet_output = ''
+			snippet_input = ''
+		gotten_output = jsshell.run(js1, snippet_input)
 		self.assertEqual(snippet_output, gotten_output.strip())
-
 
 for fn in sorted(os.listdir(SNIPPETSDIR)):
 	if not fnmatch(fn, '*.lda'):

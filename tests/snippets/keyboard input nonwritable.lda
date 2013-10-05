@@ -1,0 +1,8 @@
+algorithme
+début
+	lire((*#TypeError#*)"salut")
+	lire(1(*#TypeError#*)+1)
+	lire((*#TypeError#*)1)
+	lire((*#TypeError#*)-1)
+fin
+

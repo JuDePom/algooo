@@ -2,8 +2,19 @@
  * LDA runtime library
  */
 
-LDA = {
-	pedantic: true
+var LDA = {
+	pedantic: true,
+	browser: typeof(window) === undefined,
+	booleanLiterals: {
+		'vrai': true,
+		'true': true,
+		'oui': true,
+		'yes': true,
+		'faux': false,
+		'false': false,
+		'non': false,
+		'no': false
+	},
 };
 
 LDA.RuntimeError = function(message) {
@@ -146,4 +157,27 @@ LDA.Array.prototype.set = function(indices, value, n) {
 		this[i] = value;
 	}
 };
+
+(function() {
+	function genericRead(promptMessage, convert) {
+		return function() {
+			var v = convert(LDA.prompt(promptMessage));
+			while (typeof v === 'undefined' || (typeof v === 'number' && isNaN(v))) {
+				LDA.print("Mauvais type ! Recommencez, SVP.");
+				v = convert(LDA.prompt(promptMessage));
+			}
+			return v;
+		};
+	};
+
+	LDA.readStr  = function(){return LDA.prompt('cha\u00EEne> ');};
+	LDA.readInt  = genericRead('entier> ', parseInt);
+	LDA.readReal = genericRead('r\u00E9el> ', parseFloat);
+	LDA.readBool = genericRead('bool\u00E9en> ', function(line) {
+		return LDA.booleanLiterals[line.toLowerCase()];
+	});
+	LDA.readChar = genericRead('caract\u00E8re> ', function(line) {
+		return line.length === 1? line: undefined;
+	});
+})();
 
