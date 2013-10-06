@@ -3,7 +3,6 @@ Parser facilities.
 """
 
 
-import re
 from . import position
 from .errors import syntax
 
@@ -130,16 +129,10 @@ class BaseParser:
 	  context manager.
 	"""
 
-	def __init__(self, options, path=None, raw_buf=None):
+	def __init__(self, options, buf, path):
 		assert hasattr(self, 're_identifier'), "please provide re_identifier"
-		assert (path is not None) ^ (raw_buf is not None), "either a path or a direct string can be specified, but not both"
-		if path is None:
-			self.path = "<direct>"
-			self.raw_buf = raw_buf
-		else:
-			self.path = path
-			with open(path, 'rt', encoding='utf8') as input_file:
-				self.raw_buf = input_file.read()
+		self.raw_buf = buf
+		self.path = path or "<string>"
 		# set position to start of buffer
 		self.pos = position.Position(self.path)
 		self.buflen = len(self.raw_buf)

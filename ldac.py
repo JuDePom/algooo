@@ -1,13 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
-'''
-LDA compiler entry point.
-'''
+"""
+LDA compiler command line front-end.
+"""
 
-import lda.parser
-import lda.errors
-import lda.context
-import lda.prettyprinter
+from lda import build_tree, translate_tree, CompilationFailed
 import argparse
 import sys
 
@@ -33,46 +30,30 @@ ap.add_argument('--no-output', '-n', action='store_true',
 ap.add_argument('--ignore-case', '-c', action='store_true',
 		help="""Ignorer la casse dans les identificateurs et les mot-clés""")
 
-ap.add_argument('--js-standalone', '-s', action='store_true',
-		help="""Si le format de sortie est `js`, faire que le script puisse
-		être exécuté tel quel.""")
+ap.add_argument('--execute', '-x', action='store_true',
+		help="""Exécuter le programme immédiatement s'il ne contient
+		aucune erreur""")
 
 args = ap.parse_args()
 
+args.extra_js_code = "P.main();"
+args.stats_comment = True
+
 try:
-	parser = lda.parser.Parser(args, path=args.path)
-	module = parser.analyze_module()
-except lda.errors.syntax.SyntaxError as e:
-	print(e.pretty(parser.raw_buf), file=sys.stderr)
+	module = build_tree(args, None, args.path)
+except CompilationFailed as cf:
+	for error in cf.errors:
+		print(error.pretty(cf.buf), file=sys.stderr)
 	sys.exit(1)
-
-logger = lda.errors.handler.Logger()
-module.check(lda.context.ContextStack(args), logger)
-
-if logger:
-	for e in logger.errors:
-		print(e.pretty(parser.raw_buf), file=sys.stderr)
-	sys.exit(1)
-
 if args.no_output:
 	sys.exit(0)
-
-if args.format == 'lda':
-	pp = lda.prettyprinter.LDAPrettyPrinter()
-	module.lda(pp)
-	output = str(pp)
-elif args.format == 'js':
-	pp = lda.prettyprinter.JSPrettyPrinter()
-	module.js(pp)
-	output = str(pp)
-	if args.js_standalone:
-		output = "require('lda.js');\n\n{}\n\nP.main();\n".format(output)
+code = translate_tree(args, module, args.format)
+if args.execute:
+	assert args.format == 'js', "on ne peut exécuter que du JavaScript !"
+	import jsshell
+	jsshell.run_interactive(code)
+elif args.output_file:
+	with open(args.output_file, 'wt', encoding='utf8') as f:
+		f.write(code)
 else:
-	raise Exception("Format de sortie inconnu : " + args.format)
-
-if args.output_file is None:
-	print(output)
-else:
-	with open(args.output_file, 'wt', encoding='utf8') as output_file:
-		output_file.write(output)
-
+	print(code)

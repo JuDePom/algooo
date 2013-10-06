@@ -31,14 +31,10 @@ import unittest
 import sys
 from fnmatch import fnmatch
 from itertools import count
+import jsshell
 
-from tests import jsshell
-
-from lda.parser import Parser
 from lda.errors import syntax, semantic
-from lda.context import ContextStack
-from lda.errors.handler import Logger
-from lda import prettyprinter
+from lda import build_tree, CompilationFailed, DefaultOptions, translate_tree
 from lda import kw
 
 
@@ -58,19 +54,25 @@ DIRECTIVE_REGEXP = re.compile(r"^\(\*% ?(.*?) ?%\*\)", re.DOTALL | re.MULTILINE)
 SESSION_REGEXP = re.compile(r"^\(\*\|(?P<session>.*?)\|\*\)", re.DOTALL | re.MULTILINE)
 
 
-class DefaultOptions:
-	ignore_case        = False
-
-
 class TestSnippets(unittest.TestCase):
-	def c(self, snippet):
+	def c(self, snipname, snippath):
+		options = DefaultOptions()
+		options.stats_comment = False
+		with open(snippath, 'rt', encoding='utf-8') as f:
+			snippet = f.read()
+		jspath = os.path.join(SNIPPETSDIR, snipname + ".js")
+		if os.path.exists(jspath):
+			with open(jspath, 'rt', encoding='utf-8') as f:
+				options.extra_js_code = f.read()
+			print(snipname + ": loaded extra JS")
+		else:
+			options.extra_js_code = "P.main();"
 		# TODO this is a hellish monstrosity
 		# ---- apply all directives ---------------
-		options = DefaultOptions()
 		directives_match = DIRECTIVE_REGEXP.search(snippet)
 		if directives_match:
 			for directive in directives_match.group(1).split(','):
-				tokens = directive.split()
+				tokens = directive.split(maxsplit=1)
 				self.assertEqual(2, len(tokens), tokens)
 				k, v = tokens
 				vtype = type(getattr(options, k))
@@ -81,18 +83,13 @@ class TestSnippets(unittest.TestCase):
 				setattr(options, k, v)
 		# ---- parse & check ----------------------
 		try:
-			parser = Parser(options, raw_buf=snippet)
-			module = parser.analyze_module()
-			self.assertTrue(parser.eof(), ("program couldn't be parsed entirely"
-					" -- stopped at {}").format(parser.pos))
-		except syntax.SyntaxError as e:
-			logged_errors = [e]
+			module = build_tree(options, path=None, buf=snippet)
+		except CompilationFailed as cf:
+			logged_errors = cf.errors
 		else:
-			logger = Logger()
-			module.check(ContextStack(options), logger)
-			logged_errors = list(logger.errors)
-		# ---- match errors -----------------------
+			logged_errors = []
 		snippet_errors = list(ERROR_REGEXP.finditer(snippet))
+		# ---- match errors -----------------------
 		# make sure the analysis raised as many errors as expected
 		sc, lc = len(snippet_errors), len(logged_errors)
 		self.assertEqual(sc, lc, "expected {} errors but {} were reported: {}"
@@ -118,18 +115,11 @@ class TestSnippets(unittest.TestCase):
 		if snippet_errors:
 			return
 		# ---- compile to JS directly ----------------
-		jspp = prettyprinter.JSPrettyPrinter()
-		module.js(jspp)
-		js1 = str(jspp)
+		js1 = translate_tree(options, module, 'js')
 		# ---- compile to JS through regenerated LDA -----------
-		ldapp = prettyprinter.LDAPrettyPrinter()
-		module.lda(ldapp)
-		regenerated = str(ldapp)
-		jspp = prettyprinter.JSPrettyPrinter()
-		module2 = Parser(options, raw_buf=regenerated).analyze_module()
-		module2.check(ContextStack(options), logger)
-		module2.js(jspp)
-		js2 = str(jspp)
+		lda1 = translate_tree(options, module, 'lda')
+		regen_module = build_tree(options, lda1)
+		js2 = translate_tree(options, regen_module, 'js')
 		# ---- both JS versions of the same program must end up identical
 		# Instead of jumping through these hoops (LDA->LDA->JS), we could've
 		# compared the original program with the regenerated LDA code, but then
@@ -154,10 +144,8 @@ for fn in sorted(os.listdir(SNIPPETSDIR)):
 	if not fnmatch(fn, '*.lda'):
 		continue
 	snipname = fn[:-4]
-	path = os.path.join(SNIPPETSDIR, fn)
-	with open(path, 'rt', encoding='utf8') as snippet_file:
-		fbuf = snippet_file.read()
-	test = lambda self, snippet=fbuf: self.c(snippet)
+	snippath = os.path.join(SNIPPETSDIR, fn)
+	test = lambda self, n=snipname, p=snippath: self.c(n, p)
 	test.__name__ = "test snippet '{}'".format(snipname)
 	setattr(TestSnippets, test.__name__, test)
 

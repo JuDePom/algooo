@@ -1,5 +1,5 @@
 import unittest
-from lda.errors import syntax, semantic, handler
+from lda.errors import syntax, handler
 from lda import parser
 from lda import types
 from lda import lexicon
@@ -7,6 +7,7 @@ from lda import statements
 from lda import expression
 from lda import module
 from lda import function
+from lda import DefaultOptions
 from lda.context import ContextStack
 
 ERROR_MARKER = "(**)"
@@ -25,8 +26,6 @@ PARSING_FUNCTIONS = {
 		statements.If:               'analyze_if',
 }
 
-class DefaultOptions:
-	ignore_case = False
 
 class LDATestCase(unittest.TestCase):
 	"""
@@ -50,7 +49,7 @@ class LDATestCase(unittest.TestCase):
 			only parsed partially.
 		:param kwargs: Optional arguments to pass to the analysis function.
 		"""
-		self.parser = parser.Parser(self.options, raw_buf=program)
+		self.parser = parser.Parser(self.options, path=None, buf=program)
 		try:
 			analyze_func = getattr(self.parser, PARSING_FUNCTIONS[cls])
 		except KeyError as e:

@@ -1,6 +1,6 @@
+from lda.prettyprinter import JSPrettyPrinter, LDAPrettyPrinter
 from .lexicon import Lexicon
 from .errors import semantic
-from .statements import StatementBlock
 
 class Module:
 	# All identifiers at the module level will pertain
@@ -51,3 +51,12 @@ class Module:
 			self.algorithms[0].js(pp)
 			pp.putline(";")
 
+	def quicklda(self):
+		pp = LDAPrettyPrinter()
+		self.lda(pp)
+		return str(pp)
+
+	def quickjs(self):
+		pp = JSPrettyPrinter()
+		self.js(pp)
+		return str(pp)
