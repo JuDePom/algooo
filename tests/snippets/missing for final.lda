@@ -1,0 +1,8 @@
+algorithme
+lexique
+	i: entier
+début
+	pour i de 1 jusque (*#ExpectedItem#*)faire
+		écrire("salut")
+	fpour
+fin

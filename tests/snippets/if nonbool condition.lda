@@ -1,0 +1,31 @@
+algorithme
+lexique
+	Moule = <>
+	en: entier
+	re: réel
+	ch: chaîne
+	ca: caractère
+	m: Moule
+début
+	si (*#SpecificTypeExpected#*)m alors fsi
+	si (*#SpecificTypeExpected#*)en alors fsi
+	si (*#SpecificTypeExpected#*)re alors fsi
+	si (*#SpecificTypeExpected#*)ch alors fsi
+	si (*#SpecificTypeExpected#*)ca alors fsi
+
+	si (*#SpecificTypeExpected#*)1234 alors fsi
+	si (*#SpecificTypeExpected#*)123.456 alors fsi
+	si (*#SpecificTypeExpected#*)"les poules ont des dents" alors fsi
+	si (*#SpecificTypeExpected#*)'a' alors fsi
+
+	si vrai alors snsi (*#SpecificTypeExpected#*)m alors fsi
+	si vrai alors snsi (*#SpecificTypeExpected#*)en alors fsi
+	si vrai alors snsi (*#SpecificTypeExpected#*)re alors fsi
+	si vrai alors snsi (*#SpecificTypeExpected#*)ch alors fsi
+	si vrai alors snsi (*#SpecificTypeExpected#*)ca alors fsi
+
+	si vrai alors snsi (*#SpecificTypeExpected#*)1234 alors fsi
+	si vrai alors snsi (*#SpecificTypeExpected#*)123.456 alors fsi
+	si vrai alors snsi (*#SpecificTypeExpected#*)"les poules ont des dents" alors fsi
+	si vrai alors snsi (*#SpecificTypeExpected#*)'a' alors fsi
+fin

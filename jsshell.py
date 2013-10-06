@@ -23,12 +23,14 @@ print("SpiderMonkey shell: {} "
 		.format(JSSHELL))
 
 
-def run(jscode, inputstr='', shutup=False, extracode="P.main();"):
-	code = ("load('jsruntime/lda.js');\n"
+def command(jscode):
+	return [JSSHELL, "-w", "-s", "-e",
+			("load('jsruntime/lda.js');\n"
 			"load('jsruntime/lda-spidermonkey.js');\n"
-			"{}\n"
-			"{}\n").format(jscode, extracode)
-	process = subprocess.Popen([JSSHELL, "-w", "-s", "-e", code],
+			"{}\n").format(jscode)]
+
+def run(jscode, inputstr='', shutup=False):
+	process = subprocess.Popen(command(jscode),
 			stdin=subprocess.PIPE,
 			stdout=subprocess.PIPE,
 			stderr=shutup and subprocess.DEVNULL or None)
@@ -37,3 +39,5 @@ def run(jscode, inputstr='', shutup=False, extracode="P.main();"):
 		raise subprocess.CalledProcessError(process.returncode, 'jsshell.run()')
 	return stdout.decode("utf-8").replace("\r", "").strip()
 
+def run_interactive(jscode):
+	subprocess.Popen(command(jscode)).communicate()

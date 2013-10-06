@@ -1,0 +1,8 @@
+algorithme
+début
+	si vrai alors
+		écrire("salut")
+	sinon
+		écrire("au revoir")
+	(*#kw:END_IF#*)fin
+fin

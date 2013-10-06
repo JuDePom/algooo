@@ -1,0 +1,20 @@
+algorithme
+lexique
+	Moule = <>
+	en: entier
+	re: réel
+	ch: chaîne
+	ca: caractère
+	m: Moule
+début
+	tantque (*#SpecificTypeExpected#*)m faire ftant
+	tantque (*#SpecificTypeExpected#*)en faire ftant
+	tantque (*#SpecificTypeExpected#*)re faire ftant
+	tantque (*#SpecificTypeExpected#*)ch faire ftant
+	tantque (*#SpecificTypeExpected#*)ca faire ftant
+
+	tantque (*#SpecificTypeExpected#*)1234 faire ftant
+	tantque (*#SpecificTypeExpected#*)123.456 faire ftant
+	tantque (*#SpecificTypeExpected#*)"les poules ont des dents" faire ftant
+	tantque (*#SpecificTypeExpected#*)'a' faire ftant
+fin

@@ -1,0 +1,11 @@
+(*|4|*)
+algorithme
+lexique
+	i: entier
+début
+	i <- 4
+	tantque 1+1=3 faire
+		i <- 1000
+	ftant
+	écrire(i)
+fin

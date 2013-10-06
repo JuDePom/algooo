@@ -1,0 +1,30 @@
+(*|
+2
+0
+1.5
+512
+2
+-123
+-123.456
+-0.3
+123
+123.456
+0.3
+-2
+|*)
+
+algorithme
+début
+	écrire(1 + 1)
+	écrire(1 - 1)
+	écrire(3. / 2)
+	écrire(2 ** 9)
+	écrire(6 mod 4)
+	écrire(-123)
+	écrire(-123.456)
+	écrire(-.3)
+	écrire(+123)
+	écrire(+123.456)
+	écrire(+.3)
+	écrire(-(1+1))
+fin

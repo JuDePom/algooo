@@ -1,0 +1,4 @@
+algorithme
+début
+	si vrai (*#kw:THEN#*)écrire("salut") fsi
+fin

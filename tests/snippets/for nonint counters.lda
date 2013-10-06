@@ -1,0 +1,15 @@
+algorithme
+lexique
+	Moule = <>
+	bo: booléen
+	re: réel
+	ch: chaîne
+	ca: caractère
+	m: Moule
+début
+	pour (*#SpecificTypeExpected#*)m de 0 à 5 faire fpour
+	pour (*#SpecificTypeExpected#*)bo de 0 à 5 faire fpour
+	pour (*#SpecificTypeExpected#*)re de 0 à 5 faire fpour
+	pour (*#SpecificTypeExpected#*)ch de 0 à 5 faire fpour
+	pour (*#SpecificTypeExpected#*)ca de 0 à 5 faire fpour
+fin

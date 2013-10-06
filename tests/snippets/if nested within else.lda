@@ -1,19 +1,20 @@
 (*|
 -
 +
-0
++
 OVER 9000!
 |*)
+
 fonction f(x: entier)
 début
 	si x < 0 alors
 		écrire("-")
-	snsi x > 9000 alors
-		écrire("OVER 9000!")
-	snsi x > 0 alors
-		écrire("+")
 	sinon
-		écrire("0")
+	 	si x > 9000 alors
+			écrire("OVER 9000!")
+		sinon
+			écrire("+")
+		fsi
 	fsi
 fin
 
