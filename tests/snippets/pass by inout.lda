@@ -1,0 +1,32 @@
+(*|
+vrai
+a 1 0.1 azertyqsdfwxc
+|*)
+
+fonction pass_by_inout(b: inout booléen, c: inout caractère, i: inout entier, r: inout réel, s: inout chaîne)
+début
+	b <- vrai
+	c <- 'a'
+	i <- 1
+	r <- .1
+	s <- "azertyqsdfwxc"
+fin
+
+algorithme
+lexique
+	b: booléen
+	c: caractère
+	i: entier
+	r: réel
+	s: chaîne
+début
+	b <- faux
+	c <- 'z'
+	i <- 0
+	r <- 999.
+	s <- "qwertyasdfzxc"
+	pass_by_inout(b, c, i, r, s)
+	si b alors écrire("vrai") sinon écrire("faux") fsi
+	écrire(c, i, r, s)
+fin
+

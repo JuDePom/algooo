@@ -1,0 +1,12 @@
+fonction f0() début fin
+fonction f1(a:entier) début fin
+
+algorithme
+début
+	(*#ParameterCountMismatch#*)f0(1)
+	(*#ParameterCountMismatch#*)f0(1,1)
+	(*#ParameterCountMismatch#*)f0(1,1,1)
+	(*#ParameterCountMismatch#*)f1()
+	(*#ParameterCountMismatch#*)f1(1,1)
+	(*#ParameterCountMismatch#*)f1(1,1,1)
+fin

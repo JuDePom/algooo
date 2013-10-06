@@ -1,0 +1,31 @@
+(*
+If this test fails, try upgrading your SpiderMonkey shell.
+JavaScript-C27.0a1 was used during development.
+*)
+
+
+(*|
+こんにちは世界
+亀
+|*)
+
+lexique
+	構造体型 = <文字列: chaîne, 記号: caractère>
+
+fonction 初期化関数(挨拶: chaîne, 動物: caractère): 構造体型
+lexique
+	宣言: 構造体型
+début
+	宣言.文字列 ← 挨拶
+	宣言.記号 ← 動物
+	retourne 宣言
+fin
+
+algorithme
+lexique
+	挨拶ラッパー: 構造体型
+début
+	挨拶ラッパー ← 初期化関数("こんにちは世界", '亀')
+	écrire(挨拶ラッパー.文字列)
+	écrire(挨拶ラッパー.記号)
+fin

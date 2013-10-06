@@ -1,4 +1,4 @@
-from . import ldatestcase
+from tests import ldatestcase
 from lda import expression, position
 from lda import operators as ops
 from lda.identifier import PureIdentifier
@@ -79,4 +79,3 @@ class TestExpressionEqualities(ldatestcase.LDATestCase):
 		self.assertNotEqual(r('0..5'), r('0..5.00'))
 		self.assertNotEqual(r('a..b'), r('c..d'))
 		self.assertNotEqual(r('a[5]..a[7]'), r('a[5]..a[6]'))
-	

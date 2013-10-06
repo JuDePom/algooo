@@ -1,0 +1,3 @@
+lexique
+	Moule = <a: (*#SpecificTypeExpected#*)f>
+fonction f() lexique début fin

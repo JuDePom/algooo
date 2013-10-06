@@ -1,0 +1,13 @@
+fonction f()
+début
+	retourne
+fin
+
+algorithme
+début
+	(* NOT_A_VARIABLE *)
+	écrire((*#TypeError#*)f)
+
+	(* VOID *)
+	écrire((*#TypeError#*)f())
+fin

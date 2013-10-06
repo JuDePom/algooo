@@ -1,0 +1,13 @@
+(* different types in params and lexicon *)
+fonction f(a: entier)
+lexique
+	(*#DuplicateDeclaration#*)a: réel
+début
+fin
+
+(* same types in params and lexicon *)
+fonction g(a: entier)
+lexique
+	(*#DuplicateDeclaration#*)a: entier
+début
+fin

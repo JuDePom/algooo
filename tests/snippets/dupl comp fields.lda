@@ -1,0 +1,12 @@
+algorithme
+lexique
+	Moule = <m: entier, (*#DuplicateDeclaration#*)m: réel>
+	m: Moule
+début
+	(* the statements below must not raise an error since the compiler can't
+	resolve m.m's type *)
+	m.m <- 3
+	m.m <- 3.14
+	m.m <- 'c'
+	m.m <- "abcdef"
+fin

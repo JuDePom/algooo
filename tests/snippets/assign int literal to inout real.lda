@@ -1,0 +1,4 @@
+fonction f(a: inout réel)
+début
+	a <- 3
+fin

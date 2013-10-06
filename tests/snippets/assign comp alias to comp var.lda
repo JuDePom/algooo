@@ -1,0 +1,7 @@
+algorithme
+lexique
+	Moule = <>
+	m1: Moule
+début
+	m1 (*#TypeMismatch#*)<- Moule
+fin

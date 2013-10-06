@@ -1,0 +1,5 @@
+fonction f(m: (*#UnresolvableTypeAlias#*)Moule)
+lexique
+	Moule = <>
+début
+fin

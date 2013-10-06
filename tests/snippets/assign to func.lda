@@ -1,0 +1,6 @@
+fonction f() début fin
+fonction g() début fin
+algorithme
+début
+	(*#NonWritable#*)f <- g
+fin

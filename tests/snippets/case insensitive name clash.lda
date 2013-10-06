@@ -1,0 +1,4 @@
+(*% ignore_case True %*)
+lexique
+	bonjour: entier
+	(*#DuplicateDeclaration#*)Bonjour: entier

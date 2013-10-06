@@ -1,0 +1,4 @@
+algorithme
+début
+	(*#NonWritable#*)écrire <- 30
+fin

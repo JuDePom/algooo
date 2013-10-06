@@ -1,0 +1,8 @@
+algorithme
+lexique
+	a: (*#UnresolvableTypeAlias#*)UnMystérieuxCompositeInexistant
+début
+	(* no more errors, UnMystérieuxCompositeInexistant resolves to ERRONEOUS *)
+	a.b <- 3
+	a.c[1234] <- "abcdef"
+fin

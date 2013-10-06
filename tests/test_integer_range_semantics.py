@@ -1,7 +1,7 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 from lda.operators import IntegerRange
-from lda.symbols import Lexicon
+from lda.lexicon import Lexicon
 from lda.context import ContextStack
 
 class TestIntegerRangeSemantics(LDATestCase):
@@ -9,13 +9,13 @@ class TestIntegerRangeSemantics(LDATestCase):
 		self.check(cls=IntegerRange, program='0..5')
 
 	def test_semi_constant(self):
-		context = ContextStack()
+		context = ContextStack(self.options)
 		lexicon = self.check(cls=Lexicon, context=context,
 				program='lexique n:entier')
 		self.check(context, cls=IntegerRange, program='0..n')
 
 	def test_fully_variable(self):
-		context = ContextStack()
+		context = ContextStack(self.options)
 		lexicon = self.check(cls=Lexicon, context=context,
 				program='lexique i:entier j:entier')
 		self.check(context, cls=IntegerRange, program='i..j')

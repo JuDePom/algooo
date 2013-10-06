@@ -1,0 +1,6 @@
+algorithme
+lexique
+	t: tableau entier[0..5]
+début
+	tailletab((*#TypeError#*)t, 0..5)
+fin

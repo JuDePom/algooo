@@ -1,0 +1,4 @@
+(* Make sure your editor doesn't automatically add a new line
+character at the end of this file, or the test will fail! *)
+algorithme
+début(*#kw:END#*)

@@ -1,0 +1,4 @@
+fonction f(a: réel)
+début
+	f(3)
+fin

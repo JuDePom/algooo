@@ -1,0 +1,8 @@
+algorithme
+début
+	lire((*#NonWritable#*)"salut")
+	lire(1(*#NonWritable#*)+1)
+	lire((*#NonWritable#*)1)
+	lire((*#NonWritable#*)-1)
+fin
+

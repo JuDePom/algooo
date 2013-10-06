@@ -1,0 +1,34 @@
+(*|
+1
+palme
+2
+palme
+palme
+3
+palme
+palme
+palme
+|*)
+algorithme
+lexique
+	Moule = <viscosité: entier, tabfrites: tableau Frite[?]>
+	Frite = <huile: chaîne>
+	tabdélice: tableau Moule[?]
+	i: entier
+	j: entier
+début
+	tailletab(tabdélice, 1..3)
+	pour i de 1 à 3 faire
+		tabdélice[i].viscosité <- i
+		tailletab(tabdélice[i].tabfrites, 1..i)
+		pour j de 1 à i faire
+			tabdélice[i].tabfrites[j].huile <- "palme"
+		fpour
+	fpour
+	pour i de 1 à 3 faire
+		écrire(tabdélice[i].viscosité)
+		pour j de 1 à i faire
+			écrire(tabdélice[i].tabfrites[j].huile)
+		fpour
+	fpour
+fin

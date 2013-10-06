@@ -1,0 +1,8 @@
+algorithme
+lexique
+	r: réel
+	e: entier
+début
+	e <- 3
+	r <- e
+fin

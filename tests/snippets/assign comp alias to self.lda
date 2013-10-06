@@ -1,0 +1,6 @@
+algorithme
+lexique
+	Moule = <>
+début
+	(*#NonWritable#*)Moule <- Moule
+fin

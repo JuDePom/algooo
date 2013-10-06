@@ -1,0 +1,19 @@
+fonction f(a: tableau entier[0..(*#SemanticError#*)n], n: entier)
+début
+fin
+
+fonction g(a: tableau entier[0..(*#SemanticError#*)n])
+lexique
+	n: entier
+début
+fin
+
+algorithme
+lexique
+	i: entier
+	j: entier
+	t1: tableau entier[(*#SemanticError#*)i..j]
+	t2: tableau entier[0..(*#SemanticError#*)j]
+	t3: tableau entier[(*#SemanticError#*)i..10]
+début
+fin

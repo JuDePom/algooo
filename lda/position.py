@@ -41,3 +41,15 @@ class Position(tuple):
 	def terse(self):
 		return "{}:{}".format(self.line, self.column)
 
+	def marker_lines(self, buf):
+		prevcr = buf.rfind('\n', 0, self.char)
+		nextcr = buf.find('\n', self.char)
+		if nextcr == -1:
+			nextcr = len(buf)
+		line = buf[prevcr+1: nextcr]
+		tick = ''
+		for i in range(0, self.column-1):
+			tick += '\t' if line[i] == '\t' else ' '
+		tick += '^'
+		return line, tick
+

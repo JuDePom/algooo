@@ -87,11 +87,11 @@ class TestExpressionSyntax(LDATestCase):
 		test(".")
 
 	def test_encompassing_operators_missing_closing_keyword(self):
-		def test(program, closing_kw):
-			self.assertMissingKeywords(closing_kw,
+		def test(program, *keywords):
+			self.assertMissingKeywords(*keywords,
 					program=program, cls=expression.Expression)
-		test("oh_no [ the_closing_square_bracket, is_missing(**)", kw.RSBRACK)
-		test("oh_no ( the_closing_parenthesis, is_missing(**)", kw.RPAREN)
+		test("oh_no [ the_closing_square_bracket, is_missing(**)", kw.RSBRACK, kw.COMMA)
+		test("oh_no ( the_closing_parenthesis, is_missing(**)", kw.RPAREN, kw.COMMA)
 
 	def test_incomplete_unary_operations(self):
 		def test(s):

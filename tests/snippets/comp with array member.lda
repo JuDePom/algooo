@@ -1,0 +1,25 @@
+(*|
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+|*)
+algorithme
+lexique
+	i: entier
+	Moule = <t: tableau entier[1..10]>
+	m: Moule
+début
+	pour i de 1 jusque 10 faire
+		m.t[i] <- i
+	fpour
+	pour i de 1 jusque 10 faire
+		écrire(m.t[i])
+	fpour
+fin

@@ -1,7 +1,6 @@
 from .expression import Expression, surround
 from .errors import semantic
 from . import types
-from . import dot
 from . import kw
 from . import semantictools
 
@@ -58,12 +57,6 @@ class UnaryOp(Expression):
 	def __eq__(self, other):
 		return type(self) == type(other) and self.rhs == other.rhs
 
-	def put_node(self, cluster):
-		op_node = dot.Node(self.keyword_def.default_spelling,
-				cluster, self.rhs.put_node(cluster))
-		op_node.shape = "circle"
-		return op_node
-		
 	@surround
 	def lda(self, pp):
 		pp.put(self.keyword_def, " ", self.rhs)
@@ -104,14 +97,6 @@ class BinaryOp(Expression):
 	def part_of_rhs(cls, whose):
 		return cls.precedence > whose.precedence or \
 			(cls.right_ass and cls.precedence == whose.precedence)
-
-	def put_node(self, cluster):
-		op_node = dot.Node(self.keyword_def.default_spelling,
-				cluster,
-				self.lhs.put_node(cluster),
-				self.rhs.put_node(cluster))
-		op_node.shape = "circle"
-		return op_node
 
 	@surround
 	def lda(self, pp):
@@ -229,11 +214,21 @@ class BinaryEncompassingOp(BinaryOp):
 class UnaryPlus(UnaryNumberOp):
 	keyword_def = kw.PLUS
 
+	def js(self, pp):
+		self.rhs.js(pp)
+
 class UnaryMinus(UnaryNumberOp):
 	keyword_def = kw.MINUS
+	js_kw = "-"
 
 class LogicalNot(UnaryOp):
 	keyword_def = kw.NOT
+	resolved_type = types.BOOLEAN
+	js_kw = "!"
+
+	def check(self, context, logger):
+		self.rhs.check(context, logger)
+		semantictools.enforce("l'opérande du 'non'", types.BOOLEAN, self.rhs, logger)
 
 #######################################################################
 #
@@ -278,6 +273,27 @@ class ArraySubscript(BinaryEncompassingOp):
 			semantictools.enforce("cet indice de tableau", types.INTEGER, index, logger)
 		self.resolved_type = array.resolved_element_type
 
+	def js_indices(self, pp):
+		"""
+		Generate a JavaScript translation of the array indices.
+		"""
+		pp.put("[")
+		pp.join(self.rhs, pp.put, ",")
+		pp.put("]")
+
+	# JS getter
+	def js(self, pp):
+		pp.put(self.lhs, ".get(")
+		self.js_indices(pp)
+		pp.put(")")
+
+	# JS setter
+	def js_assign_lhs(self, pp, assignment):
+		pp.put(self.lhs, ".set(")
+		self.js_indices(pp)
+		pp.put(", ", assignment.rhs, ");")
+
+
 class FunctionCall(BinaryEncompassingOp):
 	"""
 	Function call operator.
@@ -299,17 +315,23 @@ class FunctionCall(BinaryEncompassingOp):
 		self.lhs.check(context, logger)
 		try:
 			self.function = self.lhs.bound
-			for effective in self.rhs:
-				effective.check(context, logger)
-			self.function.check_effective_parameters(context, logger, self.pos, self.rhs)
+			check_effective_parameters = getattr(self.function, 'check_effective_parameters')
 		except AttributeError:
 			logger.log(semantic.NonCallable(self.pos, self.lhs))
 			self.resolved_type = types.ERRONEOUS
 			return
+		for effective in self.rhs:
+			effective.check(context, logger)
+		check_effective_parameters(logger, self.pos, self.rhs)
 		self.resolved_type = self.function.resolved_return_type
 
+	def lda(self, pp):
+		pp.put(self.lhs, "(")
+		pp.join(self.rhs, pp.put, ", ")
+		pp.put(")")
+
 	def js(self, pp):
-		self.function.js_call(pp, self)
+		self.function.js_call(pp, self.rhs)
 
 class MemberSelect(BinaryOp):
 	"""
@@ -337,11 +359,9 @@ class MemberSelect(BinaryOp):
 			self.rhs.check(composite.context, logger)
 			self.resolved_type = self.rhs.resolved_type
 
-	@surround
 	def lda(self, pp):
 		pp.put(self.lhs, self.keyword_def, self.rhs)
 	
-	@surround
 	def js(self, pp):
 		pp.put(self.lhs, ".", self.rhs)
 
@@ -371,6 +391,7 @@ class Division(NumberArithmeticOp):
 class Modulo(NumberArithmeticOp):
 	keyword_def = kw.MODULO
 	js_kw = "%"
+	#TODO: entier? pas entier?
 
 class Addition(NumberArithmeticOp):
 	keyword_def = kw.PLUS

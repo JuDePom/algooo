@@ -1,0 +1,4 @@
+algorithme
+lexique
+	a: tableau(*#ExpectedItem#*)tableau entier [0..5][0..5]
+début fin

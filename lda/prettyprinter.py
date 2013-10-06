@@ -59,10 +59,11 @@ class PrettyPrinter:
 		:param gluefunc: glue function called between each element
 		:param args: arguments passed to gluefunc
 		"""
-		if not iterable:
-			return
 		it = iter(iterable)
-		self.put(next(it))
+		try:
+			self.put(next(it))
+		except StopIteration:
+			return
 		for element in it:
 			gluefunc(*args)
 			self.put(element)

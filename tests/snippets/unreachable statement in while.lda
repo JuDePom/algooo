@@ -1,0 +1,7 @@
+algorithme
+début
+	tantque vrai faire
+		retourne
+		(*#UnreachableStatement#*)retourne
+	ftant
+fin

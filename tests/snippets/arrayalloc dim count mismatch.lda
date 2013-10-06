@@ -1,0 +1,8 @@
+algorithme
+lexique
+	t: tableau entier[?, ?, ?]
+début
+	(*#ParameterCountMismatch#*)tailletab(t)
+	tailletab((*#DimensionCountMismatch#*)t, 0..5, 0..5)
+	tailletab((*#DimensionCountMismatch#*)t, 0..5, 0..5, 0..5, 0..5)
+fin

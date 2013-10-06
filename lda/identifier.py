@@ -1,5 +1,3 @@
-from . import dot
-
 class PureIdentifier:
 	"""
 	User-defined name that identifies an LDA code object.
@@ -22,8 +20,5 @@ class PureIdentifier:
 		pp.put(self.name)
 
 	def js(self, pp):
-		pp.put("$" + self.name)
-
-	def put_node(self, cluster):
-		return dot.Node(self.name, cluster)
+		pp.put("$" + self.name.encode('unicode-escape').decode().replace('\\', '$'))
 

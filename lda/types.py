@@ -5,6 +5,12 @@ from . import semantictools
 from .identifier import PureIdentifier
 from types import MethodType
 
+def nonvoid(t):
+	"""
+	Return True if t is not VOID nor a BlackHole type.
+	"""
+	return t is not VOID and not isinstance(t, BlackHole)
+
 #######################################################################
 #
 # BASE TYPE DESCRIPTOR CLASS
@@ -17,6 +23,9 @@ class TypeDescriptor:
 
 	Type descriptors may need to be refined through semantic analysis (via the
 	check() method) to be complete.
+
+	All type descriptors shall provide the `js_object` boolean; set it to True
+	if this TypeDescriptor translates to an `object` type in JavaScript.
 	"""
 
 	def __eq__(self, other):
@@ -46,6 +55,13 @@ class TypeDescriptor:
 		"""
 		return self.__eq__(other.equivalent(self))
 
+	def js_declare(self, pp):
+		"""
+		Generate a JavaScript declaration of a variable whose resolved_type is
+		this LDA type descriptor.
+		"""
+		raise NotImplementedError
+
 
 #######################################################################
 #
@@ -62,6 +78,8 @@ class BlackHole(TypeDescriptor):
 	They typically occur when the type of an item cannot be resolved, or when
 	an expression doesn't have a type.
 	"""
+
+	js_object = False
 
 	def __init__(self, human_name):
 		self.human_name = human_name
@@ -110,6 +128,9 @@ class Scalar(TypeDescriptor):
 	pre-defined Scalar instances in this module: INTEGER, REAL, etc.).
 	"""
 
+	# `number`, `boolean`, `string` are not objects in JavaScript
+	js_object = False
+
 	def __init__(self, keyword, name=None):
 		super().__init__()
 		self.keyword = keyword
@@ -129,6 +150,9 @@ class Scalar(TypeDescriptor):
 
 	def lda(self, pp):
 		pp.put(str(self.keyword))
+
+	def js_declare(self, pp):
+		pp.put("null")
 
 def _dual_scalar_compatibility(weak, strong):
 	def weak_equivalent(self, other):
@@ -151,44 +175,11 @@ RANGE     = Scalar(None, "<intervalle>")
 _dual_scalar_compatibility(weak=INTEGER,   strong=REAL)
 _dual_scalar_compatibility(weak=CHARACTER, strong=STRING)
 
-
 #######################################################################
 #
 # TYPES THAT NEED TO BE RESOLVED
 #
 #######################################################################
-
-class Inout(TypeDescriptor):
-	"""
-	Inout wrapper around a core type.
-	"""
-
-	def __init__(self, core):
-		super().__init__()
-		self.core = core
-
-	def __repr__(self):
-		return "inout {}".format(self.core)
-
-	def __eq__(self, other):
-		return isinstance(other, Inout) and self.core.__eq__(other.core)
-
-	def resolve_type(self, context, logger):
-		self.resolved_core = self.core.resolve_type(context, logger)
-		return self.resolved_core
-
-	def equivalent(self, other):
-		if isinstance(other, Inout):
-			return self.core.equivalent(other.core)
-		else:
-			return self.core.equivalent(other)
-
-	def compatible(self, other):
-		if isinstance(other, Inout):
-			return self.core.compatible(other.core)
-		else:
-			return self.core.compatible(other)
-
 
 class TypeAlias(PureIdentifier, TypeDescriptor):
 	"""
@@ -220,6 +211,8 @@ class Array(TypeDescriptor):
 	dimension can be static or dynamic.
 	"""
 
+	js_object = True
+
 	class StaticDimension:
 		"""
 		Created from a constant integer range that must be evaluable at compile
@@ -227,6 +220,7 @@ class Array(TypeDescriptor):
 		"""
 
 		def __init__(self, expression):
+			self.pos = expression.pos
 			self.expression = expression
 
 		def __eq__(self, other):
@@ -248,12 +242,13 @@ class Array(TypeDescriptor):
 				self.expression.check({}, handler.Raiser())
 			except semantic.MissingDeclaration as e:
 				logger.log(semantic.SemanticError(e.pos,
-						"une borne de tableau statique doit être construite à partir "
-						"d'une expression constante"))
+						"il est interdit d'introduire des variables dans la définition "
+						"d'une borne de tableau statique; les bornes d'un tableau statique "
+						"doivent être définies sous forme d'intervalle d'entiers littéraux"))
 				return False
 			if self.expression.resolved_type is not RANGE:
 				logger.log(semantic.TypeError(self.expression.pos,
-						"les bornes d'un tableau statique doivent être données "
+						"les bornes d'un tableau statique doivent être définies "
 						"sous forme d'intervalle d'entiers littéraux",
 						self.expression.resolved_type))
 				return False
@@ -304,21 +299,66 @@ class Array(TypeDescriptor):
 		return str(pp)
 
 	def resolve_type(self, context, logger):
+		"""
+		Perform a semantic analysis on the dimensions and the element type. Set
+		the `resolved_element_type` attribute and the `dynamic` and `static`
+		boolean attributes.
+		"""
+		# Innocent until proven guilty.
 		erroneous = False
+		# Check dimensions.
 		if len(self.dimensions) == 0:
 			logger.log(semantic.SemanticError(self.pos,
 					"un tableau doit avoir au moins une dimension"))
 			erroneous = True
-		for dim in self.dimensions:
-			if not dim.check(logger):
-				erroneous = True
+		else:
+			dim0_type = type(self.dimensions[0])
+			self.dynamic = dim0_type is Array.DynamicDimension
+			self.static = not self.dynamic
+			for dim in self.dimensions:
+				# Semantic analysis of the dimension.
+				if not dim.check(logger):
+					erroneous = True
+				# Ensure we don't have a mix of static and dynamic dimensions.
+				if type(dim) is not dim0_type:
+					logger.log(semantic.SemanticError(dim.pos,
+							"un tableau doit être complètement statique ou "
+							"complètement dynamique"))
+					erroneous = True
+		# Resolve element type.
 		self.resolved_element_type = self.element_type.resolve_type(context, logger)
+		# If an error occured during this method, the entire type is erroneous.
 		return ERRONEOUS if erroneous else self
 
 	def lda(self, pp):
 		pp.put(kw.ARRAY, " ", self.element_type, kw.LSBRACK)
 		pp.join(self.dimensions, pp.put, ", ")
 		pp.put(kw.RSBRACK)
+
+	def js_declare(self, pp):
+		# The JS runtime implementation requires LDA arrays to be LDA.Array
+		# "objects". We can make such an object right away if the array is
+		# static. Otherwise we'll have to wait until the user calls the array
+		# allocation builtin function.
+		if self.static:
+			self.js_new(pp, ((dim.low, dim.high) for dim in self.dimensions))
+		else:
+			pp.put("null")
+
+	def js_new(self, pp, dimensions):
+		"""
+		Generate a `new` statement for an LDA.Array. `dimensions` is an
+		iterable of ranges; each range is represented by a tuple containing two
+		expressions.
+		"""
+		pp.put("new LDA.Array([")
+		prefix = ""
+		for dim in dimensions:
+			pp.put(prefix, "[", dim[0], ", ", dim[1], "]")
+			prefix = ", "
+		pp.put("], function(){return ")
+		self.resolved_element_type.js_declare(pp)
+		pp.put(";})")
 
 	def equivalent(self, other):
 		if not isinstance(other, Array):
@@ -339,6 +379,8 @@ class Composite(TypeDescriptor):
 	composite type) and a list of member fields.
 	"""
 
+	js_object = True
+
 	def __init__(self, ident, fields):
 		super().__init__()
 		self.ident = ident
@@ -356,16 +398,21 @@ class Composite(TypeDescriptor):
 
 	def resolve_type(self, supercontext, logger):
 		"""
-		Creates self.context: a mini-symbol table associating field name
+		Create `self.context`: a mini-symbol table associating field name
 		strings the fields themselves.
 
-		Also hunts down duplicate field names.
+		Also hunts down duplicate field names and sets the `parent` attribute.
 		"""
 		assert not hasattr(self, 'context'), "inutile de redéfinir le contexte"
-		semantictools.hunt_duplicates(self.fields, logger)
-		self.context = {field.ident.name: field for field in self.fields}
+		self.parent = supercontext.parent
+		self.context = semantictools.hunt_duplicates(self.fields, logger, ERRONEOUS)
+		# Push this composite as the parent of a new context, so that the fields
+		# know they belong to it. Among other things, this will come in handy to
+		# find the right JS namespace for the fields.
+		supercontext.push(self)
 		for field in self.fields:
 			field.check(supercontext, logger)
+		supercontext.pop()
 		return self
 
 	def detect_loops(self, composite, logger):
@@ -380,6 +427,9 @@ class Composite(TypeDescriptor):
 		for field in self.fields:
 			if field.resolved_type is composite:
 				logger.log(semantic.RecursiveDeclaration(field.ident.pos))
+				# Prevent raising multiple errors about this particular recursion
+				field.resolved_type = ERRONEOUS
+				continue
 			try:
 				field.resolved_type.detect_loops(composite, logger)
 			except AttributeError:
@@ -390,9 +440,7 @@ class Composite(TypeDescriptor):
 		pp.join(self.fields, pp.put, ", ")
 		pp.put(kw.GT)
 
-	def js(self, pp):
-		pp.putline("var ", self.ident, " = {")
-		for field in self.fields:
-			pp.indented(pp.putline, field.ident, ",")
-		pp.put("};")
+	def js_declare(self, pp):
+		prefix = getattr(self.parent, 'js_namespace', '')
+		pp.put("new ", prefix, self.ident, "()")
 

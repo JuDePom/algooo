@@ -1,0 +1,10 @@
+(*|3|*)
+fonction trois(): entier
+début
+	retourne 3
+fin
+
+algorithme
+début
+	écrire(trois())
+fin

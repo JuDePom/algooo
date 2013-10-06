@@ -1,0 +1,11 @@
+algorithme
+début
+	si 1+1=2 alors
+		retourne
+	snsi 2+2=4 alors
+		retourne
+	sinon
+		retourne
+	fsi
+	(*#UnreachableStatement#*)retourne
+fin

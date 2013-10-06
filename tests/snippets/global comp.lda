@@ -1,0 +1,16 @@
+(*|
+123
+hejsan
+|*)
+lexique
+	Moule = <a: entier, b: chaîne>
+
+algorithme
+lexique
+	m: Moule
+début
+	m.a <- 123
+	m.b <- "hejsan"
+	écrire(m.a)
+	écrire(m.b)
+fin

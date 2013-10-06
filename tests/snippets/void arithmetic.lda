@@ -1,0 +1,6 @@
+algorithme
+lexique
+	i: entier
+début
+	i <- 2 (*#TypeMismatch#*)+ écrire("salut")
+fin

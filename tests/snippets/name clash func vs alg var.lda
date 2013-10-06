@@ -1,0 +1,9 @@
+fonction f()
+début
+fin
+
+algorithme
+lexique
+	(*#DuplicateDeclaration#*)f: entier
+début
+fin

@@ -1,0 +1,4 @@
+fonction f(a: inout entier)
+début
+	a <- 3
+fin

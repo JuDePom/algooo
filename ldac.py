@@ -7,6 +7,7 @@ LDA compiler entry point.
 import lda.parser
 import lda.errors
 import lda.context
+import lda.prettyprinter
 import argparse
 import sys
 
@@ -29,52 +30,43 @@ ap.add_argument('--no-output', '-n', action='store_true',
 		help="""vérifie uniquement la cohérence syntaxique et sémantique
 		sans générer de code""")
 
-ap.add_argument('--case-insensitive', action='store_true',
+ap.add_argument('--ignore-case', '-c', action='store_true',
 		help="""Ignorer la casse dans les identificateurs et les mot-clés""")
+
+ap.add_argument('--js-standalone', '-s', action='store_true',
+		help="""Si le format de sortie est `js`, faire que le script puisse
+		être exécuté tel quel.""")
 
 args = ap.parse_args()
 
-parser = lda.parser.Parser(args, path=args.path)
-
 try:
+	parser = lda.parser.Parser(args, path=args.path)
 	module = parser.analyze_module()
 except lda.errors.syntax.SyntaxError as e:
-	print(e, file=sys.stderr)
-	if hasattr(e, 'intent'):
-		print(" ...Lors de l'analyse de :", e.intent, file=sys.stderr)
-	if hasattr(e, 'tip'):
-		print(" ...Conseil sur cette erreur :", e.tip, file=sys.stderr)
+	print(e.pretty(parser.raw_buf), file=sys.stderr)
 	sys.exit(1)
-
-print (" * Syntaxe : OK.")
 
 logger = lda.errors.handler.Logger()
-module.check(lda.context.ContextStack(), logger)
+module.check(lda.context.ContextStack(args), logger)
 
 if logger:
-	print (" *** ERREURS DE SÉMANTIQUE", file=sys.stderr)
 	for e in logger.errors:
-		print(e, file=sys.stderr)
+		print(e.pretty(parser.raw_buf), file=sys.stderr)
 	sys.exit(1)
-else:
-	print (" * Sémantique : OK.")
 
 if args.no_output:
 	sys.exit(0)
 
-if args.format == 'dot':
-	from lda import dot
-	output = lda.dot.format(module)
-elif args.format == 'lda':
-	from lda import prettyprinter
+if args.format == 'lda':
 	pp = lda.prettyprinter.LDAPrettyPrinter()
 	module.lda(pp)
 	output = str(pp)
 elif args.format == 'js':
-	from lda import prettyprinter
 	pp = lda.prettyprinter.JSPrettyPrinter()
 	module.js(pp)
 	output = str(pp)
+	if args.js_standalone:
+		output = "require('lda.js');\n\n{}\n\nP.main();\n".format(output)
 else:
 	raise Exception("Format de sortie inconnu : " + args.format)
 

@@ -1,0 +1,7 @@
+algorithme
+début
+	si (*#MissingDeclaration#*)i alors
+	snsi non i alors (* an error was already raised about i *)
+	snsi (*#MissingDeclaration#*)j alors
+	fsi
+fin

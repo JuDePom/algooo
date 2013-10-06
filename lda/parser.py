@@ -7,13 +7,15 @@ import re
 from .parsertools import BaseParser, Backtrack, CriticalItem, NotFoundHere, opening_keyword
 from .errors import syntax
 from . import kw
-from . import module
 from . import expression
 from . import operators
 from . import statements
-from . import symbols
 from . import types
 from . import identifier
+from .module import Module
+from .function import Algorithm, Function
+from .vardecl import VarDecl
+from .lexicon import Lexicon
 
 
 SCALARS_KW_TO_TYPE = {
@@ -72,7 +74,7 @@ class Parser(BaseParser):
 				continue
 			raise syntax.ExpectedItem(self.pos, "une fonction ou un algorithme",
 					self.last_good_match)
-		return module.Module(lexicon, functions, algorithms)
+		return Module(lexicon, functions, algorithms)
 
 	def analyze_lexicon_and_body(self):
 		# lexicon
@@ -86,13 +88,14 @@ class Parser(BaseParser):
 						"avez-vous pensé au mot-clé lexique ?")
 			raise e
 		body = self.analyze_statement_block()
+		end_pos = self.pos
 		self.hardskip(kw.END)
-		return lexicon, body
+		return lexicon, body, end_pos
 
 	@opening_keyword(kw.ALGORITHM)
 	def analyze_algorithm(self, kwpos):
-		lexicon, body = self.analyze_lexicon_and_body()
-		return module.Algorithm(kwpos, lexicon, body)
+		lexicon, body, _ = self.analyze_lexicon_and_body()
+		return Algorithm(kwpos, lexicon, body)
 
 	@opening_keyword(kw.FUNCTION)
 	def analyze_function(self, kwpos):
@@ -108,8 +111,8 @@ class Parser(BaseParser):
 				return_type = self.analyze_type_descriptor()
 		else:
 			return_type = types.VOID
-		lexicon, body = self.analyze_lexicon_and_body()
-		return module.Function(kwpos, ident, params, return_type, lexicon, body)
+		lexicon, body, end_pos = self.analyze_lexicon_and_body()
+		return Function(kwpos, end_pos, ident, params, return_type, lexicon, body)
 
 	@opening_keyword(kw.ARRAY)
 	def analyze_array(self, kwpos):
@@ -133,14 +136,10 @@ class Parser(BaseParser):
 		return types.Array.DynamicDimension(kwpos)
 
 	def analyze_type_descriptor(self):
-		inout = self.softskip(kw.INOUT)
 		typedesc = Backtrack(self).give(self.analyze_array)
 		if typedesc is None:
 			typedesc = self.analyze_non_array_type_descriptor()
-		if not inout:
-			return typedesc
-		else:
-			return types.Inout(typedesc)
+		return typedesc
 
 	def analyze_non_array_type_descriptor(self):
 		keyword = self.softskip(*SCALARS_KW_TO_TYPE.keys())
@@ -153,9 +152,10 @@ class Parser(BaseParser):
 		if ident is None:
 			ident = self.analyze_identifier(critical=True)
 			self.hardskip(kw.COLON)
+		inout = self.softskip(kw.INOUT)
 		with CriticalItem(self, "le type de la variable"):
 			typedesc = self.analyze_type_descriptor()
-		return symbols.VarDecl(ident, typedesc, formal)
+		return VarDecl(ident, typedesc, formal, inout)
 
 	@opening_keyword(kw.LT)
 	def analyze_composite(self, kwpos, ident):
@@ -175,7 +175,7 @@ class Parser(BaseParser):
 				variables.append(self.analyze_vardecl(ident=ident))
 			elif keyword == kw.EQ:
 				composites.append(self.analyze_composite(ident=ident))
-		return symbols.Lexicon(variables, composites)
+		return Lexicon(variables, composites)
 
 	def analyze_identifier(self, identifier_class=identifier.PureIdentifier, critical=False):
 		"""
@@ -407,7 +407,10 @@ class Parser(BaseParser):
 			except NotFoundHere:
 				raise syntax.SyntaxError(pos, "argument vide")
 			has_next = self.softskip(kw.COMMA)
-		self.hardskip(closing_kw)
+		# Even though there cannot be a comma here (since has_next went False),
+		# we're hardskipping kw.COMMA anyway. That way, in case of an error,
+		# the user knows they could've used a comma here.
+		self.hardskip(closing_kw, kw.COMMA)
 		return arglist
 
 	def analyze_literal_integer(self):

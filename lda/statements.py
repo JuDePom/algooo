@@ -1,5 +1,4 @@
 from . import kw
-from . import dot
 from . import types
 from . import semantictools
 from .errors import semantic
@@ -21,24 +20,6 @@ class StatementBlock:
 
 	def __bool__(self):
 		return bool(self.body)
-
-	def put_node(self, cluster):
-		prev_outer_node = None
-		first_outer_node = None
-		rank_chain = []
-		for i, statement in enumerate(self):
-			ncluster = dot.Cluster("", cluster)
-			node = statement.put_node(ncluster)
-			outer_node = dot.Node("statement "+str(i), cluster)
-			outer_node.children.append(node)
-			if prev_outer_node is not None:
-				prev_outer_node.children.append(outer_node)
-			else:
-				first_outer_node = outer_node
-			prev_outer_node = outer_node
-			rank_chain.append(outer_node)
-		cluster.rank_chains.append(rank_chain)
-		return first_outer_node
 
 	def lda(self, pp):
 		pp.join(self.body, pp.newline)
@@ -94,9 +75,7 @@ class Assignment:
 		self.lhs.check(context, logger)
 		self.rhs.check(context, logger)
 		if not self.lhs.writable:
-			logger.log(semantic.TypeError(self.lhs.pos,
-					"l'opérande de gauche ne peut pas être affectée",
-					self.lhs.resolved_type))
+			logger.log(semantic.NonWritable(self.lhs))
 			return
 		ltype = self.lhs.resolved_type
 		rtype = self.rhs.resolved_type
@@ -109,7 +88,12 @@ class Assignment:
 		pp.put(self.lhs, " ", kw.ASSIGN, " ", self.rhs)
 
 	def js(self, pp):
-		pp.put(self.lhs, " = ", self.rhs, ";")
+		try:
+			# Try using LHS's JS export method specific to assignments
+			self.lhs.js_assign_lhs(pp, self)
+		except AttributeError:
+			# Fall back to standard JS assignment statement
+			pp.put(self.lhs, " = ", self.rhs, ";")
 
 
 class Return:
@@ -161,7 +145,7 @@ class FunctionCallWrapper:
 		self.call_op = call_op
 
 	def lda(self, pp):
-		self.call_op.put(pp)
+		pp.put(self.call_op)
 
 	def js(self, pp):
 		pp.put(self.call_op, ";")
@@ -193,27 +177,6 @@ class If:
 		else:
 			self.returns = False
 
-	def put_node(self, cluster):
-		rank_chain = []
-		prev_node = None
-		for i, conditional in enumerate(self.conditionals):
-			c_cluster = dot.Cluster("", cluster)
-			cond_node = conditional.condition.put_node(c_cluster)
-			then_cluster = dot.Cluster("alors", c_cluster)
-			then_node = conditional.block.put_node(then_cluster)
-			if_node = dot.Node("si" if i == 0 else "snsi", c_cluster, cond_node, then_node)
-			rank_chain.append(if_node)
-			if prev_node is not None:
-				prev_node.children.append(if_node)
-			prev_node = if_node
-		if self.else_block is not None:
-			else_cluster = dot.Cluster("sinon", cluster)
-			else_node = self.else_block.put_node(else_cluster)
-			prev_node.children.append(else_node)
-			rank_chain.append(else_node)
-		cluster.rank_chains.append(rank_chain)
-		return rank_chain[0]
-
 	def lda(self, pp):
 		intro = kw.IF
 		for conditional in self.conditionals:
@@ -229,12 +192,12 @@ class If:
 		intro = "if ("
 		for conditional in self.conditionals:
 			pp.putline(intro, conditional.condition, ") {")
-			pp.indented(pp.putline, conditional.block)
+			pp.indented(pp.putline, conditional)
 			intro = "} else if ("
 		if self.else_block:
 			pp.putline("} else {")
 			pp.indented(pp.putline, self.else_block)
-		pp.put("};")
+		pp.put("}")
 
 class For(StatementBlock):
 	_COMPONENT_NAMES = [
@@ -254,20 +217,11 @@ class For(StatementBlock):
 		for comp, name in zip(components, For._COMPONENT_NAMES):
 			comp.check(context, logger)
 			semantictools.enforce(name, types.INTEGER, comp, logger)
-		if not self.counter.writable:
-			logger.log(semantic.TypeError(self.counter.pos,
-					"le compteur doit être une variable",
-					self.counter.resolved_type))
+		# If the counter is an integer, ensure the counter is writable;
+		# otherwise don't bother since an error was already raised
+		if self.counter.resolved_type == types.INTEGER and not self.counter.writable:
+			logger.log(semantic.NonWritable(self.counter))
 		super().check(context, logger)
-
-	def put_node(self, cluster):
-		counter_node = self.counter.put_node(cluster)
-		initial_node = self.initial.put_node(cluster)
-		final_node = self.final.put_node(cluster)
-		block_cluster = dot.Cluster("faire", cluster)
-		block_node = super().put_node(block_cluster)
-		return dot.Node("pour", cluster, counter_node, initial_node,
-				final_node, block_node)
 
 	def lda(self, pp):
 		pp.putline(kw.FOR, " ", self.counter, " ", kw.FROM, " ", self.initial,
@@ -281,15 +235,9 @@ class For(StatementBlock):
 				"; ", self.counter, " <= ", self.final, "; ", self.counter, "++) {")
 		if self.body:
 			pp.indented(pp.putline, super())
-		pp.put("};")
+		pp.put("}")
 
 class While(Conditional):
-	def put_node(self, cluster):
-		cond_node = self.condition.put_node(cluster)
-		block_cluster = dot.Cluster("faire", cluster)
-		block_node = super().put_node(block_cluster)
-		return dot.Node("tantque", cluster, cond_node, block_node)
-
 	def lda(self, pp):
 		pp.putline(kw.WHILE, " ", self.condition, " ", kw.DO)
 		if self.body:
@@ -300,5 +248,5 @@ class While(Conditional):
 		pp.putline("while (", self.condition, ") {")
 		if self.body:
 			pp.indented(pp.putline, super())
-		pp.put("};")
+		pp.put("}")
 

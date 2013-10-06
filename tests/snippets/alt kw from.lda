@@ -1,0 +1,13 @@
+(*|
+youpi
+youpi
+youpi
+|*)
+algorithme
+lexique
+	i: entier
+début
+	pour i de 1 à 3 faire
+		écrire("youpi")
+	fpour
+fin

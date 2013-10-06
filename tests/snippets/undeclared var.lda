@@ -1,0 +1,13 @@
+(* Even though i is used multiple times,
+only one error must be raised about it *)
+algorithme
+lexique
+	j: entier
+début
+	(*#MissingDeclaration#*)i <- 1
+	tantque i faire ftant
+	si i alors fsi
+	pour i de 1 à 100 faire fpour
+	i <- i + 1
+	j <- i + 3
+fin

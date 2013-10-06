@@ -1,0 +1,2 @@
+lexique f = <>
+fonction (*#DuplicateDeclaration#*)f() lexique début fin

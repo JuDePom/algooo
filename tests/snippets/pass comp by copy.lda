@@ -1,0 +1,17 @@
+(*|original|*)
+lexique
+	Moule = <a: chaîne>
+
+fonction f(m: Moule)
+début
+	m.a <- "remplacement"
+fin
+
+algorithme
+lexique
+	m: Moule
+début
+	m.a <- "original"
+	f(m)
+	écrire(m.a)
+fin

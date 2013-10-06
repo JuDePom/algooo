@@ -1,0 +1,4 @@
+algorithme
+début
+	(*#NonWritable#*)3 <- 4
+fin

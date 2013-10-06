@@ -1,0 +1,14 @@
+(*|
+2
+3.141593
+|*)
+algorithme
+lexique
+	Moule = <a: entier, b: réel>
+	a: Moule
+début
+	a.a <- 1 + 1
+	a.b <- 0.10109 + .000503 + .04 + 1.0000 * 9. / 3.
+	écrire(a.a)
+	écrire(a.b)
+fin

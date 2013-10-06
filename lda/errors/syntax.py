@@ -2,15 +2,15 @@
 Lexical and syntactic errors that can be raised during the parsing phase.
 '''
 
-class SyntaxError(Exception):
+from .error import LDAError
+
+class SyntaxError(LDAError):
 	'''
 	Raised when the parser encounters an LDA syntax error.
 	'''
 
 	def __init__(self, pos, message):
-		self.pos = pos
-		message = "{}: {}".format(pos, message)
-		super().__init__(message)
+		super().__init__(pos, message)
 
 class ExpectedItem(SyntaxError):
 	'''
@@ -80,3 +80,9 @@ class DiscardedExpression(SyntaxError):
 		else:
 			super().__init__(expr.pos, "lexème errant")
 
+class UnclosedComment(SyntaxError):
+	"""
+	Raised when EOF was reached before a multiline comment's closing marker.
+	"""
+	def __init__(self, pos):
+		super().__init__(pos, "commentaire non fermé")

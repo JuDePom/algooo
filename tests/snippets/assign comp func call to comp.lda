@@ -1,0 +1,10 @@
+lexique
+	Moule = <>
+
+fonction f(): Moule
+lexique
+	m: Moule
+début
+	m <- f()
+	retourne m
+fin

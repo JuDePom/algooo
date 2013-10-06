@@ -1,0 +1,16 @@
+(*|5|*)
+fonction f(a: inout entier)
+lexique
+	b: entier
+début
+	b <- a
+	écrire(b)
+fin
+
+algorithme
+lexique
+	a: entier
+début
+	a <- 5
+	f(a)
+fin

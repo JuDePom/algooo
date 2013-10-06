@@ -1,0 +1,7 @@
+algorithme
+lexique
+	Moule = <>
+	Huitre = <>
+début
+	(*#NonWritable#*)Moule <- Huitre
+fin

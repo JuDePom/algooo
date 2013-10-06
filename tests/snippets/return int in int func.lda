@@ -1,0 +1,7 @@
+fonction f(): entier
+lexique
+	a : entier
+début
+	a<-3
+	retourne a
+fin

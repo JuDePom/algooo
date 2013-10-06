@@ -1,0 +1,4 @@
+algorithme
+début
+	tantque (*#ExpectedItem#*)! faire ftant fin
+fin

@@ -1,0 +1,15 @@
+algorithme
+lexique
+	i: entier
+début
+	tantque vrai faire
+		pour i de 1 jusque 3 faire
+			si 1+1=2 alors
+				retourne
+			sinon
+				retourne
+			fsi
+		fpour
+	ftant
+	(*#UnreachableStatement#*)retourne
+fin

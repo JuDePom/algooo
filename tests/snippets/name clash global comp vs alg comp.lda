@@ -1,0 +1,8 @@
+lexique
+	M = <>
+
+algorithme
+lexique
+	(*#DuplicateDeclaration#*)M = <>
+début
+fin

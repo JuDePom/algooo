@@ -1,0 +1,5 @@
+algorithme
+début
+	retourne
+	(*#UnreachableStatement#*)retourne
+fin

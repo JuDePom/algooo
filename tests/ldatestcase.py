@@ -1,27 +1,26 @@
 import unittest
-import subprocess
-from io import StringIO
-from itertools import count
 from lda.errors import syntax, semantic, handler
 from lda import parser
 from lda import types
-from lda import symbols
+from lda import lexicon
 from lda import statements
 from lda import expression
 from lda import module
+from lda import function
 from lda import prettyprinter
 from lda.context import ContextStack
+from tests import jsshell
 
 ERROR_MARKER = "(**)"
 
 PARSING_FUNCTIONS = {
 		module.Module:               'analyze_module',
-		module.Function:             'analyze_function',
-		module.Algorithm:            'analyze_algorithm',
+		function.Function:           'analyze_function',
+		function.Algorithm:          'analyze_algorithm',
 		list:                        'analyze_arglist',
 		types.Array:                 'analyze_array',
 		types.Composite:             'analyze_composite',
-		symbols.Lexicon:             'analyze_lexicon',
+		lexicon.Lexicon:             'analyze_lexicon',
 		statements.StatementBlock:   'analyze_statement_block',
 		statements.While:            'analyze_while',
 		statements.For:              'analyze_for',
@@ -29,7 +28,7 @@ PARSING_FUNCTIONS = {
 }
 
 class DefaultOptions:
-	case_insensitive = False
+	ignore_case = False
 
 class LDATestCase(unittest.TestCase):
 	"""
@@ -120,41 +119,6 @@ class LDATestCase(unittest.TestCase):
 		self.assertSetEqual(set(error.expected_keywords), set(expected_keywords))
 		return error
 
-	def assertMultipleSemanticErrors(self, error_classes, program):
-		"""
-		Ensure that multiple LDA semantic errors are raised at specific points
-		in the input program.
-
-		In the unit test's LDA source code, mark expected error occurences with
-		an empty comment like so:
-			tableau entier[(**)'a', (**)'b']
-
-		Please note that non-relevant errors are ignored by this method. Refer
-		to errors/semantic.py to learn how the compiler deems a semantic error
-		relevant or not.
-
-		:param error_classes: List of error classes expected to be raised
-			during the semantic analysis of the program, in the order in which they
-			appear in the program.
-		:param program: Source code to analyze.
-		"""
-		logger = handler.Logger()
-		self.check(program=program, error_handler=logger)
-		# make sure the analysis raised as many errors as expected
-		expected_count, reported_count = len(error_classes), len(logger.errors)
-		self.assertEqual(expected_count, reported_count,
-				"we expected {} errors but only {} were reported".format(
-				expected_count, reported_count))
-		# check each error
-		start = 0
-		for i, error, class_ in zip(count(), logger.errors, error_classes):
-			start = self._assertSingleLDAError(program, error, start, i)
-			self.assertIsInstance(error, class_,
-					"wrong error found at error marker #{}".format(i))
-		# make sure there are no leftover markers in the source code
-		self.assertEqual(-1, program.find(ERROR_MARKER, start),
-				"too many error markers!")
-
 	def check(self, context=None, error_handler=None, **kwargs):
 		"""
 		Perform syntactic and semantic analysis of a program.
@@ -167,7 +131,7 @@ class LDATestCase(unittest.TestCase):
 		:param kwargs : Arguments to pass to the analysis function.
 		"""
 		if context is None:
-			context = ContextStack()
+			context = ContextStack(self.options)
 		if error_handler is None:
 			error_handler = handler.Raiser()
 		root = self.analyze(**kwargs)
@@ -177,13 +141,17 @@ class LDATestCase(unittest.TestCase):
 			root.check(context, error_handler)
 		return root
 
-	def jseval(self, **kwargs):
+	def jseval(self, shutup=False, extracode="P.main();", **kwargs):
 		"""
 		Compile a program to JavaScript, execute it, and return the output.
 		The input program's entry point is its Algorithm.
+
+		:param shutup: If True, stderr's output will be redirected to
+		subprocess.DEVNULL. This is useful if you are certain the test fails.
+		:param extracode: Extra JavaScript code executed at the very end of the
+		generated code. By default, `extracode` calls `P.main()`.
 		"""
 		pp = prettyprinter.JSPrettyPrinter()
 		self.check(**kwargs).js(pp)
-		code = str(pp) + "\n\nMain();\n"
-		return subprocess.check_output(["node", "-e", code], universal_newlines=True)
+		return jsshell.run(str(pp), shutup=shutup, extracode=extracode)
 

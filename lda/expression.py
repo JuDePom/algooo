@@ -1,5 +1,4 @@
 from . import kw
-from . import dot
 from . import types
 from .identifier import PureIdentifier
 from .errors import semantic
@@ -90,7 +89,7 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 			context[self.name] = None
 			self.bound = None
 			logger.log(semantic.MissingDeclaration(self))
-		if self.bound is None:
+		if self.bound is None or self.bound is types.ERRONEOUS:
 			# Bound to an undeclared symbol.
 			self.resolved_type = types.ERRONEOUS
 			self.writable = False
@@ -109,6 +108,10 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 			self.writable = self.bound.writable
 		except AttributeError:
 			self.writable = False
+
+	def js(self, pp):
+		self.bound.js_ident(pp, access=True)
+
 
 class Literal(Expression):
 	"""
@@ -129,9 +132,6 @@ class Literal(Expression):
 
 	def __repr__(self):
 		return "littéral {}".format(self.resolved_type)
-
-	def put_node(self, cluster):
-		return dot.Node(str(self.value), cluster)
 
 	def check(self, context, logger):
 		pass
@@ -161,7 +161,7 @@ class LiteralString(Literal):
 		pp.put(kw.QUOTE2, self.value, kw.QUOTE2)
 	
 	def js(self, pp):
-		pp.put('\"', self.value, '\"')
+		pp.put('"', self.value.encode('unicode-escape').decode(), '"')
 
 class LiteralCharacter(Literal):
 	resolved_type = types.CHARACTER
@@ -174,7 +174,7 @@ class LiteralCharacter(Literal):
 		pp.put(kw.QUOTE1, self.value, kw.QUOTE1)
 		
 	def js(self, pp):
-		pp.put("\'", self.value, "\'")
+		pp.put('"', self.value.encode('unicode-escape').decode(), '"')
 
 class LiteralBoolean(Literal):
 	resolved_type = types.BOOLEAN

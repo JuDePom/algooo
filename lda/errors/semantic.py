@@ -2,7 +2,9 @@
 Semantic errors that can be raised during the semantic analysis phase.
 """
 
-class SemanticError(Exception):
+from .error import LDAError
+
+class SemanticError(LDAError):
 	"""
 	Raised when the semantic analysis on a given element fails.
 
@@ -17,9 +19,7 @@ class SemanticError(Exception):
 	ignore all errors that ensue.
 	"""
 	def __init__(self, pos, message):
-		self.pos = pos
-		message = "{}: {}".format(pos.pretty(), message)
-		super().__init__(message)
+		super().__init__(pos, message)
 		self.relevant = True
 
 class MissingDeclaration(SemanticError):
@@ -33,15 +33,6 @@ class MissingDeclaration(SemanticError):
 
 class UnresolvableTypeAlias(MissingDeclaration):
 	pass
-
-class FormalParameterMissingInLexicon(SemanticError):
-	"""
-	Raised when a function's formal parameter was not found in its lexicon.
-	"""
-	def __init__(self, ident):
-		message = ("ce paramètre formel n'a pas été déclaré dans le "
-				"lexique de la fonction : \"{}\"").format(ident)
-		super().__init__(ident.pos, message)
 
 class DuplicateDeclaration(SemanticError):
 	"""
@@ -121,15 +112,34 @@ class NonCallable(TypeError):
 				"fonction (il est de type {})").format(given_type)
 		super().__init__(pos, message, given_type)
 
-class CountMismatch(SemanticError):
+class NonWritable(TypeError):
+	"""
+	Raised when a non-writable expression is used in place of a variable
+	identifier.
+	"""
+	def __init__(self, expression):
+		super().__init__(expression.pos,
+				"une variable est attendue à la place de cette expression, car "
+				"elle doit pouvoir être modifiée (or, le résultat de cette "
+				"expression est figé)", expression.resolved_type)
+
+class _CountMismatch(SemanticError):
 	"""
 	Raised when the number of items given does not match that which is expected.
-
 	Typically used with arglists.
+
+	This error class cannot be used as-is. Subclasses must provide the
+	following attributes:
+	- self_wants: introductory string (such as "this object requires")
+	- singular: tuple of two strings. String #0 contains the name of the
+	  expected item in singular form. String #1 is the phrase "was given" in
+	  singular form.
+	- plural: same as singular except that the phrases are in plural form.
 	"""
-	def __init__(self, pos, expected, given):
-		message = "{self_wants} {x} {things}, mais {only}{y} {were_given}".format(
+	def __init__(self, pos, expected, given, at_least=False):
+		message = "{self_wants} {at_least}{x} {things}, mais {only}{y} {were_given}".format(
 				self_wants = self.self_wants,
+				at_least = "au moins " if at_least else "",
 				x = expected,
 				things = self.singular[0] if expected < 2 else self.plural[0],
 				only = "seulement " if given < expected else "",
@@ -137,12 +147,12 @@ class CountMismatch(SemanticError):
 				were_given = self.singular[1] if given < 2 else self.plural[1])
 		super().__init__(pos, message)
 
-class DimensionCountMismatch(CountMismatch):
+class DimensionCountMismatch(_CountMismatch):
 	self_wants = "ce tableau possède"
 	singular = ("dimension", "est fournie")
 	plural = ("dimensions", "sont fournies")
 
-class ParameterCountMismatch(CountMismatch):
+class ParameterCountMismatch(_CountMismatch):
 	self_wants = "cette fonction requiert"
 	singular = ("paramètre", "est fourni")
 	plural = ("paramètres", "sont fournis")
@@ -155,3 +165,7 @@ class UnreachableStatement(SemanticError):
 	def __init__(self, pos):
 		super().__init__(pos, "instruction jamais atteinte")
 
+class MissingReturnStatement(SemanticError):
+	def __init__(self, pos):
+		super().__init__(pos, "il manque une instruction retourne dans "
+				"cette fonction")

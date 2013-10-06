@@ -1,7 +1,6 @@
 from tests.ldatestcase import LDATestCase
 from lda.errors import semantic
 from lda.statements import If
-from lda.module import Algorithm
 
 class TestIfSemantics(LDATestCase):
 	def test_if_literal_boolean_condition(self):
@@ -25,7 +24,7 @@ class TestIfSemantics(LDATestCase):
 				début
 					si (**){} alors fsi
 				fin'''.format(raw_condition)
-			self.assertLDAError(semantic.SemanticError, self.check, cls=Algorithm,
+			self.assertLDAError(semantic.SemanticError, self.check,
 					program=program)
 		test('1234')
 		test('123.456')

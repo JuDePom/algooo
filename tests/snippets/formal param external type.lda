@@ -1,0 +1,6 @@
+lexique
+	Moule = <>
+
+fonction f(m: Moule)
+début
+fin

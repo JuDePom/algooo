@@ -149,8 +149,7 @@ class BaseParser:
 		# raw_buf is only used to parse strings and characters, and buf is used
 		# for everything else. This separation allows for case insensitivity
 		# while retaining the case in literal strings/characters.
-		self.options = options
-		if self.options.case_insensitive:
+		if options.ignore_case:
 			self.buf = self.raw_buf.lower()
 		else:
 			self.buf = self.raw_buf
@@ -180,32 +179,34 @@ class BaseParser:
 		if chars != 0:
 			bpos += chars
 			column += chars
-		in_multi = False
+		multi_start = None
 		while bpos != -1 and bpos < self.buflen:
 			if self.buf[bpos] == '\n':
 				bpos += 1
 				line += 1
 				column = 1
-			elif not in_multi:
+			elif not multi_start:
 				if self.buf[bpos].isspace():
 					bpos += 1
 					column += 1
 				elif self.buf.startswith('(*', bpos):
+					multi_start = position.Position(self.pos.path, bpos, line, column)
 					bpos += 2
 					column += 2
-					in_multi = True
 				elif self.buf.startswith('//', bpos):
 					bpos = self.buf.find('\n', bpos+2)
 				else:
 					break
 			else:
 				if self.buf.startswith('*)', bpos):
+					multi_start = None
 					bpos += 2
 					column += 2
-					in_multi = False
 				else:
 					bpos += 1
 					column += 1
+		if bpos == self.buflen and multi_start:
+			raise syntax.UnclosedComment(multi_start)
 		self.pos = position.Position(self.pos.path, bpos, line, column)
 
 	def eof(self):
