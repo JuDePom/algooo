@@ -15,6 +15,10 @@ début
 	pour (*#SpecificTypeExpected#*)f de 1 jusque 10 faire
 	fpour
 
+	(* literal *)
+	pour (*#NonWritable#*)0 de 1 jusque 6 faire
+	fpour
+
 	(* expression *)
 	pour 1(*#NonWritable#*)+1 de 1 jusque 10 faire
 	fpour

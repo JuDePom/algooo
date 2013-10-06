@@ -1,0 +1,54 @@
+(*|
+---NOT---
+false
+true
+---AND---
+true
+false
+false
+false
+---OR---
+true
+true
+true
+false
+---NOTCOMP---
+false
+true
+true
+true
+true
+---NOTPAREN---
+false
+false
+false
+true
+|*)
+
+algorithme
+début
+	écrire("---NOT---")
+	écrire(non vrai)
+	écrire(non faux)
+	écrire("---AND---")
+	écrire(vrai et vrai)
+	écrire(vrai et faux)
+	écrire(faux et vrai)
+	écrire(faux et faux)
+	écrire("---OR---")
+	écrire(vrai ou vrai)
+	écrire(vrai ou faux)
+	écrire(faux ou vrai)
+	écrire(faux ou faux)
+	écrire("---NOTCOMP---")
+	écrire(non vrai ou faux)
+	écrire(non vrai ou vrai)
+	écrire(non faux ou faux)
+	écrire(faux ou non faux)
+	écrire(non faux et non faux)
+	écrire("---NOTPAREN---")
+	écrire(non(vrai ou faux))
+	écrire(non(vrai ou vrai))
+	écrire(non(vrai et vrai))
+	écrire(non(vrai et faux))
+fin

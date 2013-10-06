@@ -23,11 +23,10 @@ print("SpiderMonkey shell: {} "
 		.format(JSSHELL))
 
 
-def run(jscode, inputstr='', shutup=False, extracode="P.main();"):
+def run(jscode, inputstr='', shutup=False):
 	code = ("load('jsruntime/lda.js');\n"
 			"load('jsruntime/lda-spidermonkey.js');\n"
-			"{}\n"
-			"{}\n").format(jscode, extracode)
+			"{}\n").format(jscode)
 	process = subprocess.Popen([JSSHELL, "-w", "-s", "-e", code],
 			stdin=subprocess.PIPE,
 			stdout=subprocess.PIPE,

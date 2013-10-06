@@ -1,0 +1,3 @@
+algorithme
+début
+	a <- oh_no(the_closing_round_bracket, is_missing(*#kw:RPAREN,COMMA#*)

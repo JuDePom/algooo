@@ -1,8 +1,26 @@
 algorithme
 lexique
-	t: tableau entier[(*#TypeError#*)"xxx", (*#TypeError#*)'a', (*#TypeError#*)5.123]
+	(* 0 dimensions *)
+	t1: (*#TypeError#*)tableau entier[]
+
+	(* non integer range *)
+	t2: tableau entier[(*#TypeError#*)1]
+	t3: tableau entier[(*#TypeError#*)"coucou"]
+	t4: tableau entier[(*#TypeError#*)'c']
+
+	(* multiple incorrect dimension types *)
+	t5: tableau entier[(*#TypeError#*)"xxx", (*#TypeError#*)'a', (*#TypeError#*)5.123]
+
+	(* part static, part dynamic *)
+	t6: tableau entier[0..5, (*#TypeError#*)?]
+	t7: tableau entier[?, 0(*#TypeError#*)..5, ?, 0..3]
 début
 	(* no errors in statements because t's type must be ERRONEOUS *)
-	t[0] <- 40
-	t[1,2,3] <- 6
+	t1[0] <- 0
+	t2[0] <- 0
+	t3[0] <- 0
+	t4[0] <- 0
+	t5[0] <- 0
+	t6[0] <- 0
+	t7[0] <- 0
 fin

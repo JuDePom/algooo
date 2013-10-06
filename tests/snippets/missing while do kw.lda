@@ -1,0 +1,6 @@
+algorithme
+début
+	tantque vrai
+		(*#kw:DO#*)écrire("salut")
+	ftant
+fin

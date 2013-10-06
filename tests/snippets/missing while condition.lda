@@ -1,0 +1,6 @@
+algorithme
+début
+	tantque (*#ExpectedItem#*)faire
+		écrire("salut")
+	ftant
+fin

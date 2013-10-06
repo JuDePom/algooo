@@ -3,14 +3,6 @@ from lda.errors import semantic
 from lda.expression import Expression
 
 class TestExpressionSemantics(LDATestCase):
-	def test_correct_expressions(self):
-		def test(program):
-			self.check(cls=Expression, program=program)
-		test("non vrai")
-		test("non faux")
-		test("vrai ou faux")
-		test("vrai et faux")
-
 	def test_type_errors_in_incorrect_expressions(self):
 		def test(program):
 			self.assertLDAError(semantic.TypeError, self.check,

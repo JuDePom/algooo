@@ -1,0 +1,8 @@
+algorithme
+lexique
+	i: entier
+début
+	pour i de 1 (*#kw:TO#*)3 faire
+		écrire("salut")
+	fpour
+fin

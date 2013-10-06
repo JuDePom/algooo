@@ -1,0 +1,7 @@
+(* don't execute! Just let the compiler analyze, check and translate it *)
+fonction endless1()
+début
+	tantque vrai faire ftant
+	tantque faux faire ftant
+fin
+

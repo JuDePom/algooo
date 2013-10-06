@@ -1,0 +1,24 @@
+(*|auxiliary JS test passed!|*)
+
+lexique
+	M = <x: entier, y: entier>
+	z: entier
+
+fonction f(a: entier)
+lexique
+	b: entier
+	m: M
+début
+	m.x <- 100
+	z <- 789
+fin
+
+algorithme
+lexique
+	c: entier
+début
+	c <- 123
+	z <- 456
+	f(c)
+fin
+

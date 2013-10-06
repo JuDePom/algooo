@@ -1,0 +1,6 @@
+algorithme
+début
+	si vrai alors
+		écrire("salut")
+	(*#kw:ELSE,ELIF,END_IF#*)fin
+fin

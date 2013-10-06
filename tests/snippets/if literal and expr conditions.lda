@@ -1,0 +1,28 @@
+(*|
+j'ai faim
+j'ai super faim
+tu sais compter
+|*)
+
+algorithme
+début
+	si vrai alors
+		écrire("j'ai faim")
+	fsi
+
+	si non faux alors
+		écrire("j'ai super faim")
+	fsi
+
+	si faux alors
+		écrire("jamais affiché")
+	fsi
+
+	si 1+1=2 alors
+		écrire("tu sais compter")
+	fsi
+
+	si 1+1=3 alors
+		écrire("retourne au CP")
+	fsi
+fin

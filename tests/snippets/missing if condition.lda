@@ -1,0 +1,4 @@
+algorithme
+début
+	si (*#ExpectedItem#*)alors fsi
+fin

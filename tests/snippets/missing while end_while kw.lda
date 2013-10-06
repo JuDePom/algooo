@@ -1,0 +1,6 @@
+algorithme
+début
+	tantque vrai faire
+		écrire("salut")
+	(*#kw:END_WHILE#*)fin
+fin

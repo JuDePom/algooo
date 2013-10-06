@@ -1,0 +1,36 @@
+algorithme
+lexique
+	i: entier
+	Moule = <>
+	bo: booléen
+	re: réel
+	ch: chaîne
+	ca: caractère
+	m: Moule
+début
+	pour i de (*#SpecificTypeExpected#*)"abc"  à 5 faire fpour
+	pour i de (*#SpecificTypeExpected#*)vrai   à 5 faire fpour
+	pour i de (*#SpecificTypeExpected#*)12.345 à 5 faire fpour
+	pour i de (*#SpecificTypeExpected#*)'a'    à 5 faire fpour
+
+	pour i de 1 à (*#SpecificTypeExpected#*)"abc"  faire fpour
+	pour i de 1 à (*#SpecificTypeExpected#*)vrai   faire fpour
+	pour i de 1 à (*#SpecificTypeExpected#*)12.345 faire fpour
+	pour i de 1 à (*#SpecificTypeExpected#*)'a'    faire fpour
+
+	pour i de (*#SpecificTypeExpected#*)m  à 5 faire fpour
+	pour i de (*#SpecificTypeExpected#*)bo à 5 faire fpour
+	pour i de (*#SpecificTypeExpected#*)re à 5 faire fpour
+	pour i de (*#SpecificTypeExpected#*)ch à 5 faire fpour
+	pour i de (*#SpecificTypeExpected#*)ca à 5 faire fpour
+
+	pour i de 1 à (*#SpecificTypeExpected#*)m  faire fpour
+	pour i de 1 à (*#SpecificTypeExpected#*)bo faire fpour
+	pour i de 1 à (*#SpecificTypeExpected#*)re faire fpour
+	pour i de 1 à (*#SpecificTypeExpected#*)ch faire fpour
+	pour i de 1 à (*#SpecificTypeExpected#*)ca faire fpour
+
+	pour i de (*#SpecificTypeExpected#*)12.34 à (*#SpecificTypeExpected#*)"abc" faire fpour
+	pour i de (*#SpecificTypeExpected#*)bo à (*#SpecificTypeExpected#*)m faire fpour
+	pour i de (*#SpecificTypeExpected#*)re à (*#SpecificTypeExpected#*)3.123 faire fpour
+fin

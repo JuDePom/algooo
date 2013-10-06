@@ -7,9 +7,7 @@ from lda import statements
 from lda import expression
 from lda import module
 from lda import function
-from lda import prettyprinter
 from lda.context import ContextStack
-from tests import jsshell
 
 ERROR_MARKER = "(**)"
 
@@ -67,25 +65,6 @@ class LDATestCase(unittest.TestCase):
 					" -- stopped at {}").format(self.parser.pos))
 		return thing
 
-	def _assertSingleLDAError(self, program, error, start=0, error_no=0):
-		"""
-		Meant for LDATestCase's internal use only. Find the next error marker
-		and ensure its position matches where the error was effectively found.
-		Return the position following the error marker.
-
-		:param start: Where to start looking for the error marker in the
-			program (0 by default)
-		:param error_no: Error number to help identifying the culprit when
-			working with several potential errors (0 by default)
-		"""
-		marker_pos = program.find(ERROR_MARKER, start)
-		expected_pos = marker_pos + len(ERROR_MARKER)
-		self.assertNotEqual(-1, marker_pos, "can't find error marker!")
-		self.assertEqual(error.pos.char, expected_pos,
-				"error #{} wasn't reported at expected position (raised: {})"
-				.format(error_no, error))
-		return expected_pos
-
 	def assertLDAError(self, error_class, analyzer, **kwargs):
 		"""
 		Ensure an LDA syntactic or semantic error is raised at a specific point
@@ -99,25 +78,15 @@ class LDATestCase(unittest.TestCase):
 			during the syntactic and semantic analysis of the program.
 		:param kwargs       : Arguments to pass to the analysis function.
 		"""
-		result = None
 		with self.assertRaises(error_class) as cm:
-			result = analyzer(**kwargs)
-		self._assertSingleLDAError(kwargs['program'], cm.exception)
+			analyzer(**kwargs)
+		marker_pos = kwargs['program'].find(ERROR_MARKER)
+		expected_pos = marker_pos + len(ERROR_MARKER)
+		self.assertNotEqual(-1, marker_pos, "can't find error marker!")
+		self.assertEqual(cm.exception.pos.char, expected_pos,
+				"error wasn't reported at expected position (raised: {})"
+				.format(cm.exception))
 		return cm.exception
-
-	def assertMissingKeywords(self, *expected_keywords, **kwargs):
-		"""
-		Given a syntactically broken LDA program, ensure the syntax analysis
-		fails because a keyword was missing (among a specific set of keywords)
-		at a specific point in the input program.
-
-		:param expected_keywords: One of these keywords is expected at the
-			error marker comment (see assertLDAError's documentation)
-		:param kwargs: Arguments to pass to analyze().
-		"""
-		error = self.assertLDAError(syntax.ExpectedKeyword, self.analyze, **kwargs)
-		self.assertSetEqual(set(error.expected_keywords), set(expected_keywords))
-		return error
 
 	def check(self, context=None, error_handler=None, **kwargs):
 		"""
@@ -140,18 +109,3 @@ class LDATestCase(unittest.TestCase):
 		else:
 			root.check(context, error_handler)
 		return root
-
-	def jseval(self, shutup=False, extracode="P.main();", **kwargs):
-		"""
-		Compile a program to JavaScript, execute it, and return the output.
-		The input program's entry point is its Algorithm.
-
-		:param shutup: If True, stderr's output will be redirected to
-		subprocess.DEVNULL. This is useful if you are certain the test fails.
-		:param extracode: Extra JavaScript code executed at the very end of the
-		generated code. By default, `extracode` calls `P.main()`.
-		"""
-		pp = prettyprinter.JSPrettyPrinter()
-		self.check(**kwargs).js(pp)
-		return jsshell.run(str(pp), shutup=shutup, extracode=extracode)
-
