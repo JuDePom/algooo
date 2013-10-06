@@ -359,11 +359,9 @@ class MemberSelect(BinaryOp):
 			self.rhs.check(composite.context, logger)
 			self.resolved_type = self.rhs.resolved_type
 
-	@surround
 	def lda(self, pp):
 		pp.put(self.lhs, self.keyword_def, self.rhs)
 	
-	@surround
 	def js(self, pp):
 		pp.put(self.lhs, ".", self.rhs)
 

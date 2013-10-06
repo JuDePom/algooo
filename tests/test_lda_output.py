@@ -123,7 +123,7 @@ class test_lda_output(LDATestCase):
 				"\t{kw.ELSE}\n"
 				"\t\te {kw.ASSIGN} (-1)\n"
 				"\t{kw.END_IF}\n"
-				"\t(d.j) {kw.ASSIGN} e\n"
+				"\td.j {kw.ASSIGN} e\n"
 				"{kw.END}\n").format(kw=kw)
 		self._assert_export(module.Module, program)
 
