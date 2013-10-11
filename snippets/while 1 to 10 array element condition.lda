@@ -1,0 +1,27 @@
+(*|
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+|*)
+algorithme
+lexique
+	i: entier
+	t: tableau booléen[1..11]
+début
+	pour i de 1 jusque 10 faire
+		t[i] <- vrai
+	fpour
+	t[11] <- faux
+	i <- 1
+	tantque t[i] faire
+		écrire(i)
+		i <- i + 1
+	ftant
+fin
