@@ -1,3 +1,5 @@
+LDA.print("loaded auxiliary JS!");
+
 P.main();
 
 var notDefined = [
@@ -29,11 +31,18 @@ var defined = [
 ];
 
 for (var i = 0; i < notDefined.length; i++) {
+	var nd = notDefined[i];
+	var undef;
 	try {
-		x = eval(notDefined[i]);
-		if (typeof x === 'undefined')
+		if (0 == nd.indexOf("P.")) {
+			// avoid strict warning by not using eval with P
+			undef = P[nd.slice("P.".length)];
+		} else {
+			undef = eval(nd);
+		}
+		if (typeof undef === 'undefined')
 			continue;
-		throw new Error(notDefined[i] + " should *NOT* have been defined!");
+		throw new Error(nd + " should *NOT* have been defined!");
 	} catch (e) {
 		if (!(e instanceof ReferenceError)) {
 			throw e;
@@ -42,8 +51,7 @@ for (var i = 0; i < notDefined.length; i++) {
 }
 
 for (var i = 0; i < defined.length; i++) {
-	x = eval(defined[i]);
-	if (typeof x === 'undefined')
+	if (typeof eval(defined[i]) === 'undefined')
 		throw new Error(defined[i] + " *SHOULD* have been defined!");
 }
 

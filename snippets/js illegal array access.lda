@@ -1,4 +1,9 @@
-(*|auxiliary JS test passed!|*)
+(* This unit test requires an auxiliary JavaScript file *)
+
+(*|
+loaded auxiliary JS!
+auxiliary JS test passed!
+|*)
 
 fonction staticfail()
 lexique

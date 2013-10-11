@@ -15,6 +15,9 @@ def check_effective_parameters(logger, pos, args):
 
 def js_call(pp, params):
 	pp.put("LDA.print(")
-	pp.join(params, pp.put, " +' '+ ")
+	prefix = "("
+	for param in params:
+		pp.put(prefix, param, ")")
+		prefix = " + \" \" + ("
 	pp.put(")")
 

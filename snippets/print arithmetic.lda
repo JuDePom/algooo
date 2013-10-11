@@ -1,0 +1,15 @@
+(*|
+2 et 2 font 4
+4 et 4 font 8
+|*)
+algorithme
+lexique
+	deux: entier
+	quatre: entier
+début
+	deux <- 2
+	quatre <- 4
+	écrire(2, "et", 4-deux, "font", 2+2)
+	écrire(quatre, "et", 2+deux, "font", quatre+4)
+fin
+
