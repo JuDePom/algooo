@@ -2,6 +2,8 @@ from . import kw
 from . import types
 from . import semantictools
 from .errors import semantic
+from .operators import GreaterOrEqual, Addition
+from .expression import LiteralInteger
 
 #######################################################################
 #
@@ -87,13 +89,15 @@ class Assignment:
 	def lda(self, pp):
 		pp.put(self.lhs, " ", kw.ASSIGN, " ", self.rhs)
 
-	def js(self, pp):
+	def js(self, pp, semicolon=True):
 		try:
 			# Try using LHS's JS export method specific to assignments
 			self.lhs.js_assign_lhs(pp, self)
 		except AttributeError:
 			# Fall back to standard JS assignment statement
-			pp.put(self.lhs, " = ", self.rhs, ";")
+			pp.put(self.lhs, " = ", self.rhs)
+		if semicolon:
+			pp.put(";")
 
 
 class Return:
@@ -200,6 +204,26 @@ class If:
 		pp.put("}")
 
 class For(StatementBlock):
+	"""
+	In LDA code, the behavior of a For loop is described with syntactic sugar
+	to initialize the counter and to specify the stop condition. The increment
+	operation is deduced by the compiler.
+
+	Internally, the behavior of the For loop is distilled into synthetic
+	semantic units that could have been written in pure LDA:
+	- synth_init: synthetic counter initializing statement (could have been
+	  written in LDA as e.g. "i <- 3")
+	- synth_cond: synthetic stop condition expression (could have been written
+	  in LDA as e.g. "i >= 5")
+	- synth_incr: synthetic counter increment statement (could have been
+	  written in LDA as e.g. "i <- i + 1")
+
+	The synthetic units facilitate exporting the counter logic to JavaScript,
+	because the counter may require specific JS syntax to access it. For
+	example, if the counter is an array element, the special syntax to
+	initialize it will be handled by the Assignment class.
+	"""
+
 	_COMPONENT_NAMES = [
 			"le compteur de la boucle",
 			"la valeur initiale du compteur",
@@ -211,16 +235,31 @@ class For(StatementBlock):
 		self.counter = counter
 		self.initial = initial
 		self.final = final
+		# Create synthetic assignments and condition
+		self.synth_init = Assignment(initial.pos, counter, initial)
+		self.synth_cond = GreaterOrEqual(None, counter, final)
+		self.synth_incr = Assignment(initial.pos, counter, Addition(None, counter, LiteralInteger(None, 1)))
+		self.synth_cond.root = True
 
 	def check(self, context, logger):
+		ok = True
+		# Check each component individually
 		components = [self.counter, self.initial, self.final]
 		for comp, name in zip(components, For._COMPONENT_NAMES):
 			comp.check(context, logger)
-			semantictools.enforce(name, types.INTEGER, comp, logger)
+			ok &= semantictools.enforce(name, types.INTEGER, comp, logger)
 		# If the counter is an integer, ensure the counter is writable;
 		# otherwise don't bother since an error was already raised
 		if self.counter.resolved_type == types.INTEGER and not self.counter.writable:
 			logger.log(semantic.NonWritable(self.counter))
+			ok = False
+		# If all checks passed, run semantic analysis on the synthetic units.
+		# Everything, whether real or synthesized, must be semantically correct
+		# before translating to JavaScript.
+		if ok:
+			self.synth_init.check(context, logger)
+			self.synth_cond.check(context, logger)
+			self.synth_incr.check(context, logger)
 		super().check(context, logger)
 
 	def lda(self, pp):
@@ -231,10 +270,15 @@ class For(StatementBlock):
 		pp.put(kw.END_FOR)
 
 	def js(self, pp):
-		pp.putline("for (", self.counter, " = ", self.initial,
-				"; ", self.counter, " <= ", self.final, "; ", self.counter, "++) {")
+		# The stop condition is checked before incrementing the counter.
+		pp.put("for (")
+		self.synth_init.js(pp, False)
+		pp.put("; true; ")
+		self.synth_incr.js(pp, False)
+		pp.putline(") {")
 		if self.body:
 			pp.indented(pp.putline, super())
+		pp.indented(pp.putline, "if (", self.synth_cond, ") break;")
 		pp.put("}")
 
 class While(Conditional):

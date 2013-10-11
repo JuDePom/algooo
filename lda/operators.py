@@ -291,7 +291,7 @@ class ArraySubscript(BinaryEncompassingOp):
 	def js_assign_lhs(self, pp, assignment):
 		pp.put(self.lhs, ".set(")
 		self.js_indices(pp)
-		pp.put(", ", assignment.rhs, ");")
+		pp.put(", ", assignment.rhs, ")")
 
 
 class FunctionCall(BinaryEncompassingOp):
