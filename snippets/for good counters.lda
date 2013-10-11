@@ -9,16 +9,22 @@
 8
 9
 3 6 9
+1
+2
+3
+4
+5
+6
+7
+8
+9
+3 6 9
 |*)
 
 lexique
 	Moule = <compteur: entier>
 
-algorithme
-lexique
-	i: entier
-	m: Moule
-	t: tableau entier[0..10]
+fonction pour_inout(i: inout entier, m: inout Moule, t: inout tableau entier[0..10])
 début
 	pour i de 1 jusque 3 faire
 		écrire(i)
@@ -33,4 +39,33 @@ début
 	fpour
 
 	écrire(i, m.compteur, t[5])
+fin
+
+
+fonction pour_copie(i: entier, m: Moule, t: tableau entier[0..10])
+début
+	pour i de 1 jusque 3 faire
+		écrire(i)
+	fpour
+
+	pour m.compteur de 4 jusque 6 faire
+		écrire(m.compteur)
+	fpour
+
+	pour t[5] de 7 jusque 9 faire
+		écrire(t[5])
+	fpour
+
+	écrire(i, m.compteur, t[5])
+fin
+
+
+algorithme
+lexique
+	i: entier
+	m: Moule
+	t: tableau entier[0..10]
+début
+	pour_inout(i, m, t)
+	pour_copie(i, m, t)
 fin
