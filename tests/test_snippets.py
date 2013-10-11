@@ -38,7 +38,7 @@ from lda import build_tree, CompilationFailed, DefaultOptions, translate_tree
 from lda import kw
 
 
-SNIPPETSDIR = os.path.join(os.path.dirname(__file__), "snippets")
+SNIPPETSDIR = "snippets"
 
 
 # (*#ErrorClassExpectedRightAfterThisCommentEnds#*)
