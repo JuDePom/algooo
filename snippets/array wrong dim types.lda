@@ -1,7 +1,7 @@
 algorithme
 lexique
 	(* 0 dimensions *)
-	t1: (*#TypeError#*)tableau entier[]
+	t1: (*#SemanticError#*)tableau entier[]
 
 	(* non integer range *)
 	t2: tableau entier[(*#TypeError#*)1]
@@ -12,8 +12,8 @@ lexique
 	t5: tableau entier[(*#TypeError#*)"xxx", (*#TypeError#*)'a', (*#TypeError#*)5.123]
 
 	(* part static, part dynamic *)
-	t6: tableau entier[0..5, (*#TypeError#*)?]
-	t7: tableau entier[?, 0(*#TypeError#*)..5, ?, 0..3]
+	t6: tableau entier[0..5, (*#SemanticError#*)?]
+	t7: tableau entier[?, 0(*#SemanticError#*)..5, ?, 0..3]
 début
 	(* no errors in statements because t's type must be ERRONEOUS *)
 	t1[0] <- 0

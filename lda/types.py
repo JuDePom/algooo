@@ -315,16 +315,18 @@ class Array(TypeDescriptor):
 			dim0_type = type(self.dimensions[0])
 			self.dynamic = dim0_type is Array.DynamicDimension
 			self.static = not self.dynamic
+			mixed_dims = False
 			for dim in self.dimensions:
 				# Semantic analysis of the dimension.
 				if not dim.check(logger):
 					erroneous = True
 				# Ensure we don't have a mix of static and dynamic dimensions.
-				if type(dim) is not dim0_type:
+				if not mixed_dims and type(dim) is not dim0_type:
 					logger.log(semantic.SemanticError(dim.pos,
 							"un tableau doit être complètement statique ou "
 							"complètement dynamique"))
 					erroneous = True
+					mixed_dims = True
 		# Resolve element type.
 		self.resolved_element_type = self.element_type.resolve_type(context, logger)
 		# If an error occured during this method, the entire type is erroneous.

@@ -291,7 +291,7 @@ class ArraySubscript(BinaryEncompassingOp):
 	def js_assign_lhs(self, pp, assignment):
 		pp.put(self.lhs, ".set(")
 		self.js_indices(pp)
-		pp.put(", ", assignment.rhs, ");")
+		pp.put(", ", assignment.rhs, ")")
 
 
 class FunctionCall(BinaryEncompassingOp):
@@ -317,7 +317,7 @@ class FunctionCall(BinaryEncompassingOp):
 			self.function = self.lhs.bound
 			check_effective_parameters = getattr(self.function, 'check_effective_parameters')
 		except AttributeError:
-			logger.log(semantic.NonCallable(self.pos, self.lhs))
+			logger.log(semantic.NonCallable(self.pos, self.lhs.resolved_type))
 			self.resolved_type = types.ERRONEOUS
 			return
 		for effective in self.rhs:
