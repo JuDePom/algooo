@@ -1,3 +1,5 @@
+LDA.print("loaded auxiliary JS!");
+
 function mustThrow(f) {
 	try {
 		f();

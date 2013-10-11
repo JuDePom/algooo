@@ -64,7 +64,6 @@ class TestSnippets(unittest.TestCase):
 		if os.path.exists(jspath):
 			with open(jspath, 'rt', encoding='utf-8') as f:
 				options.extra_js_code = f.read()
-			print(snipname + ": loaded extra JS")
 		else:
 			options.extra_js_code = "P.main();"
 		# TODO this is a hellish monstrosity
