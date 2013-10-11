@@ -36,7 +36,7 @@ ap.add_argument('--execute', '-x', action='store_true',
 
 args = ap.parse_args()
 
-args.extra_js_code = "P.main();"
+args.extra_js_code = ""
 args.stats_comment = True
 
 try:
@@ -51,7 +51,7 @@ code = translate_tree(args, module, args.format)
 if args.execute:
 	assert args.format == 'js', "on ne peut exécuter que du JavaScript !"
 	import jsshell
-	jsshell.run_interactive(code)
+	jsshell.run_interactive(code + "\nP.main();")
 elif args.output_file:
 	with open(args.output_file, 'wt', encoding='utf8') as f:
 		f.write(code)
