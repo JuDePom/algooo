@@ -14,3 +14,12 @@ class LDAError(Exception):
 		message += "\n\t{}\n\t{}".format(line, tick)
 		return message
 
+	def json(self):
+		return {
+				'line': self.pos.line,
+				'column': self.pos.column,
+				'message': self.message,
+				'intent': getattr(self, 'intent', None),
+				'tip': getattr(self, 'tip', None),
+		}
+
