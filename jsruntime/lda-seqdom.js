@@ -4,10 +4,14 @@
  */
 
 LDA.prompt = function(message) {
-	return window.prompt(message);
+	if (null === window.prompt(message)) {
+		throw new LDA.InterruptedException();
+	}
 };
 
 LDA.print = function(message) {
-	window.alert(message);
-}
+	if (!window.confirm(message)) {
+		throw new LDA.InterruptedException();
+	}
+};
 
