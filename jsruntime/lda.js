@@ -17,10 +17,27 @@ var LDA = {
 	},
 };
 
+///////////////////////////////////////////////////////////////////////
+//
+// EXCEPTIONS
+//
+///////////////////////////////////////////////////////////////////////
+
+/**
+ * Thrown when an illegal operation occurs (e.g. accessing an array element
+ * out of bounds).
+ */
 LDA.RuntimeError = function(message) {
 	this.name = "LDARuntimeError";
 	this.message = message;
 };
+
+
+///////////////////////////////////////////////////////////////////////
+//
+// ARGUMENT PASSING HELPERS
+//
+///////////////////////////////////////////////////////////////////////
 
 /**
  * Make a fake pointer. Useful when passing `inout` parameters.
@@ -54,6 +71,13 @@ LDA.clone = (function() {
 		return new Clone();
 	};
 }());
+
+
+///////////////////////////////////////////////////////////////////////
+//
+// ARRAY
+//
+///////////////////////////////////////////////////////////////////////
 
 /**
  * Construct an array and its sub-arrays recursively.
@@ -157,6 +181,17 @@ LDA.Array.prototype.set = function(indices, value, n) {
 		this[i] = value;
 	}
 };
+
+
+///////////////////////////////////////////////////////////////////////
+//
+// TYPED INPUT FUNCTIONS
+//
+// The platform-specific implementations are only required to provide
+// LDA.prompt, which must return a string. The functions below use
+// LDA.prompt to prompt for specific types.
+//
+///////////////////////////////////////////////////////////////////////
 
 (function() {
 	function genericRead(promptMessage, convert) {
