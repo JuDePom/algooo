@@ -32,6 +32,13 @@ LDA.RuntimeError = function(message) {
 	this.message = message;
 };
 
+/**
+ * Thrown if the user aborts the execution of the program.
+ */
+LDA.InterruptedException = function() {
+	this.name = "LDAInterruptedException";
+};
+
 
 ///////////////////////////////////////////////////////////////////////
 //
