@@ -19,7 +19,7 @@ class CompilationFailed(Exception):
 		self.buf = buf
 
 def build_tree(options, buf, path=None):
-	assert buf or path
+	assert buf is not None or path
 	if buf is None and path is not None:
 		with open(path, 'rt', encoding='utf-8') as f:
 			buf = f.read()
