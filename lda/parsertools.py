@@ -173,7 +173,7 @@ class BaseParser:
 			bpos += chars
 			column += chars
 		multi_start = None
-		while bpos != -1 and bpos < self.buflen:
+		while bpos < self.buflen:
 			if self.buf[bpos] == '\n':
 				bpos += 1
 				line += 1
@@ -188,6 +188,8 @@ class BaseParser:
 					column += 2
 				elif self.buf.startswith('//', bpos):
 					bpos = self.buf.find('\n', bpos+2)
+					if bpos == -1:
+						bpos = self.buflen
 				else:
 					break
 			else:
