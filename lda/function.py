@@ -147,8 +147,13 @@ class Function(_BaseFunction):
 		semantically prior to running this method.
 		"""
 		if return_statement.expression is not None:
-			semantictools.enforce_compatible("l'expression retournée",
-					self.resolved_return_type, return_statement.expression, logger)
+			if self.return_type is types.VOID:
+				logger.log(semantic.TypeError(return_statement.pos,
+						"cette instruction retourne une expression alors que la fonction "
+						"est censée ne rien renvoyer", self.return_type))
+			else:
+				semantictools.enforce_compatible("l'expression retournée",
+						self.resolved_return_type, return_statement.expression, logger)
 		elif types.nonvoid(self.resolved_return_type):
 			logger.log(semantic.TypeError(return_statement.pos,
 					"cette instruction 'retourne' ne renvoit rien alors que la "
