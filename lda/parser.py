@@ -429,6 +429,19 @@ class Parser(BaseParser):
 		if match is not None:
 			return expression.LiteralReal(pos, float(match))
 
+	def unescape(self, char):
+		if char == '\\':
+			char = self.softchar()
+			if char is None:
+				raise syntax.UnclosedItem(self.pos,
+						"manque caractère d'échappement après l'antislash")
+			try:
+				char = expression.ESCAPE_SEQUENCES['\\'+char.lower()]
+			except KeyError:
+				raise syntax.SyntaxError(self.pos,
+						"code d'échappement inconnu : \\" + char)
+		return char
+
 	@backtrack_if_missing
 	def analyze_literal_string(self):
 		assert 1 == len(kw.QUOTE2.synonyms) and '"' == str(kw.QUOTE2)
@@ -436,28 +449,18 @@ class Parser(BaseParser):
 		kwpos = self.pos
 		if "\"" != self.softchar():
 			return None
-		s = ""
-		while True:
-			char = self.softchar()
-			if char is None:
-				raise syntax.UnclosedItem(kwpos, "guillemet double non-refermé")
-			elif "\"" == char:
-				break
-			elif char == '\\':
-				# escape sequence
+		# generator that yields unescaped characters until QUOTE2 is found
+		def gen_string_chars():
+			while True:
 				char = self.softchar()
-				if char is None:
-					raise syntax.UnclosedItem(self.pos,
-							"manque caractère d'échappement après l'antislash")
-				try:
-					char = expression.ESCAPE_SEQUENCES['\\'+char.lower()]
-				except KeyError:
-					raise syntax.SyntaxError(self.pos,
-							"code d'échappement inconnu : \\" + char)
-			s += char
-		# skip trailing whitespace
-		self.advance()
-		return expression.LiteralString(kwpos, s)
+				if char == '"':
+					# skip trailing whitespace
+					self.advance()
+					raise StopIteration
+				elif char is None:
+					raise syntax.UnclosedItem(kwpos, "guillemet double non-refermé")
+				yield self.unescape(char)
+		return expression.LiteralString(kwpos, ''.join(gen_string_chars()))
 
 	# DON'T decorate this method with opening_keyword! We don't want to
 	# skip a literal space character!
@@ -474,17 +477,7 @@ class Parser(BaseParser):
 			raise syntax.UnclosedItem(kwpos, "guillemet simple non-refermé")
 		elif "\'" == char:
 			raise syntax.SyntaxError(kwpos, "un caractère ne peut pas être vide")
-		elif char == '\\':
-			# escape sequence
-			char = self.softchar()
-			if char is None:
-				raise syntax.UnclosedItem(self.pos,
-						"manque caractère d'échappement après l'antislash")
-			try:
-				char = expression.ESCAPE_SEQUENCES['\\'+char.lower()]
-			except KeyError:
-				raise syntax.SyntaxError(self.pos,
-						"code d'échappement inconnu : \\" + char)
+		char = self.unescape(char)
 		# Use softskip to finish, because we're done with the character and any
 		# operation that consumes characters should skip any trailing
 		# whitespace after it.

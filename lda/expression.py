@@ -13,8 +13,12 @@ ESCAPE_SEQUENCES = {
 
 REVERSE_ESCAPE_SEQUENCES = {v: k for k, v in ESCAPE_SEQUENCES.items()}
 
-def escape_string(s):
+def lda_escape_string(s):
 	return ''.join(REVERSE_ESCAPE_SEQUENCES.get(c, c) for c in s)
+
+def js_escape_string(s, js_quote):
+	# unicode-escape happens to be compatible with JS too
+	return s.encode('unicode-escape').decode().replace(js_quote, '\\'+js_quote)
 
 def surround(lda_method):
 	"""
@@ -171,12 +175,10 @@ class LiteralString(Literal):
 	resolved_type = types.STRING
 
 	def lda(self, pp):
-		pp.put(kw.QUOTE2, escape_string(self.value), kw.QUOTE2)
+		pp.put(kw.QUOTE2, lda_escape_string(self.value), kw.QUOTE2)
 	
 	def js(self, pp):
-		# unicode-escape happens to be compatible with JS too
-		escaped = self.value.encode('unicode-escape').decode().replace('"', '\\"')
-		pp.put('"', escaped, '"')
+		pp.put('"', js_escape_string(self.value, '"'), '"')
 
 class LiteralCharacter(Literal):
 	resolved_type = types.CHARACTER
@@ -186,12 +188,10 @@ class LiteralCharacter(Literal):
 		assert len(value) == 1
 
 	def lda(self, pp):
-		pp.put(kw.QUOTE1, escape_string(self.value), kw.QUOTE1)
+		pp.put(kw.QUOTE1, lda_escape_string(self.value), kw.QUOTE1)
 
 	def js(self, pp):
-		# unicode-escape happens to be compatible with JS too
-		escaped = self.value.encode('unicode-escape').decode().replace("'", "\\'")
-		pp.put("'", escaped, "'")
+		pp.put("'", js_escape_string(self.value, "'"), "'")
 
 class LiteralBoolean(Literal):
 	resolved_type = types.BOOLEAN
