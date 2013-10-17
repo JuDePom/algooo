@@ -1,0 +1,8 @@
+fonction calc_âge(année: entier): (*#UnresolvableTypeAlias#*)entiaz
+début
+	(* The following statement shouldn't raise an error, because the
+	expected return type is ERRONEOUS (type errors incriminating ERRONEOUS are
+	supposed to be silenced). *)
+	retourne 2013 - année
+fin
+

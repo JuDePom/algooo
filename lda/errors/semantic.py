@@ -83,7 +83,7 @@ class SpecificTypeExpected(TypeError):
 	def __init__(self, pos, what, expected, given):
 		message = "{} doit être de type {} (et non pas {})".format(
 				what, expected, given)
-		super().__init__(pos, message, given)
+		super().__init__(pos, message, expected, given)
 
 class NonComposite(TypeError):
 	"""
