@@ -13,9 +13,16 @@ class DefaultOptions:
 	stats_comment = True
 
 class CompilationFailed(Exception):
+	"""
+	Raised when a program contains syntactic or semantic errors.
+
+	The `errors` attribute is a list of LDAError instances sorted by position.
+	The `buf` attribute is the source code buffer (may be used to format the
+	marker line when pretty-printing the errors).
+	"""
 	def __init__(self, error_list, buf):
 		super().__init__("Compilation failed")
-		self.errors = error_list
+		self.errors = sorted(error_list, key=lambda e: e.pos.char)
 		self.buf = buf
 
 def build_tree(options, buf, path=None):
