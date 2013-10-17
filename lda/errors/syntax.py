@@ -80,9 +80,11 @@ class DiscardedExpression(SyntaxError):
 		else:
 			super().__init__(expr.pos, "lexème errant")
 
-class UnclosedComment(SyntaxError):
+class UnclosedItem(SyntaxError):
 	"""
-	Raised when EOF was reached before a multiline comment's closing marker.
+	Raised when EOF (or EOL in some cases) was reached before an item's
+	closing marker.
 	"""
-	def __init__(self, pos):
-		super().__init__(pos, "commentaire non fermé")
+	def __init__(self, pos, message):
+		super().__init__(pos, message)
+

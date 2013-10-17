@@ -59,8 +59,6 @@ class Parser(BaseParser):
 
 	re_string = re.compile(r'".*?"') # TODO- escaping
 
-	re_character = re.compile(r"'.'") # TODO- escaping
-
 	def analyze_module(self):
 		functions = []
 		algorithms = []
@@ -429,11 +427,22 @@ class Parser(BaseParser):
 		match = self.analyze_regex(self.re_string, buf=self.raw_buf)
 		return expression.LiteralString(pos, match[1:-1])
 
-	def analyze_literal_character(self):
-		pos = self.pos
-		# Retain case: match raw_buf, not buf
-		match = self.analyze_regex(self.re_character, buf=self.raw_buf)
-		return expression.LiteralCharacter(pos, match[1:-1])
+	@opening_keyword(kw.QUOTE1)
+	def analyze_literal_character(self, kwpos):
+		if self.softskip(kw.QUOTE1):
+			raise syntax.SyntaxError(kwpos, "un caractère ne peut pas être vide")
+		if self.eof():
+			raise syntax.UnclosedItem(kwpos, "guillemet non fermé")
+		char = self.raw_buf[self.pos.char]
+		self.advance(1)
+		if not self.softskip(kw.QUOTE1):
+			e = syntax.SyntaxError(kwpos,
+					"un seul caractère est admis entre guillemets simples")
+			e.tip = ("Si vous voulez définir une chaîne, entourez-la de "
+					"double-guillemets (\"). Les guillemets simples (') "
+					"sont réservés aux caractères.")
+			raise e
+		return expression.LiteralCharacter(kwpos, char)
 
 	def analyze_literal_boolean(self):
 		pos = self.pos

@@ -201,7 +201,7 @@ class BaseParser:
 					bpos += 1
 					column += 1
 		if bpos == self.buflen and multi_start:
-			raise syntax.UnclosedComment(multi_start)
+			raise syntax.UnclosedItem(multi_start, "commentaire multi-ligne non-fermé")
 		self.pos = position.Position(self.pos.path, bpos, line, column)
 
 	def eof(self):
