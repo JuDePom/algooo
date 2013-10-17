@@ -7,6 +7,17 @@ from . import position
 from .errors import syntax
 
 
+def yield_till_none(f):
+	"""
+	Yield the result of calling f until f returns None.
+	"""
+	while True:
+		o = f()
+		if o is None:
+			raise StopIteration
+		yield o
+
+
 def opening_keyword(keyword):
 	"""
 	Decorator for 'analyze_' methods.

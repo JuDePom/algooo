@@ -4,7 +4,7 @@ LDA parser.
 
 
 import re
-from .parsertools import BaseParser, opening_keyword
+from .parsertools import BaseParser, yield_till_none, opening_keyword
 from .errors import syntax
 from . import kw
 from . import expression
@@ -172,14 +172,12 @@ class Parser(BaseParser):
 	def analyze_lexicon(self, kwpos=None):
 		variables = []
 		composites = []
-		ident = self.analyze_identifier()
-		while ident is not None:
+		for ident in yield_till_none(self.analyze_identifier):
 			keyword = self.hardskip(kw.COLON, kw.EQ)
 			if keyword == kw.COLON:
 				variables.append(self.analyze_vardecl(ident=ident))
 			elif keyword == kw.EQ:
 				composites.append(self.analyze_composite(ident=ident, critical=True))
-			ident = self.analyze_identifier()
 		return Lexicon(variables, composites)
 
 	def analyze_identifier(self, identifier_class=identifier.PureIdentifier, critical=False):
@@ -209,12 +207,7 @@ class Parser(BaseParser):
 			return identifier_class(pos, name)
 
 	def analyze_statement_list(self):
-		block = []
-		unit = self.analyze_statement()
-		while unit is not None:
-			block.append(unit)
-			unit = self.analyze_statement()
-		return block
+		return list(yield_till_none(self.analyze_statement))
 
 	def analyze_statement_block(self):
 		pos = self.pos
