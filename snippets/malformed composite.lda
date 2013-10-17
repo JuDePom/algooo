@@ -1,0 +1,3 @@
+lexique
+	Moule = (*#kw:LT#*)1234abcd: entier
+

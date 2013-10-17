@@ -7,95 +7,33 @@ from . import position
 from .errors import syntax
 
 
-class NotFoundHere(Exception):
-	"""
-	Internal parser exception raised whenever an `analyze_` method does not
-	find something.
-
-	This exception is not meant to be seen by the end user. To communicate
-	between the parser and the end user, use SyntaxError instead.
-	"""
-	pass
-
-
-class Backtrack:
-	"""
-	Parser context manager that backtracks on errors.
-
-	If an error of a given class is raised, the parser's position is silently
-	reverted to the position at which the context was entered.
-
-	By default, this class backtracks on NotFoundHere exceptions.
-	"""
-
-	def __init__(self, parser, error_cls=NotFoundHere):
-		self.parser = parser
-		self.error_cls = error_cls
-
-	def __enter__(self):
-		self.initial_pos = self.parser.pos
-
-	def __exit__(self, exc_type, exc_value, traceback):
-		if exc_type is not None and issubclass(exc_type, self.error_cls):
-			self.parser.pos = self.initial_pos
-			# Prevent the exception from propagating
-			return True
-
-	def give(self, analyzer, *args, **kwargs):
-		"""
-		Attempt to analyze an item and return it; backtrack and return None if
-		the item was not found.
-		"""
-		assert callable(analyzer), "please pass a function"
-		with self:
-			return analyzer(*args, **kwargs)
-		return None
-
-
-class CriticalItem:
-	"""
-	Parser context manager that notifies of the failure to parse an item. There
-	are two outcomes depending on what caused the parsing failure:
-
-	- If the item was not found, raise an ExpectedItem exception.
-
-	- If the item was found, but a SyntaxError cut short the analysis, annotate
-	  the SyntaxError exception with an intent string to make it friendlier.
-	"""
-
-	def __init__(self, parser, intent):
-		self.parser = parser
-		self.intent = intent
-
-	def __enter__(self):
-		self.initial_pos = self.parser.pos
-
-	def __exit__(self, exc_type, exc_value, traceback):
-		if exc_type is None:
-			return False
-		elif issubclass(exc_type, NotFoundHere):
-			raise syntax.ExpectedItem(
-					self.initial_pos, self.intent, self.parser.last_good_match)
-		elif issubclass(exc_type, syntax.SyntaxError):
-			exc_value.intent = self.intent
-
-
 def opening_keyword(keyword):
 	"""
 	Decorator for 'analyze_' methods.
 
 	Try parsing an opening keyword before running the decorated method; if the
-	opening keyword cannot be found, raise NotFoundHere and do not run the
-	decorated method.
+	opening keyword cannot be found, return None and do not run the decorated
+	method.
 
 	The decorated method is required to have `kwpos` as its first argument
 	(position of the successfully-parsed opening keyword).
+
+	If the optional argument `critical` is truthy when calling a decorated
+	method, an ExpectedKeyword exception will be raised instead of returning
+	None if the opening keyword is missing.
 	"""
 	def decorator(parser_method):
 		def wrapper(self, *args, **kwargs):
 			kwargs['kwpos'] = self.pos
-			if not self.softskip(keyword):
-				raise NotFoundHere
+			if 'critical' in kwargs:
+				critical = kwargs['critical']
+				del kwargs['critical']
+			else:
+				critical = False
+			if critical:
+				self.hardskip(keyword)
+			elif not self.softskip(keyword):
+				return None
 			return parser_method(self, *args, **kwargs)
 		return wrapper
 	return decorator
@@ -117,16 +55,13 @@ class BaseParser:
 	  past the end of the item (skipping any whitespace that follows it), and
 	  the item is returned.
 
-	- Not found: the item was not found. A NotFoundHere exception is raised and
-	  the current position in the buffer may be left in a dangling state.
-	  This can be handled gracefully with a context manager such as Backtrack
-	  or CriticalItem.
+	- Not found: the item was not found. Returns None. The current position in
+	  the buffer is left as it was before calling the function.
 
 	- Error: the item was partially found. However, a syntax error prevented
 	  the parser from fully constructing the item. A SyntaxError exception is
 	  raised and the current position is left where the parser managed to make
-	  inroads. Syntax errors may be made more helpful through a CriticalItem
-	  context manager.
+	  inroads.
 	"""
 
 	def __init__(self, options, buf, path):
@@ -244,9 +179,8 @@ class BaseParser:
 					return
 			else:
 				if cached_alpha is None:
-					try:
-						cached_alpha = self.analyze_regex(self.re_identifier, advance=False)
-					except NotFoundHere:
+					cached_alpha = self.analyze_regex(self.re_identifier, advance=False)
+					if cached_alpha is None:
 						continue
 				if cached_alpha == syn.word:
 					self.advance(len(syn.word))
@@ -278,18 +212,17 @@ class BaseParser:
 		return None if all the analysis functions failed.
 		"""
 		for analyze in analysis_order:
-			with Backtrack(self):
-				return analyze()
-		raise NotFoundHere
+			o = analyze()
+			if o is not None:
+				return o
 
 	def analyze_regex(self, compiled_regex, advance=True, buf=None):
 		match = compiled_regex.match(buf or self.buf, self.pos.char)
-		try:
-			string = match.group(0)
-			self.last_match, self.last_match_pos = string, self.pos
-			if advance:
-				self.advance(len(string))
-			return string
-		except AttributeError:
-			raise NotFoundHere
+		if match is None:
+			return
+		string = match.group(0)
+		self.last_match, self.last_match_pos = string, self.pos
+		if advance:
+			self.advance(len(string))
+		return string
 
