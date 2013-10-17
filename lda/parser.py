@@ -4,7 +4,7 @@ LDA parser.
 
 
 import re
-from .parsertools import BaseParser, yield_till_none, opening_keyword
+from .parsertools import BaseParser, yield_till_none, opening_keyword, backtrack_if_missing
 from .errors import syntax
 from . import kw
 from . import expression
@@ -213,6 +213,7 @@ class Parser(BaseParser):
 		pos = self.pos
 		return statements.StatementBlock(pos, self.analyze_statement_list())
 
+	@backtrack_if_missing
 	def analyze_statement(self):
 		pos = self.pos
 		# First, try statements that start with a keyword.
@@ -248,7 +249,6 @@ class Parser(BaseParser):
 				# Non-compound expression, i.e. it is made of a single token.
 				# Returning None instead of raising DiscardedExpression may help
 				# reporting a stray token in one of the calling methods.
-				self.pos = pos
 				return None
 
 	@opening_keyword(kw.RETURN)

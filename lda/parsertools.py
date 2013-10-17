@@ -50,6 +50,16 @@ def opening_keyword(keyword):
 	return decorator
 
 
+def backtrack_if_missing(parser_method):
+	def wrapper(self, *args, **kwargs):
+		pos = self.pos
+		ret = parser_method(self, *args, **kwargs)
+		if ret is None:
+			self.pos = pos
+		return ret
+	return wrapper
+
+
 class BaseParser:
 	"""
 	Builds up an AST from source code.
