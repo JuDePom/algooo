@@ -283,9 +283,7 @@ class BaseParser:
 		raise NotFoundHere
 
 	def analyze_regex(self, compiled_regex, advance=True, buf=None):
-		if buf is None:
-			buf = self.buf
-		match = compiled_regex.match(self.buf, self.pos.char)
+		match = compiled_regex.match(buf or self.buf, self.pos.char)
 		try:
 			string = match.group(0)
 			self.last_match, self.last_match_pos = string, self.pos

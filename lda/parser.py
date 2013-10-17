@@ -425,11 +425,13 @@ class Parser(BaseParser):
 
 	def analyze_literal_string(self):
 		pos = self.pos
+		# Retain case: match raw_buf, not buf
 		match = self.analyze_regex(self.re_string, buf=self.raw_buf)
 		return expression.LiteralString(pos, match[1:-1])
 
 	def analyze_literal_character(self):
 		pos = self.pos
+		# Retain case: match raw_buf, not buf
 		match = self.analyze_regex(self.re_character, buf=self.raw_buf)
 		return expression.LiteralCharacter(pos, match[1:-1])
 
