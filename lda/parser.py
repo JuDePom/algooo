@@ -57,8 +57,6 @@ class Parser(BaseParser):
 				   # (Although semantically, ranges can't contain reals.)
 		)''', re.VERBOSE)
 
-	re_string = re.compile(r'".*?"') # TODO- escaping
-
 	def analyze_module(self):
 		functions = []
 		algorithms = []
@@ -431,12 +429,35 @@ class Parser(BaseParser):
 		if match is not None:
 			return expression.LiteralReal(pos, float(match))
 
+	@backtrack_if_missing
 	def analyze_literal_string(self):
-		pos = self.pos
-		# Retain case: match raw_buf, not buf
-		match = self.analyze_regex(self.re_string, buf=self.raw_buf)
-		if match is not None:
-			return expression.LiteralString(pos, match[1:-1])
+		assert 1 == len(kw.QUOTE2.synonyms) and '"' == str(kw.QUOTE2)
+		# fake softskip
+		kwpos = self.pos
+		if "\"" != self.softchar():
+			return None
+		s = ""
+		while True:
+			char = self.softchar()
+			if char is None:
+				raise syntax.UnclosedItem(kwpos, "guillemet double non-refermé")
+			elif "\"" == char:
+				break
+			elif char == '\\':
+				# escape sequence
+				char = self.softchar()
+				if char is None:
+					raise syntax.UnclosedItem(self.pos,
+							"manque caractère d'échappement après l'antislash")
+				try:
+					char = expression.ESCAPE_SEQUENCES['\\'+char.lower()]
+				except KeyError:
+					raise syntax.SyntaxError(self.pos,
+							"code d'échappement inconnu : \\" + char)
+			s += char
+		# skip trailing whitespace
+		self.advance()
+		return expression.LiteralString(kwpos, s)
 
 	# DON'T decorate this method with opening_keyword! We don't want to
 	# skip a literal space character!

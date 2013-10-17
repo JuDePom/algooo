@@ -171,10 +171,12 @@ class LiteralString(Literal):
 	resolved_type = types.STRING
 
 	def lda(self, pp):
-		pp.put(kw.QUOTE2, self.value, kw.QUOTE2)
+		pp.put(kw.QUOTE2, escape_string(self.value), kw.QUOTE2)
 	
 	def js(self, pp):
-		pp.put('"', self.value.encode('unicode-escape').decode(), '"')
+		# unicode-escape happens to be compatible with JS too
+		escaped = self.value.encode('unicode-escape').decode().replace('"', '\\"')
+		pp.put('"', escaped, '"')
 
 class LiteralCharacter(Literal):
 	resolved_type = types.CHARACTER
