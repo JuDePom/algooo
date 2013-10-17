@@ -1,0 +1,14 @@
+lexique
+	qwerty = <azerty: (*#UnresolvableTypeAlias#*)qwertz>
+	xyz: (*#UnresolvableTypeAlias#*)xyzzy
+
+fonction f(abc: (*#UnresolvableTypeAlias#*)def)
+début
+fin
+
+algorithme
+lexique
+	a: (*#UnresolvableTypeAlias#*)int
+début
+fin
+

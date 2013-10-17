@@ -1,0 +1,5 @@
+algorithme
+début
+	écrire((*#SyntaxError#*)'')
+fin
+

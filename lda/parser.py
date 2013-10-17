@@ -4,7 +4,7 @@ LDA parser.
 
 
 import re
-from .parsertools import BaseParser, Backtrack, CriticalItem, NotFoundHere, opening_keyword
+from .parsertools import BaseParser, yield_till_none, opening_keyword, backtrack_if_missing
 from .errors import syntax
 from . import kw
 from . import expression
@@ -57,20 +57,18 @@ class Parser(BaseParser):
 				   # (Although semantically, ranges can't contain reals.)
 		)''', re.VERBOSE)
 
-	re_string = re.compile(r'".*?"') # TODO- escaping
-
-	re_character = re.compile(r"'.'") # TODO- escaping
-
 	def analyze_module(self):
 		functions = []
 		algorithms = []
-		lexicon = Backtrack(self).give(self.analyze_lexicon)
+		lexicon = self.analyze_lexicon()
 		while not self.eof():
-			with Backtrack(self):
-				functions.append(self.analyze_function())
+			f = self.analyze_function()
+			if f is not None:
+				functions.append(f)
 				continue
-			with Backtrack(self):
-				algorithms.append(self.analyze_algorithm())
+			a = self.analyze_algorithm()
+			if a is not None:
+				algorithms.append(a)
 				continue
 			raise syntax.ExpectedItem(self.pos, "une fonction ou un algorithme",
 					self.last_good_match)
@@ -78,7 +76,7 @@ class Parser(BaseParser):
 
 	def analyze_lexicon_and_body(self):
 		# lexicon
-		lexicon = Backtrack(self).give(self.analyze_lexicon)
+		lexicon = self.analyze_lexicon()
 		# statement block
 		try:
 			self.hardskip(kw.BEGIN)
@@ -107,8 +105,9 @@ class Parser(BaseParser):
 		params = self.analyze_arglist(self.analyze_vardecl, kw.RPAREN, formal=True)
 		# optional colon before return type (if omitted, no return type)
 		if self.softskip(kw.COLON):
-			with CriticalItem(self, "le type de retour de la fonction"):
-				return_type = self.analyze_type_descriptor()
+			return_type = self.analyze_type_descriptor()
+			if return_type is None:
+				raise syntax.ExpectedItem(self.pos, "le type de retour de la fonction")
 		else:
 			return_type = types.VOID
 		lexicon, body, end_pos = self.analyze_lexicon_and_body()
@@ -116,11 +115,13 @@ class Parser(BaseParser):
 
 	@opening_keyword(kw.ARRAY)
 	def analyze_array(self, kwpos):
-		with CriticalItem(self, "le type des éléments du tableau"):
-			element_type = self.analyze_non_array_type_descriptor()
+		element_type = self.analyze_non_array_type_descriptor()
+		if element_type is None:
+			raise syntax.ExpectedItem(self.pos, "le type des éléments du tableau")
 		self.hardskip(kw.LSBRACK)
-		with CriticalItem(self, "une dimension statique ou dynamique"):
-			dimensions = self.analyze_arglist(self.analyze_array_dimension, kw.RSBRACK)
+		dimensions = self.analyze_arglist(self.analyze_array_dimension, kw.RSBRACK)
+		if dimensions is None:
+			raise syntax.ExpectedItem(self.pos, "au moins une dimension statique ou dynamique")
 		return types.Array(kwpos, element_type, dimensions)
 
 	def analyze_array_dimension(self):
@@ -129,14 +130,16 @@ class Parser(BaseParser):
 				self.analyze_dynamic_array_dimension)
 
 	def analyze_static_array_dimension(self):
-		return types.Array.StaticDimension(self.analyze_expression())
+		expr = self.analyze_expression()
+		if expr is not None:
+			return types.Array.StaticDimension(expr)
 
 	@opening_keyword(kw.QUESTION_MARK)
 	def analyze_dynamic_array_dimension(self, kwpos):
 		return types.Array.DynamicDimension(kwpos)
 
 	def analyze_type_descriptor(self):
-		typedesc = Backtrack(self).give(self.analyze_array)
+		typedesc = self.analyze_array()
 		if typedesc is None:
 			typedesc = self.analyze_non_array_type_descriptor()
 		return typedesc
@@ -153,8 +156,9 @@ class Parser(BaseParser):
 			ident = self.analyze_identifier(critical=True)
 			self.hardskip(kw.COLON)
 		inout = self.softskip(kw.INOUT)
-		with CriticalItem(self, "le type de la variable"):
-			typedesc = self.analyze_type_descriptor()
+		typedesc = self.analyze_type_descriptor()
+		if typedesc is None:
+			raise syntax.ExpectedItem(self.pos, "le type de la variable")
 		return VarDecl(ident, typedesc, formal, inout)
 
 	@opening_keyword(kw.LT)
@@ -166,21 +170,18 @@ class Parser(BaseParser):
 	def analyze_lexicon(self, kwpos=None):
 		variables = []
 		composites = []
-		while True:
-			ident = Backtrack(self).give(self.analyze_identifier)
-			if ident is None:
-				break
+		for ident in yield_till_none(self.analyze_identifier):
 			keyword = self.hardskip(kw.COLON, kw.EQ)
 			if keyword == kw.COLON:
 				variables.append(self.analyze_vardecl(ident=ident))
 			elif keyword == kw.EQ:
-				composites.append(self.analyze_composite(ident=ident))
+				composites.append(self.analyze_composite(ident=ident, critical=True))
 		return Lexicon(variables, composites)
 
 	def analyze_identifier(self, identifier_class=identifier.PureIdentifier, critical=False):
 		"""
 		If `critical` is True, IllegalIdentifier or ReservedWord will be raised
-		instead of NotFoundHere if no valid identifier is found. This is
+		instead of returning None if no valid identifier is found. This is
 		especially useful wherever an identifier is absolutely required (for
 		example, to denote a function's name in a function header).
 
@@ -192,12 +193,11 @@ class Parser(BaseParser):
 			try:
 				return self.analyze_identifier(identifier_class=identifier_class, critical=True)
 			except syntax.SyntaxError:
-				raise NotFoundHere
+				return None
 		else:
 			pos = self.pos
-			try:
-				name = self.analyze_regex(self.re_identifier, advance=False)
-			except NotFoundHere:
+			name = self.analyze_regex(self.re_identifier, advance=False)
+			if not name:
 				raise syntax.IllegalIdentifier(pos)
 			if name in kw.reserved:
 				raise syntax.ReservedWord(pos, name)
@@ -205,32 +205,30 @@ class Parser(BaseParser):
 			return identifier_class(pos, name)
 
 	def analyze_statement_list(self):
-		block = []
-		while True:
-			with Backtrack(self):
-				unit = self.analyze_statement()
-				block.append(unit)
-				continue
-			break
-		return block
+		return list(yield_till_none(self.analyze_statement))
 
 	def analyze_statement_block(self):
 		pos = self.pos
 		return statements.StatementBlock(pos, self.analyze_statement_list())
 
+	@backtrack_if_missing
 	def analyze_statement(self):
+		pos = self.pos
 		# First, try statements that start with a keyword.
-		with Backtrack(self):
-			return self.analyze_either(
+		kwstatement = self.analyze_either(
 					self.analyze_return,
 					self.analyze_if,
 					self.analyze_for,
 					self.analyze_while)
+		if kwstatement is not None:
+			return kwstatement
 		# Assignments and function calls are the only statements that start
 		# with an expression. We're going to avoid parsing an expression twice.
 		expr = self.analyze_expression()
 		op_pos = self.pos
-		if self.softskip(kw.ASSIGN):
+		if expr is None:
+			return None
+		elif self.softskip(kw.ASSIGN):
 			# expr is the lefthand side of an assignment statement
 			rhs = self.analyze_expression()
 			return statements.Assignment(op_pos, expr, rhs)
@@ -247,14 +245,13 @@ class Parser(BaseParser):
 				raise syntax.DiscardedExpression(expr)
 			else:
 				# Non-compound expression, i.e. it is made of a single token.
-				# Raising NotFoundHere instead of DiscardedExpression may help
+				# Returning None instead of raising DiscardedExpression may help
 				# reporting a stray token in one of the calling methods.
-				raise NotFoundHere
+				return None
 
 	@opening_keyword(kw.RETURN)
 	def analyze_return(self, kwpos):
-		expr = Backtrack(self).give(self.analyze_expression)
-		return statements.Return(kwpos, expr)
+		return statements.Return(kwpos, self.analyze_expression())
 
 	@opening_keyword(kw.IF)
 	def analyze_if(self, kwpos):
@@ -263,8 +260,9 @@ class Parser(BaseParser):
 		pos = self.pos
 		while keyword in (None, kw.ELIF):
 			# condition
-			with CriticalItem(self, "la condition de la clause"):
-				condition = self.analyze_expression()
+			condition = self.analyze_expression()
+			if condition is None:
+				raise syntax.ExpectedItem(self.pos, "la condition de la clause")
 			# then block
 			self.hardskip(kw.THEN)
 			then_body = self.analyze_statement_list()
@@ -282,16 +280,19 @@ class Parser(BaseParser):
 	@opening_keyword(kw.FOR)
 	def analyze_for(self, kwpos):
 		# counter
-		with CriticalItem(self, "le compteur de la boucle"):
-			counter = self.analyze_expression()
+		counter = self.analyze_expression()
+		if counter is None:
+			raise syntax.ExpectedItem(self.pos, "le compteur de la boucle")
 		# initial value
 		self.hardskip(kw.FROM)
-		with CriticalItem(self, "la valeur initiale du compteur"):
-			initial = self.analyze_expression()
+		initial = self.analyze_expression()
+		if initial is None:
+			raise syntax.ExpectedItem(self.pos, "la valeur initiale du compteur")
 		# final value
 		self.hardskip(kw.TO)
-		with CriticalItem(self, "la valeur finale du compteur"):
-			final = self.analyze_expression()
+		final = self.analyze_expression()
+		if final is None:
+			raise syntax.ExpectedItem(self.pos, "la valeur finale du compteur")
 		# statement block
 		self.hardskip(kw.DO)
 		body = self.analyze_statement_list()
@@ -301,8 +302,9 @@ class Parser(BaseParser):
 	@opening_keyword(kw.WHILE)
 	def analyze_while(self, kwpos):
 		# condition
-		with CriticalItem(self, "la condition de la boucle"):
-			condition = self.analyze_expression()
+		condition = self.analyze_expression()
+		if condition is None:
+			raise syntax.ExpectedItem(self.pos, "la condition de la boucle")
 		# statement block
 		self.hardskip(kw.DO)
 		body = self.analyze_statement_list()
@@ -311,8 +313,10 @@ class Parser(BaseParser):
 
 	def analyze_expression(self, root=True):
 		lhs = self.analyze_primary_expression()
+		if lhs is None:
+			return None
 		# try to find a binary operator
-		nbo1 = Backtrack(self).give(self.analyze_naked_binary_operator)
+		nbo1 = self.analyze_naked_binary_operator()
 		if nbo1 is None:
 			return lhs
 		expr, nbo2 = self.analyze_partial_expression(lhs, nbo1)
@@ -326,15 +330,14 @@ class Parser(BaseParser):
 			assert issubclass(nbo1.cls, operators.BinaryOp)
 		while nbo1 is not None and nbo1.cls.precedence >= min_p:
 			# Parse the righthand-side operand of the first operator.
-			try:
-				if issubclass(nbo1.cls, operators.BinaryEncompassingOp):
-					rhs = self.analyze_arglist(self.analyze_expression, nbo1.cls.closing)
-				else:
-					rhs = self.analyze_primary_expression()
-			except NotFoundHere:
+			if issubclass(nbo1.cls, operators.BinaryEncompassingOp):
+				rhs = self.analyze_arglist(self.analyze_expression, nbo1.cls.closing)
+			else:
+				rhs = self.analyze_primary_expression()
+			if rhs is None:
 				raise syntax.MissingRightOperand(nbo1.pos)
 			# Parse the next operator, if any.
-			nbo2 = Backtrack(self).give(self.analyze_naked_binary_operator)
+			nbo2 = self.analyze_naked_binary_operator()
 			# Keep extending bo1's RHS as long as the operators to the right (bo2) are
 			# supposed to be part of its RHS (see BinaryOp.part_of_rhs
 			# to see what this means)
@@ -361,17 +364,17 @@ class Parser(BaseParser):
 			self.hardskip(kw.RPAREN)
 			return sub_expr
 		# check for a unary operator
-		nuo = Backtrack(self).give(self.analyze_naked_operator, operators.unary)
+		nuo = self.analyze_naked_operator(operators.unary)
 		if nuo is not None:
 			# analyze unary operator's operand, which is a primary expression
-			try:
-				rhs = self.analyze_primary_expression()
-			except NotFoundHere:
+			rhs = self.analyze_primary_expression()
+			if rhs is None:
 				raise syntax.MissingRightOperand(nuo.pos)
 			return nuo.build(rhs)
 		# terminal
-		with Backtrack(self):
-			return self.analyze_identifier(expression.ExpressionIdentifier)
+		ident = self.analyze_identifier(expression.ExpressionIdentifier)
+		if ident is not None:
+			return ident
 		return self.analyze_either(
 				self.analyze_literal_integer,
 				self.analyze_literal_real,
@@ -387,7 +390,6 @@ class Parser(BaseParser):
 		for op_class in op_list:
 			if self.softskip(op_class.keyword_def):
 				return operators.NakedOperator(pos, op_class)
-		raise NotFoundHere
 
 	def analyze_arglist(self, analyze_arg, closing_kw, **kwargs):
 		if self.softskip(closing_kw):
@@ -402,41 +404,94 @@ class Parser(BaseParser):
 			# allows us to raise a friendlier error message in that case.
 			if self.softskip(kw.COMMA):
 				raise syntax.SyntaxError(pos, "argument vide")
-			try:
-				arglist.append(analyze_arg(**kwargs))
-			except NotFoundHere:
-				raise syntax.SyntaxError(pos, "argument vide")
+			newarg = analyze_arg(**kwargs)
+			if newarg is not None:
+				arglist.append(newarg)
+			else:
+				raise syntax.SyntaxError(pos, "argument malformé")
 			has_next = self.softskip(kw.COMMA)
 		# Even though there cannot be a comma here (since has_next went False),
-		# we're hardskipping kw.COMMA anyway. That way, in case of an error,
-		# the user knows they could've used a comma here.
+		# we're hardskipping kw.COMMA anyway (in addition to the closing
+		# keyword). That way, in case of an error, the user knows they could've
+		# used a comma or the closing keyword here.
 		self.hardskip(closing_kw, kw.COMMA)
 		return arglist
 
 	def analyze_literal_integer(self):
 		pos = self.pos
 		match = self.analyze_regex(self.re_integer)
-		return expression.LiteralInteger(pos, int(match))
+		if match is not None:
+			return expression.LiteralInteger(pos, int(match))
 
 	def analyze_literal_real(self):
 		pos = self.pos
 		match = self.analyze_regex(self.re_real)
-		return expression.LiteralReal(pos, float(match))
+		if match is not None:
+			return expression.LiteralReal(pos, float(match))
 
+	def unescape(self, char):
+		if char == '\\':
+			char = self.softchar()
+			if char is None:
+				raise syntax.UnclosedItem(self.pos,
+						"manque caractère d'échappement après l'antislash")
+			try:
+				char = expression.ESCAPE_SEQUENCES['\\'+char.lower()]
+			except KeyError:
+				raise syntax.SyntaxError(self.pos,
+						"code d'échappement inconnu : \\" + char)
+		return char
+
+	@backtrack_if_missing
 	def analyze_literal_string(self):
-		pos = self.pos
-		match = self.analyze_regex(self.re_string, buf=self.raw_buf)
-		return expression.LiteralString(pos, match[1:-1])
+		assert 1 == len(kw.QUOTE2.synonyms) and '"' == str(kw.QUOTE2)
+		# fake softskip
+		kwpos = self.pos
+		if "\"" != self.softchar():
+			return None
+		# generator that yields unescaped characters until QUOTE2 is found
+		def gen_string_chars():
+			while True:
+				char = self.softchar()
+				if char == '"':
+					# skip trailing whitespace
+					self.advance()
+					raise StopIteration
+				elif char is None:
+					raise syntax.UnclosedItem(kwpos, "guillemet double non-refermé")
+				yield self.unescape(char)
+		return expression.LiteralString(kwpos, ''.join(gen_string_chars()))
 
+	# DON'T decorate this method with opening_keyword! We don't want to
+	# skip a literal space character!
+	@backtrack_if_missing
 	def analyze_literal_character(self):
-		pos = self.pos
-		match = self.analyze_regex(self.re_character, buf=self.raw_buf)
-		return expression.LiteralCharacter(pos, match[1:-1])
+		assert 1 == len(kw.QUOTE1.synonyms) and "'" == str(kw.QUOTE1)
+		# fake softskip
+		kwpos = self.pos
+		if "'" != self.softchar():
+			return None
+		# prevent empty character
+		char = self.softchar()
+		if char is None:
+			raise syntax.UnclosedItem(kwpos, "guillemet simple non-refermé")
+		elif "\'" == char:
+			raise syntax.SyntaxError(kwpos, "un caractère ne peut pas être vide")
+		char = self.unescape(char)
+		# Use softskip to finish, because we're done with the character and any
+		# operation that consumes characters should skip any trailing
+		# whitespace after it.
+		if not self.softskip(kw.QUOTE1):
+			e = syntax.UnclosedItem(kwpos, "guillemet simple non refermé")
+			e.tip = ("Un seul caractère est admis entre guillemets simples (''). "
+					"Si vous voulez définir une chaîne de plusieurs caractères, "
+					"entourez-la de guillemets doubles (\"\").")
+			raise e
+		return expression.LiteralCharacter(kwpos, char)
 
 	def analyze_literal_boolean(self):
 		pos = self.pos
 		keyword = self.softskip(kw.TRUE, kw.FALSE)
-		if keyword is None:
-			raise NotFoundHere
-		return expression.LiteralBoolean(pos, keyword == kw.TRUE)
+		if keyword is not None:
+			return expression.LiteralBoolean(pos, keyword == kw.TRUE)
 

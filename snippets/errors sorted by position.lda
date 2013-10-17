@@ -1,0 +1,10 @@
+(*
+The lexicon deals with composites before variables. This test ensures that the
+order of the errors in the source code is kept, even if it doesn't match the
+order in which they were raised.
+*)
+
+lexique
+	xyz: (*#UnresolvableTypeAlias#*)xyzzy
+	qwerty = <azerty: (*#UnresolvableTypeAlias#*)qwertz>
+

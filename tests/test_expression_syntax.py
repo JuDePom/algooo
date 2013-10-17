@@ -2,7 +2,6 @@ from tests.ldatestcase import LDATestCase
 from lda import expression
 from lda import operators
 from lda import kw
-from lda.parser import NotFoundHere
 from lda.errors import syntax
 from lda.statements import StatementBlock
 
@@ -78,8 +77,7 @@ class TestExpressionSyntax(LDATestCase):
 
 	def test_incomplete_binary_operations_no_left_operand(self):
 		def test(s):
-			self.assertRaises(NotFoundHere, self.analyze,
-					program=s, cls=expression.Expression)
+			self.analyze(program=s, cls=expression.Expression, expect_none=True, force_eof=False)
 		test("..")
 		test("*")
 		test("/")
@@ -152,4 +150,13 @@ class TestExpressionSyntax(LDATestCase):
 		test("fpour")
 		test("fsi")
 		test("fin")
+
+	def test_illegal_escape_sequences(self):
+		def test(s):
+			self.assertRaises(syntax.SyntaxError, self.analyze,
+					cls=expression.LiteralCharacter, program=s)
+		test(r"'\a'")
+		test(r"'\b'")
+		test(r"'\x'")
+		test(r"'\.'")
 

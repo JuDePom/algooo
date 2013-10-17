@@ -35,7 +35,7 @@ class LDATestCase(unittest.TestCase):
 	def setUp(self):
 		self.options = DefaultOptions()
 
-	def analyze(self, program, cls=module.Module, force_eof=True, **kwargs):
+	def analyze(self, program, cls=module.Module, force_eof=True, expect_none=False, **kwargs):
 		"""
 		Parse a program. Raise the most relevant syntax error if needed.
 		If the program was syntactically correct, ensure that:
@@ -49,6 +49,7 @@ class LDATestCase(unittest.TestCase):
 			only parsed partially.
 		:param kwargs: Optional arguments to pass to the analysis function.
 		"""
+		assert not expect_none or not force_eof, "expect_none implies force_eof"
 		self.parser = parser.Parser(self.options, path=None, buf=program)
 		try:
 			analyze_func = getattr(self.parser, PARSING_FUNCTIONS[cls])
@@ -58,7 +59,10 @@ class LDATestCase(unittest.TestCase):
 			else:
 				raise e
 		thing = analyze_func(**kwargs)
-		self.assertIsInstance(thing, cls)
+		if expect_none:
+			self.assertIsNone(thing)
+		else:
+			self.assertIsInstance(thing, cls)
 		if force_eof:
 			self.assertTrue(self.parser.eof(), ("program couldn't be parsed entirely"
 					" -- stopped at {}").format(self.parser.pos))

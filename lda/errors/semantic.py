@@ -27,12 +27,13 @@ class MissingDeclaration(SemanticError):
 	Raised when an identifier is used in a statement without having been declared
 	in the current context.
 	"""
-	def __init__(self, ident):
-		message = "cet identificateur n'a pas été déclaré : \"{}\"".format(ident)
+	def __init__(self, ident, intro="cet identificateur n'a pas été déclaré"):
+		message = "{} : \"{}\"".format(intro, ident)
 		super().__init__(ident.pos, message)
 
 class UnresolvableTypeAlias(MissingDeclaration):
-	pass
+	def __init__(self, ident):
+		super().__init__(ident, "ce type n'existe pas")
 
 class DuplicateDeclaration(SemanticError):
 	"""
@@ -82,7 +83,7 @@ class SpecificTypeExpected(TypeError):
 	def __init__(self, pos, what, expected, given):
 		message = "{} doit être de type {} (et non pas {})".format(
 				what, expected, given)
-		super().__init__(pos, message, given)
+		super().__init__(pos, message, expected, given)
 
 class NonComposite(TypeError):
 	"""

@@ -3,6 +3,23 @@ from . import types
 from .identifier import PureIdentifier
 from .errors import semantic
 
+ESCAPE_SEQUENCES = {
+	'\\n': '\n',
+	'\\t': '\t',
+	'\\"': '"',
+	"\\'": "'",
+	'\\\\': '\\',
+}
+
+REVERSE_ESCAPE_SEQUENCES = {v: k for k, v in ESCAPE_SEQUENCES.items()}
+
+def lda_escape_string(s):
+	return ''.join(REVERSE_ESCAPE_SEQUENCES.get(c, c) for c in s)
+
+def js_escape_string(s, js_quote):
+	# unicode-escape happens to be compatible with JS too
+	return s.encode('unicode-escape').decode().replace(js_quote, '\\'+js_quote)
+
 def surround(lda_method):
 	"""
 	Surround the exported LDA code with parentheses if the object is not the
@@ -158,10 +175,10 @@ class LiteralString(Literal):
 	resolved_type = types.STRING
 
 	def lda(self, pp):
-		pp.put(kw.QUOTE2, self.value, kw.QUOTE2)
+		pp.put(kw.QUOTE2, lda_escape_string(self.value), kw.QUOTE2)
 	
 	def js(self, pp):
-		pp.put('"', self.value.encode('unicode-escape').decode(), '"')
+		pp.put('"', js_escape_string(self.value, '"'), '"')
 
 class LiteralCharacter(Literal):
 	resolved_type = types.CHARACTER
@@ -171,10 +188,10 @@ class LiteralCharacter(Literal):
 		assert len(value) == 1
 
 	def lda(self, pp):
-		pp.put(kw.QUOTE1, self.value, kw.QUOTE1)
-		
+		pp.put(kw.QUOTE1, lda_escape_string(self.value), kw.QUOTE1)
+
 	def js(self, pp):
-		pp.put('"', self.value.encode('unicode-escape').decode(), '"')
+		pp.put("'", js_escape_string(self.value, "'"), "'")
 
 class LiteralBoolean(Literal):
 	resolved_type = types.BOOLEAN

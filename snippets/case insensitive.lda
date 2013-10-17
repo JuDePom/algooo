@@ -1,9 +1,24 @@
+(*
+	Ignore case in keywords and identifiers,
+	but retain case in literal strings.
+*)
+
 (*% ignore_case True %*)
+
+(*|
+ABCdefGHIjkl X x
+|*)
+
 LEXIQUE
-	MOULe = <A: ENTIER>
+	MOULééé = <A: CHAÎNe>
+	carMAJ: caractÈre
+	CARmin: caractère
 ALGORITHME
 LeXiQuE
-	M: mOULE
+	M: mOULééÉ
 DÉBuT
-	m.a <- 290382432
+	m.a <- "ABCdefGHIjkl"
+	carmaj <- 'X'
+	carmin <- 'x'
+	EcriRe(m.A, CarMaj, CarMin)
 FIN
