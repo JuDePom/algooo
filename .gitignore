@@ -9,3 +9,8 @@
 *.pyc
 __pycache__
 
+# SQLite3
+*.db
+
+# dépendances externes web
+webapp/lib
