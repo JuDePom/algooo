@@ -410,7 +410,7 @@ class Parser(BaseParser):
 			if newarg is not None:
 				arglist.append(newarg)
 			else:
-				raise syntax.SyntaxError(pos, "argument vide")
+				raise syntax.SyntaxError(pos, "argument malformé")
 			has_next = self.softskip(kw.COMMA)
 		# Even though there cannot be a comma here (since has_next went False),
 		# we're hardskipping kw.COMMA anyway (in addition to the closing
