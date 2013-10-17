@@ -1,0 +1,23 @@
+(* Mind the whitespace in this one! *)
+
+(*|DEBUT
+" ' \
+	
+	
+
+
+
+
+FIN|*)
+
+algorithme
+début
+	écrire("DEBUT")
+	écrire('\"', '\'', '\\')
+	écrire('\t')
+	écrire('\T')
+	écrire('\n')
+	écrire('\N')
+	écrire("FIN")
+fin
+

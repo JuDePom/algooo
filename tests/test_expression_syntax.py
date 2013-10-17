@@ -151,3 +151,12 @@ class TestExpressionSyntax(LDATestCase):
 		test("fsi")
 		test("fin")
 
+	def test_illegal_escape_sequences(self):
+		def test(s):
+			self.assertRaises(syntax.SyntaxError, self.analyze,
+					cls=expression.LiteralCharacter, program=s)
+		test(r"'\a'")
+		test(r"'\b'")
+		test(r"'\x'")
+		test(r"'\.'")
+

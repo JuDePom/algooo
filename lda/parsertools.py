@@ -160,6 +160,23 @@ class BaseParser:
 			raise syntax.UnclosedItem(multi_start, "commentaire multi-ligne non-fermé")
 		self.pos = position.Position(self.pos.path, bpos, line, column)
 
+	def softchar(self):
+		"""
+		Consume a character, increment the position by one, and return the
+		character. Return None if EOF or EOL (\n) were reached before consuming
+		the character.
+		WARNING: this method does not call advance() and thus it does NOT skip
+		any trailing whitespace!
+		"""
+		# \n is illegal because the position is advanced on the same line.
+		# Retain case: use raw_buf here, not buf.
+		if self.eof() or '\n' == self.raw_buf[self.pos.char]:
+			return None
+		c = self.raw_buf[self.pos.char]
+		self.pos = position.Position(
+				self.pos.path, self.pos.char+1, self.pos.line, self.pos.column+1)
+		return c
+
 	def eof(self):
 		return self.pos.char >= self.buflen
 

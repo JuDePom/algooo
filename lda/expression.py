@@ -3,6 +3,19 @@ from . import types
 from .identifier import PureIdentifier
 from .errors import semantic
 
+ESCAPE_SEQUENCES = {
+	'\\n': '\n',
+	'\\t': '\t',
+	'\\"': '"',
+	"\\'": "'",
+	'\\\\': '\\',
+}
+
+REVERSE_ESCAPE_SEQUENCES = {v: k for k, v in ESCAPE_SEQUENCES.items()}
+
+def escape_string(s):
+	return ''.join(REVERSE_ESCAPE_SEQUENCES.get(c, c) for c in s)
+
 def surround(lda_method):
 	"""
 	Surround the exported LDA code with parentheses if the object is not the
@@ -171,10 +184,12 @@ class LiteralCharacter(Literal):
 		assert len(value) == 1
 
 	def lda(self, pp):
-		pp.put(kw.QUOTE1, self.value, kw.QUOTE1)
-		
+		pp.put(kw.QUOTE1, escape_string(self.value), kw.QUOTE1)
+
 	def js(self, pp):
-		pp.put('"', self.value.encode('unicode-escape').decode(), '"')
+		# unicode-escape happens to be compatible with JS too
+		escaped = self.value.encode('unicode-escape').decode().replace("'", "\\'")
+		pp.put("'", escaped, "'")
 
 class LiteralBoolean(Literal):
 	resolved_type = types.BOOLEAN

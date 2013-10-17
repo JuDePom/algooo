@@ -1,5 +1,5 @@
 algorithme
 début
-	écrire((*#SyntaxError#*)'abcdef')
+	écrire((*#UnclosedItem#*)'abcdef')
 fin
 

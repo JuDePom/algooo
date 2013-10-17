@@ -438,20 +438,40 @@ class Parser(BaseParser):
 		if match is not None:
 			return expression.LiteralString(pos, match[1:-1])
 
-	@opening_keyword(kw.QUOTE1)
-	def analyze_literal_character(self, kwpos):
-		if self.softskip(kw.QUOTE1):
+	# DON'T decorate this method with opening_keyword! We don't want to
+	# skip a literal space character!
+	@backtrack_if_missing
+	def analyze_literal_character(self):
+		assert 1 == len(kw.QUOTE1.synonyms) and "'" == str(kw.QUOTE1)
+		# fake softskip
+		kwpos = self.pos
+		if "'" != self.softchar():
+			return None
+		# prevent empty character
+		char = self.softchar()
+		if char is None:
+			raise syntax.UnclosedItem(kwpos, "guillemet simple non-refermé")
+		elif "\'" == char:
 			raise syntax.SyntaxError(kwpos, "un caractère ne peut pas être vide")
-		if self.eof():
-			raise syntax.UnclosedItem(kwpos, "guillemet non fermé")
-		char = self.raw_buf[self.pos.char]
-		self.advance(1)
+		elif char == '\\':
+			# escape sequence
+			char = self.softchar()
+			if char is None:
+				raise syntax.UnclosedItem(self.pos,
+						"manque caractère d'échappement après l'antislash")
+			try:
+				char = expression.ESCAPE_SEQUENCES['\\'+char.lower()]
+			except KeyError:
+				raise syntax.SyntaxError(self.pos,
+						"code d'échappement inconnu : \\" + char)
+		# Use softskip to finish, because we're done with the character and any
+		# operation that consumes characters should skip any trailing
+		# whitespace after it.
 		if not self.softskip(kw.QUOTE1):
-			e = syntax.SyntaxError(kwpos,
-					"un seul caractère est admis entre guillemets simples")
-			e.tip = ("Si vous voulez définir une chaîne, entourez-la de "
-					"double-guillemets (\"). Les guillemets simples (') "
-					"sont réservés aux caractères.")
+			e = syntax.UnclosedItem(kwpos, "guillemet simple non refermé")
+			e.tip = ("Un seul caractère est admis entre guillemets simples (''). "
+					"Si vous voulez définir une chaîne de plusieurs caractères, "
+					"entourez-la de guillemets doubles (\"\").")
 			raise e
 		return expression.LiteralCharacter(kwpos, char)
 
