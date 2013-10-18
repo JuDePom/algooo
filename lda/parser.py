@@ -241,12 +241,12 @@ class Parser(BaseParser):
 		else:
 			# expr is a standalone expression, but we can't treat it as a
 			# statement since its result is discarded.
-			if expr.compound:
+			if not expr.terminal:
 				raise syntax.DiscardedExpression(expr)
 			else:
-				# Non-compound expression, i.e. it is made of a single token.
-				# Returning None instead of raising DiscardedExpression may help
-				# reporting a stray token in one of the calling methods.
+				# Terminal symbol. Returning None instead of raising
+				# DiscardedExpression may help reporting a stray token in one
+				# of the calling methods.
 				return None
 
 	@opening_keyword(kw.RETURN)

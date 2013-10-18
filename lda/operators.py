@@ -39,16 +39,16 @@ class UnaryOp(Expression):
 	"""
 	Unary operator.
 
-	Right-associative, non-writable, and compound by default (these properties
-	can be overridden). See Expression's docstring for info about writable and
-	compound.
+	Right-associative, non-writable, and non-terminal by default (these
+	properties can be overridden). See Expression's docstring for info about
+	writable and terminal.
 
 	Has a righthand-side operand only.
 	"""
 
 	writable = False # can be overridden
 	right_ass = True
-	compound = True
+	terminal = False
 
 	def __init__(self, pos, rhs):
 		super().__init__(pos)
@@ -60,7 +60,7 @@ class UnaryOp(Expression):
 	@surround
 	def lda(self, pp):
 		pp.put(self.keyword_def, " ", self.rhs)
-		
+
 	@surround
 	def js(self, pp):
 		pp.put(self.js_kw, " ", self.rhs)
@@ -72,16 +72,16 @@ class BinaryOp(Expression):
 	"""
 	Binary operator.
 
-	Left-associative, non-writable, and compound by default (these properties
-	can be overridden). See Expression's docstring for info about writable and
-	compound.
+	Left-associative, non-writable, and non-terminal by default (these
+	properties can be overridden). See Expression's docstring for info about
+	writable and non-terminal.
 
 	Has a lefthand-side operand and a righthand-side operand.
 	"""
 
 	writable = False # can be overridden
 	right_ass = False
-	compound = True
+	terminal = False
 
 	def __init__(self, pos, lhs, rhs):
 		super().__init__(pos)
@@ -101,7 +101,7 @@ class BinaryOp(Expression):
 	@surround
 	def lda(self, pp):
 		pp.put(self.lhs, " ", self.keyword_def, " ", self.rhs)
-	
+
 	@surround
 	def js(self, pp):
 		pp.put(self.lhs, " ", self.js_kw, " ", self.rhs)

@@ -48,11 +48,10 @@ class Expression:
 	- root: True if the expression is not contained by any other
 	  expression. This is set to False by the default constructor.
 
+	- terminal: True if the expression is a terminal symbol.
+
 	- writable: True if the expression can legally occupy the lefthand
 	  side of an assignment statement
-
-	- compound: True if the expression is made of other expressions, False if
-	  the whole expression fits in a single token
 
 	In addition, an expression must be checked for semantic correctness with
 	the `check()` method. If the semantic analysis is successful, the
@@ -63,8 +62,8 @@ class Expression:
 	def __init__(self, pos):
 		self.pos = pos
 		self.root = False
+		assert hasattr(self, 'terminal')
 		assert hasattr(self, 'writable')
-		assert hasattr(self, 'compound')
 
 	def __eq__(self, other):
 		raise NotImplementedError
@@ -84,7 +83,7 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 	"""
 
 	writable = False
-	compound = False
+	terminal = True
 
 	def check(self, context, logger):
 		"""
@@ -137,7 +136,7 @@ class Literal(Expression):
 	"""
 
 	writable = False
-	compound = False
+	terminal = True
 
 	def __init__(self, pos, value):
 		super().__init__(pos)

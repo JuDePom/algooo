@@ -74,7 +74,7 @@ class DiscardedExpression(SyntaxError):
 	'''
 
 	def __init__(self, expr):
-		if expr.compound:
+		if not expr.terminal:
 			super().__init__(expr.pos, "le résultat de cette expression n'est pas "
 					"conservé (peut-être devriez-vous l'affecter à une variable ?)")
 		else:
