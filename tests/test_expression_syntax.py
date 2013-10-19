@@ -95,7 +95,8 @@ class TestExpressionSyntax(LDATestCase):
 	def test_root_in_binary_operation_tree(self):
 		self.analyze("1+1", operators.Plus)
 		self.analyze("1-1", operators.Subtraction)
-		self.analyze("1/1", operators.Division)
+		self.analyze("1/1", operators.RealDivision)
+		self.analyze("1:1", operators.IntegerDivision)
 		self.analyze("1*1", operators.Multiplication)
 		self.analyze("1..2", operators.IntegerRange)
 		self.analyze("ident[ident]", operators.Subscript)

@@ -476,10 +476,29 @@ class Multiplication(NumberArithmeticOp):
 	keyword_def = kw.TIMES
 	js_kw = "*"
 
-class Division(NumberArithmeticOp):
+class RealDivision(BinaryOp):
 	keyword_def = kw.SLASH
 	js_kw = "/"
-	#TODO: JS integer division!!!
+	resolved_type = types.REAL
+
+	def check(self, context, logger):
+		for side in (self.lhs, self.rhs):
+			side.check(context, logger)
+			semantictools.enforce_compatible("les opérandes d'une division réelle",
+					types.REAL, self.lhs, logger)
+
+class IntegerDivision(BinaryOp):
+	keyword_def = kw.COLON
+	resolved_type = types.INTEGER
+
+	def check(self, context, logger):
+		for side in (self.lhs, self.rhs):
+			side.check(context, logger)
+			semantictools.enforce_compatible("les opérandes d'une division entière",
+					types.INTEGER, self.lhs, logger)
+
+	def js(self, pp):
+		pp.put("Math.floor((", self.lhs, "/", self.rhs, "))")
 
 class Modulo(NumberArithmeticOp):
 	keyword_def = kw.MODULO
@@ -514,7 +533,6 @@ class _Concatenation(BinaryOp):
 			logger.log(semantic.TypeMismatch(self.pos, "les types des opérandes "
 					"doivent être équivalents", ltype, rtype))
 			self.resolved_type = types.ERRONEOUS
-	#TODO: entier? pas entier?
 
 class Plus(BinaryPolymorphicOp):
 	"""
@@ -605,7 +623,7 @@ unary = [
 binary_precedence = [
 		[Subscript, FunctionCall, MemberSelect],
 		[Power],
-		[Multiplication, Division, Modulo],
+		[Multiplication, RealDivision, IntegerDivision, Modulo],
 		[Plus, Subtraction],
 		[IntegerRange],
 		[LessThan, GreaterThan, LessOrEqual, GreaterOrEqual],
