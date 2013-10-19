@@ -109,6 +109,7 @@ class BinaryOp(Expression):
 	def check(self, context, logger):
 		raise NotImplementedError
 
+
 #######################################################################
 #
 # SPECIFIC OPERATOR BASE CLASSES
@@ -154,6 +155,45 @@ class BinaryChameleonOp(BinaryOp):
 			self.resolved_type = types.ERRONEOUS
 		else:
 			self.resolved_type = strongtype
+
+class BinaryPolymorphicOp(BinaryOp):
+	"""
+	Binary operator whose behavior is determined by the strongest type among
+	its operands.
+
+	Subclasses must provide:
+	- `morph_table`: dictionary. Maps types to a behavior method. See check().
+	- `incompat_message`: error string used when the operands' types are not
+	  adequate.
+	"""
+
+	def __init__(self, pos, lhs, rhs):
+		super().__init__(pos, lhs, rhs)
+		assert hasattr(self, 'morph_table')
+		assert hasattr(self, 'incompat_message')
+
+	def check(self, context, logger):
+		"""
+		Check that the types of both operands are equivalent, determine the
+		operator's behavior from the strongest type of the operands, and
+		execute the adequate behavior method.
+		"""
+		self.lhs.check(context, logger)
+		self.rhs.check(context, logger)
+		lrt, rrt = self.lhs.resolved_type, self.rhs.resolved_type
+		strongest = lrt.equivalent(rrt)
+		if strongest is None:
+			logger.log(semantic.TypeMismatch(self.pos, "les types des opérandes "
+					"doivent être équivalents", lrt, rrt))
+			self.resolved_type = types.ERRONEOUS
+		else:
+			try:
+				morph = self.morph_table[strongest]
+			except (TypeError, KeyError):
+				logger.log(semantic.TypeError(self.pos, self.incompat_message, lrt, rrt))
+				self.resolved_type = types.ERRONEOUS
+			else:
+				morph(self, strongest)
 
 class NumberArithmeticOp(BinaryChameleonOp):
 	def check(self, context, logger):
@@ -393,7 +433,7 @@ class Modulo(NumberArithmeticOp):
 	js_kw = "%"
 	#TODO: entier? pas entier?
 
-class Plus(BinaryOp):
+class Plus(BinaryPolymorphicOp):
 	"""
 	Polymorphic operator
 	- Number operands: addition
@@ -407,20 +447,21 @@ class Plus(BinaryOp):
 	keyword_def = kw.PLUS
 	js_kw = "+" # Warning: this works because the JS plus has exactly the same behavior
 
-	def check(self, context, logger):
-		for operand in (self.lhs, self.rhs):
-			operand.check(context, logger)
-		lrt, rrt = self.lhs.resolved_type, self.rhs.resolved_type
-		strongest = lrt.equivalent(rrt)
-		if strongest in (types.STRING, types.CHARACTER):
-			self.resolved_type = types.STRING
-		elif strongest in (types.INTEGER, types.REAL):
-			self.resolved_type = strongest
-		else:
-			logger.log(semantic.TypeError(self.pos,
-				"l'opérateur + ne fonctionne qu'avec "
-				"des nombres ou des chaînes/caractères",
-				lrt, rrt))
+	incompat_message = ("l'opérateur + ne fonctionne qu'avec des nombres ou "
+			"des chaînes/caractères")
+
+	def concat(self, strongest):
+		self.resolved_type = types.STRING
+
+	def add(self, strongest):
+		self.resolved_type = strongest
+
+	morph_table = {
+			types.STRING:    concat,
+			types.CHARACTER: concat,
+			types.INTEGER:   add,
+			types.REAL:      add,
+	}
 
 class Subtraction(NumberArithmeticOp):
 	keyword_def = kw.MINUS
