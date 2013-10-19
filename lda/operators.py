@@ -330,7 +330,6 @@ class _StringSubscript(BinaryOp):
 	writable = False
 	keyword_def = kw.LSBRACK
 	closing = kw.RSBRACK
-	resolved_type = types.CHARACTER
 
 	def check_rhs(self, context, logger):
 		# check parameter count
@@ -341,11 +340,25 @@ class _StringSubscript(BinaryOp):
 			return
 		self.index = self.rhs[0]
 		self.index.check(context, logger)
-		semantictools.enforce("l'indice du caractère extrait", types.INTEGER,
-				self.index, logger)
+		itype = self.index.resolved_type
+		if itype is types.INTEGER:
+			self.resolved_type = types.CHARACTER
+		elif itype is types.RANGE:
+			self.resolved_type = types.STRING
+		else:
+			logger.log(semantic.TypeError(self.index.pos, "les indices de chaînes doivent "
+					"être des entiers ou des intervalles", itype))
+			self.resolved_type = types.ERRONEOUS
 
 	def js(self, pp):
-		pp.put(self.lhs, "[", self.index, "]")
+		if self.resolved_type is types.CHARACTER:
+			pp.put(self.lhs, "[", self.index, "]")
+		elif self.resolved_type is types.STRING:
+			start = self.index.lhs
+			end = self.index.rhs
+			pp.put(self.lhs, ".substr(", start, ", 1+", end, "-", start, ")")
+		else:
+			assert False
 
 	def lda(self, pp):
 		pp.put(self.lhs, "[", self.index, "]")
