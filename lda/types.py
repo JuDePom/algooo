@@ -139,11 +139,14 @@ class Scalar(TypeDescriptor):
 		else:
 			self.name = name
 
-	def __repr__(self):
-		return self.name
-
 	def __eq__(self, other):
 		return self is other
+
+	def __hash__(self):
+		return id(self)
+
+	def __repr__(self):
+		return self.name
 
 	def resolve_type(self, context, logger):
 		return self

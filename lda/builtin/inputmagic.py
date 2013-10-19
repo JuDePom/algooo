@@ -1,6 +1,5 @@
 from lda import types
 from lda.errors import semantic
-from lda import kw
 
 # The VOID return type prevents the function call from being placed in the
 # middle of an expression. Thus, this call is guaranteed to be the root node of
@@ -9,11 +8,11 @@ from lda import kw
 resolved_return_type = types.VOID
 
 APICALL = {
-	kw.INT:       "readInt",
-	kw.BOOL:      "readBool",
-	kw.CHAR:      "readChar",
-	kw.STRING:    "readStr",
-	kw.REAL:      "readReal",
+	types.INTEGER:   "readInt",
+	types.BOOLEAN:   "readBool",
+	types.CHARACTER: "readChar",
+	types.STRING:    "readStr",
+	types.REAL:      "readReal",
 }
 
 def check_effective_parameters(logger, pos, params):
@@ -31,4 +30,5 @@ def js_call(pp, params):
 	assert len(params) == 1 and isinstance(params[0].resolved_type, types.Scalar),\
 			"should've called check_effective_parameters"
 	var = params[0]
-	pp.put(var, " = LDA.", APICALL[var.resolved_type.keyword], "()")
+	pp.put(var, " = LDA.", APICALL[var.resolved_type], "()")
+
