@@ -1,0 +1,10 @@
+algorithme
+lexique
+	salut: chaîne
+début
+	"haha"(*#NonWritable#*)[1] <- 'x'
+	salut <- "salut"
+	écrire(salut[(*#SpecificTypeExpected#*)'x'])
+	écrire(salut[(*#SpecificTypeExpected#*)3.14])
+fin
+

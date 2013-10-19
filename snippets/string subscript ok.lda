@@ -1,0 +1,16 @@
+(*|
+h
+a
+l
+|*)
+algorithme
+lexique
+	salut: chaîne
+début
+	écrire("haha"[0])
+	écrire("haha"[1])
+
+	salut <- "salut"
+	écrire(salut[2])
+fin
+

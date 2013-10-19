@@ -326,6 +326,31 @@ class _ArraySubscript(BinaryOp):
 		pp.put("]")
 
 
+class _StringSubscript(BinaryOp):
+	writable = False
+	keyword_def = kw.LSBRACK
+	closing = kw.RSBRACK
+	resolved_type = types.CHARACTER
+
+	def check_rhs(self, context, logger):
+		# check parameter count
+		rdims = len(self.rhs)
+		if 1 != rdims:
+			logger.log(semantic.ParameterCountMismatch(
+				self.pos, given=rdims, expected=1))
+			return
+		self.index = self.rhs[0]
+		self.index.check(context, logger)
+		semantictools.enforce("l'indice du caractère extrait", types.INTEGER,
+				self.index, logger)
+
+	def js(self, pp):
+		pp.put(self.lhs, "[", self.index, "]")
+
+	def lda(self, pp):
+		pp.put(self.lhs, "[", self.index, "]")
+
+
 class Subscript(BinaryPolymorphicOp):
 	"""
 	Array subscript operator.
@@ -345,7 +370,7 @@ class Subscript(BinaryPolymorphicOp):
 
 	morph_table = {
 			types.Array: _ArraySubscript,
-			#types.STRING: _StringSubscript,
+			types.STRING: _StringSubscript,
 	}
 
 
