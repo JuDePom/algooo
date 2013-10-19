@@ -2,7 +2,7 @@ from . import kw
 from . import types
 from . import semantictools
 from .errors import semantic
-from .operators import GreaterOrEqual, Addition
+from .operators import GreaterOrEqual, Plus
 from .expression import LiteralInteger
 
 #######################################################################
@@ -238,7 +238,7 @@ class For(StatementBlock):
 		# Create synthetic assignments and condition
 		self.synth_init = Assignment(initial.pos, counter, initial)
 		self.synth_cond = GreaterOrEqual(None, counter, final)
-		self.synth_incr = Assignment(initial.pos, counter, Addition(None, counter, LiteralInteger(None, 1)))
+		self.synth_incr = Assignment(initial.pos, counter, Plus(None, counter, LiteralInteger(None, 1)))
 		self.synth_cond.root = True
 
 	def check(self, context, logger):

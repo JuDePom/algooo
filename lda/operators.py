@@ -393,9 +393,34 @@ class Modulo(NumberArithmeticOp):
 	js_kw = "%"
 	#TODO: entier? pas entier?
 
-class Addition(NumberArithmeticOp):
+class Plus(BinaryOp):
+	"""
+	Polymorphic operator
+	- Number operands: addition
+	- String/character operands: string concatenation
+
+	Minimalist implementation because JavaScript's '+' operator happens to have
+	exactly the same behavior (in the restricted use cases that are allowed by
+	check() anyway).
+	"""
+
 	keyword_def = kw.PLUS
-	js_kw = "+"
+	js_kw = "+" # Warning: this works because the JS plus has exactly the same behavior
+
+	def check(self, context, logger):
+		for operand in (self.lhs, self.rhs):
+			operand.check(context, logger)
+		lrt, rrt = self.lhs.resolved_type, self.rhs.resolved_type
+		strongest = lrt.equivalent(rrt)
+		if strongest in (types.STRING, types.CHARACTER):
+			self.resolved_type = types.STRING
+		elif strongest in (types.INTEGER, types.REAL):
+			self.resolved_type = strongest
+		else:
+			logger.log(semantic.TypeError(self.pos,
+				"l'opérateur + ne fonctionne qu'avec "
+				"des nombres ou des chaînes/caractères",
+				lrt, rrt))
 
 class Subtraction(NumberArithmeticOp):
 	keyword_def = kw.MINUS
@@ -462,7 +487,7 @@ binary_precedence = [
 		[ArraySubscript, FunctionCall, MemberSelect],
 		[Power],
 		[Multiplication, Division, Modulo],
-		[Addition, Subtraction],
+		[Plus, Subtraction],
 		[IntegerRange],
 		[LessThan, GreaterThan, LessOrEqual, GreaterOrEqual],
 		[Equal, NotEqual],
