@@ -107,8 +107,8 @@ class BinaryOp(Expression):
 		pp.put(self.lhs, " ", self.js_kw, " ", self.rhs)
 
 	def check(self, context, logger):
+		assert not hasattr(self, 'resolved_type'), str(self)
 		raise NotImplementedError
-
 
 #######################################################################
 #
