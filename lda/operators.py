@@ -70,13 +70,18 @@ class UnaryOp(Expression):
 
 class BinaryOp(Expression):
 	"""
-	Binary operator.
+	Binary operator. Has a lefthand-side operand and a righthand-side operand.
 
-	Left-associative, non-writable, and non-terminal by default (these
-	properties can be overridden). See Expression's docstring for info about
-	writable and non-terminal.
+	Default properties (can be overridden):
+	- left-associative,
+	- non-writable (see Expression),
+	- non-terminal (see Expression),
+	- non-encompassing.
 
-	Has a lefthand-side operand and a righthand-side operand.
+	A binary operator may be 'encompassing'; that is, its RHS is a list of
+	zero or more parameters delimited by commas and closed with a complementary
+	keyword. To declare an operator encompassing, define the `closing`
+	attribute to the keyword that closes the list of parameters.
 	"""
 
 	writable = False # can be overridden
@@ -241,20 +246,6 @@ class BinaryLogicalOp(BinaryOp):
 			side.check(context, logger)
 			semantictools.enforce("cet opérande", types.BOOLEAN, side, logger)
 
-class BinaryEncompassingOp(BinaryOp):
-	"""
-	Binary operator whose righthand operand is a list of comma-separated
-	arguments. The last argument is followed by a closing keyword, therefore
-	subclasses *must* define the `closing` member.
-	"""
-
-	closing = None # must be defined by subclasses!
-
-	def lda(self, pp):
-		pp.put(self.lhs, self.keyword_def)
-		pp.join(self.rhs, pp.put, kw.COMMA, " ")
-		pp.put(self.closing)
-
 
 #######################################################################
 #
@@ -345,7 +336,7 @@ class ArraySubscript(BinaryEncompassingOp):
 		pp.put(", ", assignment.rhs, ")")
 
 
-class FunctionCall(BinaryEncompassingOp):
+class FunctionCall(BinaryOp):
 	"""
 	Function call operator.
 

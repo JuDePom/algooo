@@ -330,7 +330,7 @@ class Parser(BaseParser):
 			assert issubclass(nbo1.cls, operators.BinaryOp)
 		while nbo1 is not None and nbo1.cls.precedence >= min_p:
 			# Parse the righthand-side operand of the first operator.
-			if issubclass(nbo1.cls, operators.BinaryEncompassingOp):
+			if hasattr(nbo1.cls, 'closing'):
 				rhs = self.analyze_arglist(self.analyze_expression, nbo1.cls.closing)
 			else:
 				rhs = self.analyze_primary_expression()
