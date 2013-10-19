@@ -278,30 +278,15 @@ class LogicalNot(UnaryOp):
 #
 #######################################################################
 
-class ArraySubscript(BinaryEncompassingOp):
-	"""
-	Array subscript operator.
-
-	Encompassing.
-	LHS is an array variable identifier.
-	RHS is an arglist of indices, which should resolve to integers.
-
-	Unlike most expressions, this operator is *writable*.
-	"""
-
+class _ArraySubscript(BinaryOp):
+	writable = True
 	keyword_def = kw.LSBRACK
 	closing = kw.RSBRACK
-	writable = True
 
-	def check(self, context, logger):
-		# guilty until proven innocent
+	def check_rhs(self, context, logger):
+		# Guilty until proven innocent
 		self.resolved_type = types.ERRONEOUS
-		# are we trying to subscript an array?
-		self.lhs.check(context, logger)
 		array = self.lhs.resolved_type
-		if not isinstance(array, types.Array):
-			logger.log(semantic.NonSubscriptable(self.pos, array))
-			return
 		# check dimension count
 		ldims = len(array.dimensions)
 		rdims = len(self.rhs)
@@ -334,6 +319,34 @@ class ArraySubscript(BinaryEncompassingOp):
 		pp.put(self.lhs, ".set(")
 		self.js_indices(pp)
 		pp.put(", ", assignment.rhs, ")")
+
+	def lda(self, pp):
+		pp.put(self.lhs, "[")
+		pp.join(self.rhs, pp.put, ", ")
+		pp.put("]")
+
+
+class Subscript(BinaryPolymorphicOp):
+	"""
+	Array subscript operator.
+
+	Encompassing.
+	LHS is an array variable identifier.
+	RHS is a list of indices, which should resolve to integers.
+
+	Unlike most expressions, this operator is *writable*.
+	"""
+
+	keyword_def = kw.LSBRACK
+	closing = kw.RSBRACK
+
+	def _lhs_type_error(self, logger):
+		logger.log(semantic.NonSubscriptable(self.pos, self.lhs.resolved_type))
+
+	morph_table = {
+			types.Array: _ArraySubscript,
+			#types.STRING: _StringSubscript,
+	}
 
 
 class FunctionCall(BinaryOp):
@@ -552,7 +565,7 @@ unary = [
 ]
 
 binary_precedence = [
-		[ArraySubscript, FunctionCall, MemberSelect],
+		[Subscript, FunctionCall, MemberSelect],
 		[Power],
 		[Multiplication, Division, Modulo],
 		[Plus, Subtraction],

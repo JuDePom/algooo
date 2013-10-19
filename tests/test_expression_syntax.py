@@ -98,7 +98,7 @@ class TestExpressionSyntax(LDATestCase):
 		self.analyze("1/1", operators.Division)
 		self.analyze("1*1", operators.Multiplication)
 		self.analyze("1..2", operators.IntegerRange)
-		self.analyze("ident[ident]", operators.ArraySubscript)
+		self.analyze("ident[ident]", operators.Subscript)
 		self.analyze("ident.ident", operators.MemberSelect)
 		self.analyze("ident()", operators.FunctionCall)
 		self.analyze("ident(ident)", operators.FunctionCall)
@@ -112,12 +112,12 @@ class TestExpressionSyntax(LDATestCase):
 		self.analyze("1+1=2", operators.Equal)
 		self.analyze("2=1+1", operators.Equal)
 		self.analyze("ident[ident].ident", operators.MemberSelect)
-		self.analyze("ident.ident[ident]", operators.ArraySubscript)
+		self.analyze("ident.ident[ident]", operators.Subscript)
 		self.analyze("ident(ident < ident)", operators.FunctionCall)
 
 	def test_array_subscript(self):
 		def test(s, indices):
-			subscript = self.analyze(s, operators.ArraySubscript)
+			subscript = self.analyze(s, operators.Subscript)
 			self.assertIsInstance(subscript.rhs, list)
 			self.assertEqual(len(subscript.rhs), len(indices))
 			for rhs_int, reference in zip(subscript.rhs, indices):
