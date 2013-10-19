@@ -158,42 +158,53 @@ class BinaryChameleonOp(BinaryOp):
 
 class BinaryPolymorphicOp(BinaryOp):
 	"""
-	Binary operator whose behavior is determined by the strongest type among
-	its operands.
+	Operator whose behavior is determined by the type of its first operand.
+
+	After a successful call to check(), this class acts as a proxy to the class
+	of the deduced effective operator.
 
 	Subclasses must provide:
-	- `morph_table`: dictionary. Maps types to a behavior method. See check().
-	- `incompat_message`: error string used when the operands' types are not
-	  adequate.
+	- `morph_table`: dictionary. Maps types to type-specific operator classes.
+	  See check().
+	- `_lhs_type_error`: method called when LHS's type is absent from
+	  `morph_table`.
 	"""
-
-	def __init__(self, pos, lhs, rhs):
-		super().__init__(pos, lhs, rhs)
-		assert hasattr(self, 'morph_table')
-		assert hasattr(self, 'incompat_message')
 
 	def check(self, context, logger):
 		"""
-		Check that the types of both operands are equivalent, determine the
-		operator's behavior from the strongest type of the operands, and
-		execute the adequate behavior method.
+		Check LHS, determine the operator's behavior from LHS's type, and
+		create the adequate type-specific operator.
+		After this method succeeds, the BinaryPolymorphicOp object acts as a
+		proxy to the type-specific operator object.
 		"""
+		# Guilty until proven innocent
+		self.resolved_type = types.ERRONEOUS
 		self.lhs.check(context, logger)
-		self.rhs.check(context, logger)
-		lrt, rrt = self.lhs.resolved_type, self.rhs.resolved_type
-		strongest = lrt.equivalent(rrt)
-		if strongest is None:
-			logger.log(semantic.TypeMismatch(self.pos, "les types des opérandes "
-					"doivent être équivalents", lrt, rrt))
-			self.resolved_type = types.ERRONEOUS
+		if isinstance(self.lhs.resolved_type, types.Scalar):
+			key = self.lhs.resolved_type
 		else:
-			try:
-				morph = self.morph_table[strongest]
-			except (TypeError, KeyError):
-				logger.log(semantic.TypeError(self.pos, self.incompat_message, lrt, rrt))
-				self.resolved_type = types.ERRONEOUS
-			else:
-				morph(self, strongest)
+			key = type(self.lhs.resolved_type)
+		try:
+			morph_cls = self.morph_table[key]
+		except (TypeError, KeyError):
+			self._lhs_type_error(logger)
+		else:
+			self._morph = morph_cls(self.pos, self.lhs, self.rhs)
+			# From now on, we're nothing more than a proxy to self._morph.
+			self.check_rhs(context, logger)
+
+	def __getattribute__(self, name):
+		try:
+			morph = object.__getattribute__(self, '_morph')
+		except AttributeError:
+			return object.__getattribute__(self, name)
+		try:
+			return getattr(morph, name)
+		except AttributeError:
+			return object.__getattribute__(self, name)
+
+	def _lhs_type_error(self, logger):
+		raise NotImplementedError
 
 class NumberArithmeticOp(BinaryChameleonOp):
 	def check(self, context, logger):
@@ -431,6 +442,36 @@ class Division(NumberArithmeticOp):
 class Modulo(NumberArithmeticOp):
 	keyword_def = kw.MODULO
 	js_kw = "%"
+
+class _Addition(BinaryOp):
+	keyword_def = kw.PLUS
+	js_kw = "+"
+	writable = False
+
+	def check_rhs(self, context, logger):
+		self.rhs.check(context, logger)
+		ltype, rtype = self.lhs.resolved_type, self.rhs.resolved_type
+		strongest = ltype.equivalent(rtype)
+		if strongest not in (types.INTEGER, types.REAL):
+			logger.log(semantic.TypeMismatch(self.pos, "les types des opérandes "
+					"doivent être équivalents", ltype, rtype))
+			self.resolved_type = types.ERRONEOUS
+		else:
+			self.resolved_type = strongest
+
+class _Concatenation(BinaryOp):
+	keyword_def = kw.PLUS
+	js_kw = "+"
+	resolved_type = types.STRING
+
+	def check_rhs(self, context, logger):
+		self.rhs.check(context, logger)
+		ltype, rtype = self.lhs.resolved_type, self.rhs.resolved_type
+		strongest = ltype.equivalent(rtype)
+		if strongest not in (types.STRING, types.CHARACTER):
+			logger.log(semantic.TypeMismatch(self.pos, "les types des opérandes "
+					"doivent être équivalents", ltype, rtype))
+			self.resolved_type = types.ERRONEOUS
 	#TODO: entier? pas entier?
 
 class Plus(BinaryPolymorphicOp):
@@ -447,20 +488,15 @@ class Plus(BinaryPolymorphicOp):
 	keyword_def = kw.PLUS
 	js_kw = "+" # Warning: this works because the JS plus has exactly the same behavior
 
-	incompat_message = ("l'opérateur + ne fonctionne qu'avec des nombres ou "
-			"des chaînes/caractères")
-
-	def concat(self, strongest):
-		self.resolved_type = types.STRING
-
-	def add(self, strongest):
-		self.resolved_type = strongest
+	def _lhs_type_error(self, logger):
+		logger.log(semantic.TypeError(self.pos, "l'opérateur + ne fonctionne qu'avec des "
+				"nombres ou des chaînes/caractères", self.lhs.resolved_type))
 
 	morph_table = {
-			types.STRING:    concat,
-			types.CHARACTER: concat,
-			types.INTEGER:   add,
-			types.REAL:      add,
+			types.STRING:    _Concatenation,
+			types.CHARACTER: _Concatenation,
+			types.INTEGER:   _Addition,
+			types.REAL:      _Addition,
 	}
 
 class Subtraction(NumberArithmeticOp):
