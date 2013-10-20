@@ -15,6 +15,28 @@ class _BaseFunction:
 		self.body = body
 		self.uninitialized = None
 
+	def warn_unused_vars(self, context, logger, extra_names=None):
+		"""
+		Warn about unused variables owned by this BaseFunction.
+
+		Variables are looked up among the variables that are still reachable in
+		the context. This weeds out variables with duplicate names so that we
+		don't produce confusing warnings about those. For this reason,
+		warn_unused_vars() should be called before the BaseFunction pops its
+		context.
+		"""
+		assert context.parent is self, \
+				"warn_unused_vars must be called before context.pop()"
+		if self.lexicon:
+			names = set(v.name for v in self.lexicon.variables)
+		else:
+			names = set()
+		if extra_names:
+			names.update(extra_names)
+		for var in (context[k] for k in names):
+			if var is not ERRONEOUS and not var.used:
+				logger.log(semantic.UnusedVariable(var))
+
 	def lda_signature(self, pp):
 		"""
 		Generate LDA signature for the function. This signature will be output
@@ -67,6 +89,8 @@ class Algorithm(_BaseFunction):
 			self.lexicon.check(context, logger)
 		# Check statements
 		self.body.check(context, logger)
+		# Warn about unused variables
+		self.warn_unused_vars(context, logger)
 		# Exit function scope
 		context.pop()
 
@@ -108,8 +132,9 @@ class Function(_BaseFunction):
 		this method.
 		"""
 		context.push(self)
-		# Hunt duplicates among formal params and add them to the context
+		# Hunt duplicates among formal params
 		fp_dict = semantictools.hunt_duplicates(self.fp_list, logger, ERRONEOUS)
+		# Add formal params to the context
 		context.update(fp_dict)
 		# Check lexicon
 		if self.lexicon is not None:
@@ -120,6 +145,9 @@ class Function(_BaseFunction):
 		# function returns non-VOID
 		if types.nonvoid(self.resolved_return_type) and not self.body.returns:
 			logger.log(semantic.MissingReturnStatement(self.end_pos))
+		# Warn about unused variables
+		self.warn_unused_vars(context, logger, fp_dict.keys())
+		# Exit context
 		context.pop()
 
 	def check_call(self, context, logger, pos, params):

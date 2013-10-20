@@ -29,6 +29,7 @@ class VarDecl:
 		self.formal = formal
 		self.inout = inout
 		self.initialized = formal or inout
+		self.used = False
 
 	def __eq__(self, other):
 		if self is other:
@@ -98,6 +99,8 @@ class VarDecl:
 							"tableau dynamique avec \"tailletab\" ?")
 				logger.log(error)
 			self.initialized = True
+		# The variable won't raise an UnusedVariable error.
+		self.used = True
 
 	def lda(self, pp):
 		pp.put(self.ident, kw.COLON, " ")

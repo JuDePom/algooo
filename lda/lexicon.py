@@ -41,6 +41,8 @@ class Lexicon:
 				existing = context[name]
 				logger.log(semantic.DuplicateDeclaration(
 						symbol_dict[name].ident, existing.ident))
+				# Make this name a black hole (as in hunt_duplicates())
+				symbol_dict[name] = ERRONEOUS
 			except KeyError:
 				pass
 		# augment context with the contents of the lexicon so that items can

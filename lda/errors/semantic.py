@@ -175,4 +175,7 @@ class UninitializedVariable(SemanticError):
 	def __init__(self, pos, decl):
 		super().__init__(pos, "\"{}\" : variable non-initialisée".format(decl.name))
 
+class UnusedVariable(SemanticError):
+	def __init__(self, decl):
+		super().__init__(decl.pos, "\"{}\" : variable non-utilisée".format(decl.name))
 
