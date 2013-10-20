@@ -1,7 +1,7 @@
 from . import kw
 from . import types
 from . import semantictools
-from .types import ERRONEOUS
+from .types import ERRONEOUS, Scalar
 from .errors import semantic
 
 class _BaseFunction:
@@ -13,6 +13,14 @@ class _BaseFunction:
 		self.pos = pos
 		self.lexicon = lexicon
 		self.body = body
+		self.uninitialized = None
+
+	def fill_uninitialized(self):
+		if self.lexicon:
+			self.uninitialized = [var for var in self.lexicon.variables
+					if isinstance(var.resolved_type, Scalar)]
+		else:
+			self.uninitialized = []
 
 	def lda_signature(self, pp):
 		"""
@@ -64,6 +72,7 @@ class Algorithm(_BaseFunction):
 		# Check lexicon
 		if self.lexicon is not None:
 			self.lexicon.check(context, logger)
+		self.fill_uninitialized()
 		# Check statements
 		self.body.check(context, logger)
 		# Exit function scope
@@ -109,6 +118,7 @@ class Function(_BaseFunction):
 		# Check lexicon
 		if self.lexicon is not None:
 			self.lexicon.check(context, logger)
+		self.fill_uninitialized()
 		# Check statements
 		self.body.check(context, logger)
 		# Ensure a return statement can be reached if the signature says the

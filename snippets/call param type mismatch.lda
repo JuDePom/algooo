@@ -10,6 +10,7 @@ algorithme
 lexique
 	r: réel
 début
+	r <- 1234.5678
 	f((*#SpecificTypeExpected#*)r)
 	g((*#SpecificTypeExpected#*)r, (*#SpecificTypeExpected#*)r, (*#SpecificTypeExpected#*)r)
 fin

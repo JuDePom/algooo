@@ -170,3 +170,8 @@ class MissingReturnStatement(SemanticError):
 	def __init__(self, pos):
 		super().__init__(pos, "il manque une instruction retourne dans "
 				"cette fonction")
+
+class UninitializedVariable(SemanticError):
+	def __init__(self, pos):
+		super().__init__(pos, "variable non-initialisée")
+

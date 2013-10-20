@@ -136,6 +136,11 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 			logger.log(semantic.NonWritable(self))
 			self.resolved_type = types.ERRONEOUS
 			return
+		# Initialization status
+		if hasattr(context, 'parent') and self.bound in context.parent.uninitialized:
+			if mode == 'r':
+				logger.log(semantic.UninitializedVariable(self.pos))
+			context.parent.uninitialized.remove(self.bound)
 
 	def js(self, pp):
 		self.bound.js_ident(pp, access=True)

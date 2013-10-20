@@ -74,7 +74,7 @@ class Assignment:
 		self.rhs = rhs
 
 	def check(self, context, logger):
-		self.lhs.check(context, logger)
+		self.lhs.check(context, logger, mode='w')
 		self.rhs.check(context, logger)
 		ltype = self.lhs.resolved_type
 		rtype = self.rhs.resolved_type
@@ -214,10 +214,13 @@ class For(StatementBlock):
 		self.final = final
 
 	def check(self, context, logger):
-		# Check each component individually
+		# Check each component
+		self.counter.check(context, logger, mode='w')
+		self.initial.check(context, logger)
+		self.final.check(context, logger)
+		# Ensure they are all integers
 		components = [self.counter, self.initial, self.final]
 		for comp, name in zip(components, For._COMPONENT_NAMES):
-			comp.check(context, logger)
 			semantictools.enforce(name, types.INTEGER, comp, logger)
 		super().check(context, logger)
 

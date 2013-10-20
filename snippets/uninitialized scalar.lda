@@ -1,0 +1,26 @@
+fonction f(x: entier)
+début
+	écrire(x)
+fin
+
+fonction g(x: inout entier)
+début
+fin
+
+algorithme
+lexique
+	i: entier
+	j: entier
+	k: entier
+	l: entier
+	m: entier
+début
+	i <- 3
+	j <- 4
+	écrire(i)
+	écrire(j)
+	écrire((*#UninitializedVariable#*)k)
+	f((*#UninitializedVariable#*)l)
+	g(m)
+fin
+
