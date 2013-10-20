@@ -408,14 +408,12 @@ class FunctionCall(BinaryOp):
 		self.lhs.check(context, logger)
 		try:
 			self.function = self.lhs.bound
-			check_effective_parameters = getattr(self.function, 'check_effective_parameters')
+			check_call = getattr(self.function, 'check_call')
 		except AttributeError:
 			logger.log(semantic.NonCallable(self.pos, self.lhs.resolved_type))
 			self.resolved_type = types.ERRONEOUS
 			return
-		for effective in self.rhs:
-			effective.check(context, logger)
-		check_effective_parameters(logger, self.pos, self.rhs)
+		check_call(context, logger, self.pos, self.rhs)
 		self.resolved_type = self.function.resolved_return_type
 
 	def lda(self, pp):

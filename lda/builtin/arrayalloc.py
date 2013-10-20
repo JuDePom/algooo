@@ -4,12 +4,14 @@ from lda.errors import semantic
 
 resolved_return_type = types.VOID
 
-def check_effective_parameters(logger, pos, params):
+def check_call(context, logger, pos, params):
 	# at least 2 params
 	count = len(params)
 	if count < 2:
 		logger.log(semantic.ParameterCountMismatch(pos, 2, count, at_least=True))
 		return
+	# check first param (array)
+	params[0].check(context, logger, mode='w')
 	# first param must be array
 	array_type = params[0].resolved_type
 	if not isinstance(array_type, types.Array):
@@ -30,8 +32,9 @@ def check_effective_parameters(logger, pos, params):
 	if given_dimcount != expected_dimcount:
 		logger.log(semantic.DimensionCountMismatch(params[0].pos,
 				expected_dimcount, given_dimcount))
-	# all dimensions must be ranges
+	# check all dimensions - they must be must be ranges
 	for p in params[1:]:
+		p.check(context, logger)
 		semantictools.enforce("une dimension de tableau dynamique",
 				types.RANGE, p, logger)
 

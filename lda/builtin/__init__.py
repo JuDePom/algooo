@@ -20,8 +20,8 @@ Built-in functions are implemented as modules; each module must expose the
 following attributes, in order to mimic an actual function:
 
 - resolved_return_type
-- check_effective_parameters(context, logger, pos, args)
-- js_call(pp, call_op)
+- check_call(context, logger, pos, params)
+- js_call(pp, params)
 
 See Function's docstrings for more info about the contract of the functions
 mentioned above.

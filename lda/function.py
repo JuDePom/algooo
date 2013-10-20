@@ -117,7 +117,7 @@ class Function(_BaseFunction):
 			logger.log(semantic.MissingReturnStatement(self.end_pos))
 		context.pop()
 
-	def check_effective_parameters(self, logger, pos, params):
+	def check_call(self, context, logger, pos, params):
 		"""
 		Ensure the given effective parameters can be used in a call to this
 		function.
@@ -134,6 +134,7 @@ class Function(_BaseFunction):
 			return
 		# check effective parameter types
 		for effective, formal in zip(params, self.fp_list):
+			effective.check(context, logger)
 			semantictools.enforce_compatible("ce paramètre effectif",
 					formal.resolved_type, effective, logger)
 			if formal.inout and not effective.writable:

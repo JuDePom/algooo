@@ -15,10 +15,11 @@ APICALL = {
 	types.REAL:      "readReal",
 }
 
-def check_effective_parameters(logger, pos, params):
+def check_call(context, logger, pos, params):
 	if len(params) != 1:
 		logger.log(semantic.ParameterCountMismatch(pos, 1, len(params)))
 	var = params[0]
+	var.check(context, logger, mode='w')
 	if not isinstance(var.resolved_type, types.Scalar):
 		logger.log(semantic.TypeError(var.pos, "la fonction magique lire() "
 				"ne peut être utilisée qu'avec des types scalaires",
@@ -28,7 +29,7 @@ def check_effective_parameters(logger, pos, params):
 
 def js_call(pp, params):
 	assert len(params) == 1 and isinstance(params[0].resolved_type, types.Scalar),\
-			"should've called check_effective_parameters"
+			"should've called check_call"
 	var = params[0]
 	pp.put(var, " = LDA.", APICALL[var.resolved_type], "()")
 
