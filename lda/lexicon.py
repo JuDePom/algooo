@@ -24,7 +24,7 @@ class Lexicon:
 		self.composites = composites if composites is not None else []
 		self.functions  = functions  if functions  is not None else []
 		self.all_items = sorted(self.variables + self.composites + self.functions,
-				key = lambda item: item.ident.pos)
+				key = lambda item: item.pos)
 
 	def check(self, context, logger):
 		"""

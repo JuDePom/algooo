@@ -39,11 +39,11 @@ class DuplicateDeclaration(SemanticError):
 	"""
 	Raised when an identifier is used in a declaration more than once.
 	"""
-	def __init__(self, ident, previous_ident):
+	def __init__(self, item, previous_item):
 		message = ("l'identificateur \"{}\" est déjà pris "
 				"(déclaration préalable à la position {})").format(
-				ident.name, previous_ident.pos)
-		super().__init__(ident.pos, message)
+				item.name, previous_item.pos)
+		super().__init__(item.pos, message)
 
 class TypeError(SemanticError):
 	"""
@@ -172,6 +172,7 @@ class MissingReturnStatement(SemanticError):
 				"cette fonction")
 
 class UninitializedVariable(SemanticError):
-	def __init__(self, pos):
-		super().__init__(pos, "variable non-initialisée")
+	def __init__(self, pos, decl):
+		super().__init__(pos, "\"{}\" : variable non-initialisée".format(decl.name))
+
 

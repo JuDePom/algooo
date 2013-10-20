@@ -36,6 +36,14 @@ class VarDecl:
 				self.ident == other.ident and \
 				self.type_descriptor == other.type_descriptor
 
+	@property
+	def pos(self):
+		return self.ident.pos
+
+	@property
+	def name(self):
+		return self.ident.name
+
 	def check(self, context, logger):
 		"""
 		Semantic analysis. Create the following attributes:
@@ -55,7 +63,7 @@ class VarDecl:
 		  runtime).
 		"""
 		if not self.formal and self.inout:
-			logger.log(semantic.SemanticError(self.ident.pos,
+			logger.log(semantic.SemanticError(self.pos,
 					"\"inout\" n'est autorisé que dans un paramètre formel"))
 			self.resolved_type = ERRONEOUS
 			return

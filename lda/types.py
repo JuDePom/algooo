@@ -409,6 +409,14 @@ class Composite(TypeDescriptor):
 		self.ident = ident
 		self.fields = fields
 
+	@property
+	def pos(self):
+		return self.ident.pos
+
+	@property
+	def name(self):
+		return self.ident.name
+
 	def __eq__(self, other):
 		if self is other:
 			return True

@@ -86,11 +86,15 @@ class Function(_BaseFunction):
 	"""
 
 	def __init__(self, pos, end_pos, ident, fp_list, return_type, lexicon, body):
-		super().__init__(pos, lexicon, body)
+		super().__init__(ident.pos, lexicon, body)
 		self.end_pos     = end_pos
 		self.ident       = ident
 		self.fp_list     = fp_list
 		self.return_type = return_type
+
+	@property
+	def name(self):
+		return self.ident.name
 
 	def check_signature(self, context, logger):
 		"""
@@ -217,3 +221,4 @@ class Function(_BaseFunction):
 		if self.body:
 			pp.indented(pp.putline, self.body)
 		pp.put("}")
+

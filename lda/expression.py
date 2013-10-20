@@ -92,6 +92,7 @@ class Expression:
 		"""
 		raise NotImplementedError
 
+
 class ExpressionIdentifier(PureIdentifier, Expression):
 	"""
 	Name bound to a symbol during the semantic analysis phase.
