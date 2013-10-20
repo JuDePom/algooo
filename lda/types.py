@@ -28,6 +28,8 @@ class TypeDescriptor:
 	if this TypeDescriptor translates to an `object` type in JavaScript.
 	"""
 
+	needs_initialization = False
+
 	def __eq__(self, other):
 		raise NotImplementedError
 
@@ -61,6 +63,13 @@ class TypeDescriptor:
 		this LDA type descriptor.
 		"""
 		raise NotImplementedError
+
+	def allow_uninitialized_access(self, mode):
+		"""
+		Return True if an uninitialized variable can be legally accessed in the
+		specified mode. See Expression.check() for info about access modes.
+		"""
+		return mode != 'r'
 
 
 #######################################################################
@@ -127,6 +136,8 @@ class Scalar(TypeDescriptor):
 	such, the Scalar class is not meant to be instantiated (besides the
 	pre-defined Scalar instances in this module: INTEGER, REAL, etc.).
 	"""
+
+	needs_initialization = True
 
 	# `number`, `boolean`, `string` are not objects in JavaScript
 	js_object = False
@@ -318,6 +329,7 @@ class Array(TypeDescriptor):
 			dim0_type = type(self.dimensions[0])
 			self.dynamic = dim0_type is Array.DynamicDimension
 			self.static = not self.dynamic
+			self.needs_initialization = self.dynamic
 			mixed_dims = False
 			for dim in self.dimensions:
 				# Semantic analysis of the dimension.
@@ -376,6 +388,12 @@ class Array(TypeDescriptor):
 			if my_dim != their_dim:
 				return
 		return self
+
+	def allow_uninitialized_access(self, mode):
+		if self.static:
+			return super().allow_uninitialized_access(mode)
+		else:
+			return mode == 's'
 
 
 class Composite(TypeDescriptor):

@@ -435,14 +435,14 @@ class MemberSelect(BinaryOp):
 
 	def check(self, context, logger, mode='r'):
 		# LHS is supposed to refer to a TypeAlias, which refers to a composite
-		self.lhs.check(context, logger)
+		self.lhs.check(context, logger, mode)
 		composite = self.lhs.resolved_type
 		if not isinstance(composite, types.Composite):
 			logger.log(semantic.NonComposite(self.pos, composite))
 			self.resolved_type = types.ERRONEOUS
 		else:
 			# use composite context exclusively for RHS
-			self.rhs.check(composite.context, logger, mode)
+			self.rhs.check(composite.context, logger)
 			self.resolved_type = self.rhs.resolved_type
 
 	def lda(self, pp):
@@ -503,6 +503,7 @@ class _Addition(BinaryOp):
 	keyword_def = kw.PLUS
 	js_kw = "+"
 
+	@nonwritable
 	def check_rhs(self, context, logger):
 		self.rhs.check(context, logger)
 		ltype, rtype = self.lhs.resolved_type, self.rhs.resolved_type
@@ -519,6 +520,7 @@ class _Concatenation(BinaryOp):
 	js_kw = "+"
 	resolved_type = types.STRING
 
+	@nonwritable
 	def check_rhs(self, context, logger):
 		self.rhs.check(context, logger)
 		ltype, rtype = self.lhs.resolved_type, self.rhs.resolved_type

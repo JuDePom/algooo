@@ -11,7 +11,7 @@ def check_call(context, logger, pos, params):
 		logger.log(semantic.ParameterCountMismatch(pos, 2, count, at_least=True))
 		return
 	# check first param (array)
-	params[0].check(context, logger, mode='w')
+	params[0].check(context, logger, mode='s')
 	# first param must be array
 	array_type = params[0].resolved_type
 	if not isinstance(array_type, types.Array):

@@ -1,0 +1,36 @@
+fonction f(x: tableau entier[?])
+début
+	x[3] <- 100
+fin
+
+fonction g(x: inout tableau entier[?])
+début
+	x[3] <- 100
+fin
+
+algorithme
+lexique
+	t1: tableau entier[?]
+	t2: tableau entier[?]
+	t3: tableau entier[?]
+	t4: tableau entier[?]
+début
+	// after calling tailletab, anything goes
+	tailletab(t1, 1..5)
+	f(t1)
+	g(t1)
+	t1[5] <- 5
+
+	// inout formal parameter -- keep quiet even if uninitialized
+	g(t2)
+
+	// access uninitialized dynamic array
+	(*#UninitializedVariable#*)t3[5] <- 5
+
+	// don't repeat uninitialized errors
+	t3[4] <- 5
+
+	// can't pass uninitialized dynamic array by copy
+	f((*#UninitializedVariable#*)t4)
+fin
+

@@ -17,8 +17,8 @@ class _BaseFunction:
 
 	def fill_uninitialized(self):
 		if self.lexicon:
-			self.uninitialized = [var for var in self.lexicon.variables
-					if isinstance(var.resolved_type, Scalar)]
+			self.uninitialized = [var.ident.name for var in self.lexicon.variables
+					if var.resolved_type.needs_initialization]
 		else:
 			self.uninitialized = []
 
@@ -144,7 +144,7 @@ class Function(_BaseFunction):
 			return
 		# check effective parameter types
 		for effective, formal in zip(params, self.fp_list):
-			effective.check(context, logger, mode=(formal.inout and 'w' or 'r'))
+			effective.check(context, logger, mode=(formal.inout and 's' or 'r'))
 			semantictools.enforce_compatible("ce paramètre effectif",
 					formal.resolved_type, effective, logger)
 

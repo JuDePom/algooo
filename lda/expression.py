@@ -43,7 +43,7 @@ def nonwritable(check_method):
 	if the access mode is 'w'.
 	"""
 	def wrapper(self, context, logger, mode='r'):
-		if mode == 'w':
+		if mode != 'r':
 			logger.log(semantic.NonWritable(self))
 			self.resolved_type = types.ERRONEOUS
 		else:
@@ -64,9 +64,6 @@ class Expression:
 
 	- terminal: True if the expression is a terminal symbol.
 
-	- writable: True if the expression can legally occupy the lefthand
-	  side of an assignment statement
-
 	In addition, an expression must be checked for semantic correctness with
 	the `check()` method. If the semantic analysis is successful, the
 	expression gains the `resolved_type` attribute. Otherwise, `resolved_type`
@@ -84,10 +81,14 @@ class Expression:
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
-	@nonwritable
-	def check(self, context, logger):
+	def check(self, context, logger, mode='r'):
 		"""
 		Check for semantic aberrations and set the resolved_type attribute.
+
+		`mode` indicates how this expression is being accessed. It can be:
+		- 'r': read access.
+		- 'w': write access.
+		- 's': special write-ish access. (inout effective param, memory allocation)
 		"""
 		raise NotImplementedError
 
@@ -137,10 +138,10 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 			self.resolved_type = types.ERRONEOUS
 			return
 		# Initialization status
-		if hasattr(context, 'parent') and self.bound in context.parent.uninitialized:
-			if mode == 'r':
+		if hasattr(context, 'parent') and self.name in context.parent.uninitialized:
+			if not self.resolved_type.allow_uninitialized_access(mode):
 				logger.log(semantic.UninitializedVariable(self.pos))
-			context.parent.uninitialized.remove(self.bound)
+			context.parent.uninitialized.remove(self.name)
 
 	def js(self, pp):
 		self.bound.js_ident(pp, access=True)
