@@ -1,6 +1,4 @@
 algorithme
-lexique
-	a: entier
 début
 	(*#NonWritable#*)3 + 2 <- 4
 fin

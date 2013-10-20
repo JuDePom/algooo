@@ -12,7 +12,6 @@
 |*)
 algorithme
 lexique
-	c: entier
 	i: entier
 	j: entier
 	t: tableau entier[0..1, 1..5]

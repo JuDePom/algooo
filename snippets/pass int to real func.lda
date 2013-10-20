@@ -1,4 +1,5 @@
 fonction f(a: réel)
 début
+	a <- 3.141459 (* mute unused warning *)
 	f(3)
 fin

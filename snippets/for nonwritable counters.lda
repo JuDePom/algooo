@@ -5,7 +5,7 @@ fin
 
 algorithme
 lexique
-	a: entier
+	(*#UnusedVariable#*)a: entier
 début
 	(* function call *)
 	pour (*#NonWritable#*)f() de 1 jusque 10 faire

@@ -5,6 +5,7 @@ fin
 
 fonction g(x: inout entier)
 début
+	écrire(x)
 fin
 
 algorithme

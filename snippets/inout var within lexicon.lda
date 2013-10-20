@@ -1,1 +1,13 @@
-algorithme lexique (*#SemanticError#*)a: inout entier début fin
+fonction f()
+lexique
+	(*#SemanticError#*)a: inout entier
+début
+	a <- 3
+fin
+
+algorithme
+lexique
+	(*#SemanticError#*)a: inout entier
+début
+	a <- 3
+fin
