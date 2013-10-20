@@ -134,15 +134,12 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 			# if this identifier is used improperly.
 			self.resolved_type = types.NOT_A_VARIABLE
 		# Check bound symbol's writability.
-		if mode == 'w' and not isinstance(self.bound, VarDecl):
+		if isinstance(self.bound, VarDecl):
+			self.bound.access(context, logger, self.pos, mode)
+		elif mode != 'r':
 			logger.log(semantic.NonWritable(self))
 			self.resolved_type = types.ERRONEOUS
 			return
-		# Initialization status
-		if hasattr(context, 'parent') and self.name in context.parent.uninitialized:
-			if not self.resolved_type.allow_uninitialized_access(mode):
-				logger.log(semantic.UninitializedVariable(self.pos))
-			context.parent.uninitialized.remove(self.name)
 
 	def js(self, pp):
 		self.bound.js_ident(pp, access=True)

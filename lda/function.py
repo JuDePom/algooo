@@ -15,13 +15,6 @@ class _BaseFunction:
 		self.body = body
 		self.uninitialized = None
 
-	def fill_uninitialized(self):
-		if self.lexicon:
-			self.uninitialized = [var.ident.name for var in self.lexicon.variables
-					if var.resolved_type.needs_initialization]
-		else:
-			self.uninitialized = []
-
 	def lda_signature(self, pp):
 		"""
 		Generate LDA signature for the function. This signature will be output
@@ -70,9 +63,8 @@ class Algorithm(_BaseFunction):
 		# Push new context onto the context stack, i.e. enter function scope
 		context.push(self)
 		# Check lexicon
-		if self.lexicon is not None:
+		if self.lexicon:
 			self.lexicon.check(context, logger)
-		self.fill_uninitialized()
 		# Check statements
 		self.body.check(context, logger)
 		# Exit function scope
@@ -122,7 +114,6 @@ class Function(_BaseFunction):
 		# Check lexicon
 		if self.lexicon is not None:
 			self.lexicon.check(context, logger)
-		self.fill_uninitialized()
 		# Check statements
 		self.body.check(context, logger)
 		# Ensure a return statement can be reached if the signature says the
