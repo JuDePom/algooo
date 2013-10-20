@@ -76,9 +76,6 @@ class Assignment:
 	def check(self, context, logger):
 		self.lhs.check(context, logger)
 		self.rhs.check(context, logger)
-		if not self.lhs.writable:
-			logger.log(semantic.NonWritable(self.lhs))
-			return
 		ltype = self.lhs.resolved_type
 		rtype = self.rhs.resolved_type
 		if not ltype.compatible(rtype):
@@ -222,10 +219,6 @@ class For(StatementBlock):
 		for comp, name in zip(components, For._COMPONENT_NAMES):
 			comp.check(context, logger)
 			semantictools.enforce(name, types.INTEGER, comp, logger)
-		# If the counter is an integer, ensure the counter is writable;
-		# otherwise don't bother since an error was already raised
-		if self.counter.resolved_type == types.INTEGER and not self.counter.writable:
-			logger.log(semantic.NonWritable(self.counter))
 		super().check(context, logger)
 
 	def lda(self, pp):

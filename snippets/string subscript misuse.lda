@@ -2,7 +2,7 @@ algorithme
 lexique
 	salut: chaîne
 début
-	"haha"(*#NonWritable#*)[1] <- 'x'
+	(*#NonWritable#*)"haha"[1] <- 'x'
 	salut <- "salut"
 	écrire(salut[(*#TypeError#*)'x'])
 	écrire(salut[(*#TypeError#*)3.14])

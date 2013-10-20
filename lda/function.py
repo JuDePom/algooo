@@ -134,11 +134,9 @@ class Function(_BaseFunction):
 			return
 		# check effective parameter types
 		for effective, formal in zip(params, self.fp_list):
-			effective.check(context, logger)
+			effective.check(context, logger, mode=(formal.inout and 'w' or 'r'))
 			semantictools.enforce_compatible("ce paramètre effectif",
 					formal.resolved_type, effective, logger)
-			if formal.inout and not effective.writable:
-				logger.log(semantic.NonWritable(effective))
 
 	def check_return(self, logger, return_statement):
 		"""

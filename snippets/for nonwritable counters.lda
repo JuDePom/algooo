@@ -12,7 +12,7 @@ début
 	fpour
 
 	(* function name *)
-	pour (*#SpecificTypeExpected#*)f de 1 jusque 10 faire
+	pour (*#NonWritable#*)f de 1 jusque 10 faire
 	fpour
 
 	(* literal *)
@@ -20,7 +20,7 @@ début
 	fpour
 
 	(* expression *)
-	pour 1(*#NonWritable#*)+1 de 1 jusque 10 faire
+	pour (*#NonWritable#*)1+1 de 1 jusque 10 faire
 	fpour
 
 	(* expression *)

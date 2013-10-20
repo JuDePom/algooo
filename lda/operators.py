@@ -1,4 +1,4 @@
-from .expression import Expression, surround
+from .expression import Expression, surround, nonwritable
 from .errors import semantic
 from . import types
 from . import kw
@@ -46,7 +46,6 @@ class UnaryOp(Expression):
 	Has a righthand-side operand only.
 	"""
 
-	writable = False # can be overridden
 	right_ass = True
 	terminal = False
 
@@ -65,9 +64,6 @@ class UnaryOp(Expression):
 	def js(self, pp):
 		pp.put(self.js_kw, " ", self.rhs)
 
-	def check(self, context, logger):
-		raise NotImplementedError
-
 class BinaryOp(Expression):
 	"""
 	Binary operator. Has a lefthand-side operand and a righthand-side operand.
@@ -84,7 +80,6 @@ class BinaryOp(Expression):
 	attribute to the keyword that closes the list of parameters.
 	"""
 
-	writable = False # can be overridden
 	right_ass = False
 	terminal = False
 
@@ -111,10 +106,6 @@ class BinaryOp(Expression):
 	def js(self, pp):
 		pp.put(self.lhs, " ", self.js_kw, " ", self.rhs)
 
-	def check(self, context, logger):
-		assert not hasattr(self, 'resolved_type'), str(self)
-		raise NotImplementedError
-
 #######################################################################
 #
 # SPECIFIC OPERATOR BASE CLASSES
@@ -125,6 +116,7 @@ class UnaryNumberOp(UnaryOp):
 	"""
 	Unary operator that can only be used with a number type.
 	"""
+	@nonwritable
 	def check(self, context, logger):
 		self.rhs.check(context, logger)
 		rtype = self.rhs.resolved_type
@@ -149,6 +141,7 @@ class BinaryChameleonOp(BinaryOp):
 	Binary operator taking operands of equivalent types. The type of the operator
 	is determined by the strongest type among the operands.
 	"""
+	@nonwritable
 	def check(self, context, logger):
 		self.lhs.check(context, logger)
 		self.rhs.check(context, logger)
@@ -175,7 +168,7 @@ class BinaryPolymorphicOp(BinaryOp):
 	  `morph_table`.
 	"""
 
-	def check(self, context, logger):
+	def check(self, context, logger, mode='r'):
 		"""
 		Check LHS, determine the operator's behavior from LHS's type, and
 		create the adequate type-specific operator.
@@ -184,7 +177,7 @@ class BinaryPolymorphicOp(BinaryOp):
 		"""
 		# Guilty until proven innocent
 		self.resolved_type = types.ERRONEOUS
-		self.lhs.check(context, logger)
+		self.lhs.check(context, logger, mode)
 		if isinstance(self.lhs.resolved_type, types.Scalar):
 			key = self.lhs.resolved_type
 		else:
@@ -212,6 +205,7 @@ class BinaryPolymorphicOp(BinaryOp):
 		raise NotImplementedError
 
 class NumberArithmeticOp(BinaryChameleonOp):
+	@nonwritable
 	def check(self, context, logger):
 		super().check(context, logger)
 		if self.resolved_type not in (types.INTEGER, types.REAL):
@@ -225,6 +219,7 @@ class BinaryComparisonOp(BinaryOp):
 	"""
 	resolved_type = types.BOOLEAN
 
+	@nonwritable
 	def check(self, context, logger):
 		self.lhs.check(context, logger)
 		self.rhs.check(context, logger)
@@ -241,6 +236,7 @@ class BinaryLogicalOp(BinaryOp):
 	"""
 	resolved_type = types.BOOLEAN
 
+	@nonwritable
 	def check(self, context, logger):
 		for side in (self.lhs, self.rhs):
 			side.check(context, logger)
@@ -268,6 +264,7 @@ class LogicalNot(UnaryOp):
 	resolved_type = types.BOOLEAN
 	js_kw = "!"
 
+	@nonwritable
 	def check(self, context, logger):
 		self.rhs.check(context, logger)
 		semantictools.enforce("l'opérande du 'non'", types.BOOLEAN, self.rhs, logger)
@@ -279,7 +276,6 @@ class LogicalNot(UnaryOp):
 #######################################################################
 
 class _ArraySubscript(BinaryOp):
-	writable = True
 	keyword_def = kw.LSBRACK
 	closing = kw.RSBRACK
 
@@ -327,7 +323,6 @@ class _ArraySubscript(BinaryOp):
 
 
 class _StringSubscript(BinaryOp):
-	writable = False
 	keyword_def = kw.LSBRACK
 	closing = kw.RSBRACK
 
@@ -404,6 +399,7 @@ class FunctionCall(BinaryOp):
 		# errors instead of reporting the opening parenthesis's position)
 		super().__init__(lhs.pos, lhs, rhs)
 
+	@nonwritable
 	def check(self, context, logger):
 		self.lhs.check(context, logger)
 		try:
@@ -436,9 +432,8 @@ class MemberSelect(BinaryOp):
 	"""
 
 	keyword_def = kw.DOT
-	writable = True
 
-	def check(self, context, logger):
+	def check(self, context, logger, mode='r'):
 		# LHS is supposed to refer to a TypeAlias, which refers to a composite
 		self.lhs.check(context, logger)
 		composite = self.lhs.resolved_type
@@ -447,7 +442,7 @@ class MemberSelect(BinaryOp):
 			self.resolved_type = types.ERRONEOUS
 		else:
 			# use composite context exclusively for RHS
-			self.rhs.check(composite.context, logger)
+			self.rhs.check(composite.context, logger, mode)
 			self.resolved_type = self.rhs.resolved_type
 
 	def lda(self, pp):
@@ -479,6 +474,7 @@ class RealDivision(BinaryOp):
 	js_kw = "/"
 	resolved_type = types.REAL
 
+	@nonwritable
 	def check(self, context, logger):
 		for side in (self.lhs, self.rhs):
 			side.check(context, logger)
@@ -489,6 +485,7 @@ class IntegerDivision(BinaryOp):
 	keyword_def = kw.COLON
 	resolved_type = types.INTEGER
 
+	@nonwritable
 	def check(self, context, logger):
 		for side in (self.lhs, self.rhs):
 			side.check(context, logger)
@@ -505,7 +502,6 @@ class Modulo(NumberArithmeticOp):
 class _Addition(BinaryOp):
 	keyword_def = kw.PLUS
 	js_kw = "+"
-	writable = False
 
 	def check_rhs(self, context, logger):
 		self.rhs.check(context, logger)
@@ -565,6 +561,7 @@ class IntegerRange(BinaryOp):
 	keyword_def = kw.DOTDOT
 	resolved_type = types.RANGE
 
+	@nonwritable
 	def check(self, context, logger):
 		for operand in (self.lhs, self.rhs):
 			operand.check(context, logger)

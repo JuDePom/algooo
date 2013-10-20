@@ -2,6 +2,7 @@ from . import kw
 from . import types
 from .identifier import PureIdentifier
 from .errors import semantic
+from .vardecl import VarDecl
 
 ESCAPE_SEQUENCES = {
 	'\\n': '\n',
@@ -36,6 +37,19 @@ def surround(lda_method):
 			pp.put(")")
 	return wrapper
 
+def nonwritable(check_method):
+	"""
+	Surround a semantic check method to automatically log a NonWritable error
+	if the access mode is 'w'.
+	"""
+	def wrapper(self, context, logger, mode='r'):
+		if mode == 'w':
+			logger.log(semantic.NonWritable(self))
+			self.resolved_type = types.ERRONEOUS
+		else:
+			check_method(self, context, logger)
+	return wrapper
+
 class Expression:
 	"""
 	Base class for all expressions.
@@ -63,7 +77,6 @@ class Expression:
 		self.pos = pos
 		self.root = False
 		assert hasattr(self, 'terminal')
-		assert hasattr(self, 'writable')
 
 	def __eq__(self, other):
 		raise NotImplementedError
@@ -71,6 +84,7 @@ class Expression:
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
+	@nonwritable
 	def check(self, context, logger):
 		"""
 		Check for semantic aberrations and set the resolved_type attribute.
@@ -82,10 +96,9 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 	Name bound to a symbol during the semantic analysis phase.
 	"""
 
-	writable = False
 	terminal = True
 
-	def check(self, context, logger):
+	def check(self, context, logger, mode='r'):
 		"""
 		Resolve the name in the current context's symbol table.
 
@@ -108,7 +121,6 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 		if self.bound is None or self.bound is types.ERRONEOUS:
 			# Bound to an undeclared symbol.
 			self.resolved_type = types.ERRONEOUS
-			self.writable = False
 			return
 		# Steal the bound symbol's type.
 		try:
@@ -119,11 +131,11 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 			# a NOT_A_VARIABLE type, which will ultimately trigger a TypeError
 			# if this identifier is used improperly.
 			self.resolved_type = types.NOT_A_VARIABLE
-		# Steal the bound symbol's writability.
-		try:
-			self.writable = self.bound.writable
-		except AttributeError:
-			self.writable = False
+		# Check bound symbol's writability.
+		if mode == 'w' and not isinstance(self.bound, VarDecl):
+			logger.log(semantic.NonWritable(self))
+			self.resolved_type = types.ERRONEOUS
+			return
 
 	def js(self, pp):
 		self.bound.js_ident(pp, access=True)
@@ -135,7 +147,6 @@ class Literal(Expression):
 	Not writable.
 	"""
 
-	writable = False
 	terminal = True
 
 	def __init__(self, pos, value):
@@ -149,6 +160,7 @@ class Literal(Expression):
 	def __repr__(self):
 		return "littéral {}".format(self.resolved_type)
 
+	@nonwritable
 	def check(self, context, logger):
 		pass
 

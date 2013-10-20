@@ -24,8 +24,6 @@ def check_call(context, logger, pos, params):
 		logger.log(semantic.TypeError(var.pos, "la fonction magique lire() "
 				"ne peut être utilisée qu'avec des types scalaires",
 				var.resolved_type))
-	if not var.writable:
-		logger.log(semantic.NonWritable(var))
 
 def js_call(pp, params):
 	assert len(params) == 1 and isinstance(params[0].resolved_type, types.Scalar),\

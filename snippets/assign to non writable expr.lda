@@ -2,5 +2,5 @@ algorithme
 lexique
 	a: entier
 début
-	3 (*#NonWritable#*)+ 2 <- 4
+	(*#NonWritable#*)3 + 2 <- 4
 fin

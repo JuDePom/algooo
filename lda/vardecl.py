@@ -23,8 +23,6 @@ class VarDecl:
 	lefthand side of an assignment statement.
 	"""
 
-	writable = True
-
 	def __init__(self, ident, type_descriptor, formal, inout):
 		self.ident = ident
 		self.type_descriptor = type_descriptor
@@ -34,7 +32,8 @@ class VarDecl:
 	def __eq__(self, other):
 		if self is other:
 			return True
-		return self.ident == other.ident and \
+		return isinstance(other, VarDecl) and \
+				self.ident == other.ident and \
 				self.type_descriptor == other.type_descriptor
 
 	def check(self, context, logger):
@@ -59,11 +58,11 @@ class VarDecl:
 			logger.log(semantic.SemanticError(self.ident.pos,
 					"\"inout\" n'est autorisé que dans un paramètre formel"))
 			self.resolved_type = ERRONEOUS
-		else:
-			self.resolved_type = self.type_descriptor.resolve_type(context, logger)
-			self.parent = context.parent
-			self.js_fakeptr = self.inout and not self.resolved_type.js_object
-			self.js_fakepbc = not self.inout and self.resolved_type.js_object
+			return
+		self.resolved_type = self.type_descriptor.resolve_type(context, logger)
+		self.parent = context.parent
+		self.js_fakeptr = self.inout and not self.resolved_type.js_object
+		self.js_fakepbc = not self.inout and self.resolved_type.js_object
 
 	def lda(self, pp):
 		pp.put(self.ident, kw.COLON, " ")
@@ -83,3 +82,4 @@ class VarDecl:
 		pp.put(self.ident)
 		if access and self.js_fakeptr:
 			pp.put(".v")
+

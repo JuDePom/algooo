@@ -122,7 +122,7 @@ class NonWritable(TypeError):
 		super().__init__(expression.pos,
 				"une variable est attendue à la place de cette expression, car "
 				"elle doit pouvoir être modifiée (or, le résultat de cette "
-				"expression est figé)", expression.resolved_type)
+				"expression est figé)", getattr(expression, 'resolved_type', None))
 
 class _CountMismatch(SemanticError):
 	"""
