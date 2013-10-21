@@ -1,1 +1,6 @@
-fonction f() lexique (*#DuplicateDeclaration#*)f: entier début fin
+fonction f()
+lexique
+	(*#DuplicateDeclaration#*)f: entier
+début
+	f <- 4 (* mute unused warning *)
+fin

@@ -8,6 +8,11 @@ lexique
 	ca: caractère
 	m: Moule
 début
+	re <- 0
+	ch <- "abcdef"
+	bo <- faux
+	ca <- 'a'
+
 	pour i de (*#SpecificTypeExpected#*)"abc"  à 5 faire fpour
 	pour i de (*#SpecificTypeExpected#*)vrai   à 5 faire fpour
 	pour i de (*#SpecificTypeExpected#*)12.345 à 5 faire fpour

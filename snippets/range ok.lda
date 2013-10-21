@@ -1,0 +1,22 @@
+(* Since ranges may only exist in literal form in a few select situations, we
+use arrayalloc to test them *)
+
+algorithme
+lexique
+	t: tableau entier[?]
+	i: entier
+	j: entier
+début
+	i <- 3
+	j <- 9
+
+	(* fully constant *)
+	tailletab(t, 0..5)
+
+	(* semi-constant *)
+	tailletab(t, 0..j)
+
+	(* fully variable *)
+	tailletab(t, i..j)
+fin
+

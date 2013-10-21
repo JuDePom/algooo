@@ -7,6 +7,8 @@ JavaScript-C27.0a1 was used during development.
 (*|
 こんにちは世界
 亀
+世
+にち
 |*)
 
 lexique
@@ -28,4 +30,6 @@ début
 	挨拶ラッパー ← 初期化関数("こんにちは世界", '亀')
 	écrire(挨拶ラッパー.文字列)
 	écrire(挨拶ラッパー.記号)
+	écrire(挨拶ラッパー.文字列[5])
+	écrire(挨拶ラッパー.文字列[2..3])
 fin

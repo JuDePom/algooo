@@ -39,11 +39,11 @@ class DuplicateDeclaration(SemanticError):
 	"""
 	Raised when an identifier is used in a declaration more than once.
 	"""
-	def __init__(self, ident, previous_ident):
+	def __init__(self, item, previous_item):
 		message = ("l'identificateur \"{}\" est déjà pris "
 				"(déclaration préalable à la position {})").format(
-				ident.name, previous_ident.pos)
-		super().__init__(ident.pos, message)
+				item.name, previous_item.pos)
+		super().__init__(item.pos, message)
 
 class TypeError(SemanticError):
 	"""
@@ -122,7 +122,7 @@ class NonWritable(TypeError):
 		super().__init__(expression.pos,
 				"une variable est attendue à la place de cette expression, car "
 				"elle doit pouvoir être modifiée (or, le résultat de cette "
-				"expression est figé)", expression.resolved_type)
+				"expression est figé)", getattr(expression, 'resolved_type', None))
 
 class _CountMismatch(SemanticError):
 	"""
@@ -170,3 +170,12 @@ class MissingReturnStatement(SemanticError):
 	def __init__(self, pos):
 		super().__init__(pos, "il manque une instruction retourne dans "
 				"cette fonction")
+
+class UninitializedVariable(SemanticError):
+	def __init__(self, pos, decl):
+		super().__init__(pos, "\"{}\" : variable non-initialisée".format(decl.name))
+
+class UnusedVariable(SemanticError):
+	def __init__(self, decl):
+		super().__init__(decl.pos, "\"{}\" : variable non-utilisée".format(decl.name))
+

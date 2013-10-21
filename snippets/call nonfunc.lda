@@ -2,6 +2,7 @@ algorithme
 lexique
 	a: entier
 début
+	a <- 3
 	(*#NonCallable#*)a()
 	(*#NonCallable#*)3()
 fin

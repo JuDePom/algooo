@@ -1,4 +1,4 @@
-fonction f(m: (*#UnresolvableTypeAlias#*)Moule)
+fonction f((*#UnusedVariable#*)m: (*#UnresolvableTypeAlias#*)Moule)
 lexique
 	Moule = <>
 début

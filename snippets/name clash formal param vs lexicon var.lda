@@ -1,4 +1,4 @@
-(* different types in params and lexicon *)
+(* different types in params and lexicon, only one UnusedVariable *)
 fonction f(a: entier)
 lexique
 	(*#DuplicateDeclaration#*)a: réel
@@ -10,4 +10,6 @@ fonction g(a: entier)
 lexique
 	(*#DuplicateDeclaration#*)a: entier
 début
+	a <- 3
+	a <- "abc"
 fin

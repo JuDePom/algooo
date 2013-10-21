@@ -1,6 +1,7 @@
 lexique
-	Moule = <>
+	Moule = <a: entier>
 
 fonction f(m: Moule)
 début
+	m.a <- 3 (* mute unused warning *)
 fin

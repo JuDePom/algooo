@@ -1,9 +1,10 @@
 algorithme
 lexique
-	Moule = <>
+	Moule = <a: entier>
 	m1: Moule
 	m2: Moule
 début
+	m2.a <- 3 (* mute unused warning *)
 	m1 <- m1 (*#TypeError#*)+ m2
 	m1 <- m1 (*#TypeError#*)+ m1
 fin

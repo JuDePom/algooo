@@ -1,7 +1,7 @@
 from . import kw
 from . import types
 from . import semantictools
-from .types import ERRONEOUS
+from .types import ERRONEOUS, Scalar
 from .errors import semantic
 
 class _BaseFunction:
@@ -13,6 +13,29 @@ class _BaseFunction:
 		self.pos = pos
 		self.lexicon = lexicon
 		self.body = body
+		self.uninitialized = None
+
+	def warn_unused_vars(self, context, logger, extra_names=None):
+		"""
+		Warn about unused variables owned by this BaseFunction.
+
+		Variables are looked up among the variables that are still reachable in
+		the context. This weeds out variables with duplicate names so that we
+		don't produce confusing warnings about those. For this reason,
+		warn_unused_vars() should be called before the BaseFunction pops its
+		context.
+		"""
+		assert context.parent is self, \
+				"warn_unused_vars must be called before context.pop()"
+		if self.lexicon:
+			names = set(v.name for v in self.lexicon.variables)
+		else:
+			names = set()
+		if extra_names:
+			names.update(extra_names)
+		for var in (context[k] for k in names):
+			if var is not ERRONEOUS and not var.used:
+				logger.log(semantic.UnusedVariable(var))
 
 	def lda_signature(self, pp):
 		"""
@@ -62,10 +85,12 @@ class Algorithm(_BaseFunction):
 		# Push new context onto the context stack, i.e. enter function scope
 		context.push(self)
 		# Check lexicon
-		if self.lexicon is not None:
+		if self.lexicon:
 			self.lexicon.check(context, logger)
 		# Check statements
 		self.body.check(context, logger)
+		# Warn about unused variables
+		self.warn_unused_vars(context, logger)
 		# Exit function scope
 		context.pop()
 
@@ -77,11 +102,15 @@ class Function(_BaseFunction):
 	"""
 
 	def __init__(self, pos, end_pos, ident, fp_list, return_type, lexicon, body):
-		super().__init__(pos, lexicon, body)
+		super().__init__(ident.pos, lexicon, body)
 		self.end_pos     = end_pos
 		self.ident       = ident
 		self.fp_list     = fp_list
 		self.return_type = return_type
+
+	@property
+	def name(self):
+		return self.ident.name
 
 	def check_signature(self, context, logger):
 		"""
@@ -103,8 +132,9 @@ class Function(_BaseFunction):
 		this method.
 		"""
 		context.push(self)
-		# Hunt duplicates among formal params and add them to the context
+		# Hunt duplicates among formal params
 		fp_dict = semantictools.hunt_duplicates(self.fp_list, logger, ERRONEOUS)
+		# Add formal params to the context
 		context.update(fp_dict)
 		# Check lexicon
 		if self.lexicon is not None:
@@ -115,9 +145,12 @@ class Function(_BaseFunction):
 		# function returns non-VOID
 		if types.nonvoid(self.resolved_return_type) and not self.body.returns:
 			logger.log(semantic.MissingReturnStatement(self.end_pos))
+		# Warn about unused variables
+		self.warn_unused_vars(context, logger, fp_dict.keys())
+		# Exit context
 		context.pop()
 
-	def check_effective_parameters(self, logger, pos, params):
+	def check_call(self, context, logger, pos, params):
 		"""
 		Ensure the given effective parameters can be used in a call to this
 		function.
@@ -134,10 +167,9 @@ class Function(_BaseFunction):
 			return
 		# check effective parameter types
 		for effective, formal in zip(params, self.fp_list):
+			effective.check(context, logger, mode=(formal.inout and 's' or 'r'))
 			semantictools.enforce_compatible("ce paramètre effectif",
 					formal.resolved_type, effective, logger)
-			if formal.inout and not effective.writable:
-				logger.log(semantic.NonWritable(effective))
 
 	def check_return(self, logger, return_statement):
 		"""
@@ -208,3 +240,4 @@ class Function(_BaseFunction):
 		if self.body:
 			pp.indented(pp.putline, self.body)
 		pp.put("}")
+

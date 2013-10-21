@@ -1,0 +1,21 @@
+(*|
+3 4
+1337 4
+|*)
+
+lexique
+	Moule = <a: entier, b: entier>
+
+algorithme
+lexique
+	m1: Moule
+	m2: Moule
+début
+	m1.a <- 3
+	m1.b <- 4
+	m2 <- m1
+	m2.a <- 1337
+	écrire(m1.a, m1.b)
+	écrire(m2.a, m2.b)
+fin
+

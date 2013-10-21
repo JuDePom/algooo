@@ -24,7 +24,7 @@ class Lexicon:
 		self.composites = composites if composites is not None else []
 		self.functions  = functions  if functions  is not None else []
 		self.all_items = sorted(self.variables + self.composites + self.functions,
-				key = lambda item: item.ident.pos)
+				key = lambda item: item.pos)
 
 	def check(self, context, logger):
 		"""
@@ -41,6 +41,8 @@ class Lexicon:
 				existing = context[name]
 				logger.log(semantic.DuplicateDeclaration(
 						symbol_dict[name].ident, existing.ident))
+				# Make this name a black hole (as in hunt_duplicates())
+				symbol_dict[name] = ERRONEOUS
 			except KeyError:
 				pass
 		# augment context with the contents of the lexicon so that items can

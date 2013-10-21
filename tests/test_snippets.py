@@ -80,6 +80,8 @@ class TestSnippets(unittest.TestCase):
 				else:
 					v = vtype(v)
 				setattr(options, k, v)
+		# ---- find expected session if any ---------------
+		session_match = SESSION_REGEXP.search(snippet)
 		# ---- parse & check ----------------------
 		try:
 			module = build_tree(options, path=None, buf=snippet)
@@ -93,6 +95,8 @@ class TestSnippets(unittest.TestCase):
 		sc, lc = len(snippet_errors), len(logged_errors)
 		self.assertEqual(sc, lc, "expected {} errors but {} were reported: {}"
 				.format(sc, lc, logged_errors))
+		assert not logged_errors or not session_match,\
+				"expected a session but errors were raised"
 		# check each error
 		for i, error, match in zip(count(), logged_errors, snippet_errors):
 			classname = match.group(1)
@@ -128,7 +132,6 @@ class TestSnippets(unittest.TestCase):
 		# ---- run JS -------------------------
 		if not module.algorithms:
 			return
-		session_match = SESSION_REGEXP.search(snippet)
 		if session_match:
 			fragments = session_match.group('session').strip().split('|')
 			snippet_output = ' '.join(f.strip() for f in fragments[0::2])

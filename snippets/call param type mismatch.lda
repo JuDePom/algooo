@@ -1,8 +1,8 @@
-fonction f(a: entier)
+fonction f((*#UnusedVariable#*)a: entier)
 début
 fin
 
-fonction g(a: entier, b: chaîne, c: caractère)
+fonction g((*#UnusedVariable#*)a: entier, (*#UnusedVariable#*)b: chaîne, (*#UnusedVariable#*)c: caractère)
 début
 fin
 
@@ -10,6 +10,7 @@ algorithme
 lexique
 	r: réel
 début
+	r <- 1234.5678
 	f((*#SpecificTypeExpected#*)r)
 	g((*#SpecificTypeExpected#*)r, (*#SpecificTypeExpected#*)r, (*#SpecificTypeExpected#*)r)
 fin

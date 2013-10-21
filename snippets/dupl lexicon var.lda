@@ -1,1 +1,7 @@
-algorithme lexique a:entier (*#DuplicateDeclaration#*)a:entier début fin
+algorithme
+lexique
+	a: entier
+	(*#DuplicateDeclaration#*)a: entier
+début
+	a <- "asdf"
+fin

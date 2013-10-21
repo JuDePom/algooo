@@ -1,0 +1,19 @@
+(*|
+4
+4
+4
+4
+|*)
+algorithme
+lexique
+	a: entier
+	b: entier
+début
+	a <- 9
+	b <- 2
+	écrire(9:2)
+	écrire(a:2)
+	écrire(9:b)
+	écrire(a:b)
+fin
+

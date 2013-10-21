@@ -1,4 +1,4 @@
-from .expression import Expression, surround
+from .expression import Expression, surround, nonwritable
 from .errors import semantic
 from . import types
 from . import kw
@@ -39,16 +39,15 @@ class UnaryOp(Expression):
 	"""
 	Unary operator.
 
-	Right-associative, non-writable, and compound by default (these properties
-	can be overridden). See Expression's docstring for info about writable and
-	compound.
+	Right-associative, non-writable, and non-terminal by default (these
+	properties can be overridden). See Expression's docstring for info about
+	writable and terminal.
 
 	Has a righthand-side operand only.
 	"""
 
-	writable = False # can be overridden
 	right_ass = True
-	compound = True
+	terminal = False
 
 	def __init__(self, pos, rhs):
 		super().__init__(pos)
@@ -60,28 +59,29 @@ class UnaryOp(Expression):
 	@surround
 	def lda(self, pp):
 		pp.put(self.keyword_def, " ", self.rhs)
-		
+
 	@surround
 	def js(self, pp):
 		pp.put(self.js_kw, " ", self.rhs)
 
-	def check(self, context, logger):
-		raise NotImplementedError
-
 class BinaryOp(Expression):
 	"""
-	Binary operator.
+	Binary operator. Has a lefthand-side operand and a righthand-side operand.
 
-	Left-associative, non-writable, and compound by default (these properties
-	can be overridden). See Expression's docstring for info about writable and
-	compound.
+	Default properties (can be overridden):
+	- left-associative,
+	- non-writable (see Expression),
+	- non-terminal (see Expression),
+	- non-encompassing.
 
-	Has a lefthand-side operand and a righthand-side operand.
+	A binary operator may be 'encompassing'; that is, its RHS is a list of
+	zero or more parameters delimited by commas and closed with a complementary
+	keyword. To declare an operator encompassing, define the `closing`
+	attribute to the keyword that closes the list of parameters.
 	"""
 
-	writable = False # can be overridden
 	right_ass = False
-	compound = True
+	terminal = False
 
 	def __init__(self, pos, lhs, rhs):
 		super().__init__(pos)
@@ -101,13 +101,10 @@ class BinaryOp(Expression):
 	@surround
 	def lda(self, pp):
 		pp.put(self.lhs, " ", self.keyword_def, " ", self.rhs)
-	
+
 	@surround
 	def js(self, pp):
 		pp.put(self.lhs, " ", self.js_kw, " ", self.rhs)
-
-	def check(self, context, logger):
-		raise NotImplementedError
 
 #######################################################################
 #
@@ -119,6 +116,7 @@ class UnaryNumberOp(UnaryOp):
 	"""
 	Unary operator that can only be used with a number type.
 	"""
+	@nonwritable
 	def check(self, context, logger):
 		self.rhs.check(context, logger)
 		rtype = self.rhs.resolved_type
@@ -143,6 +141,7 @@ class BinaryChameleonOp(BinaryOp):
 	Binary operator taking operands of equivalent types. The type of the operator
 	is determined by the strongest type among the operands.
 	"""
+	@nonwritable
 	def check(self, context, logger):
 		self.lhs.check(context, logger)
 		self.rhs.check(context, logger)
@@ -155,7 +154,58 @@ class BinaryChameleonOp(BinaryOp):
 		else:
 			self.resolved_type = strongtype
 
+class BinaryPolymorphicOp(BinaryOp):
+	"""
+	Operator whose behavior is determined by the type of its first operand.
+
+	After a successful call to check(), this class acts as a proxy to the class
+	of the deduced effective operator.
+
+	Subclasses must provide:
+	- `morph_table`: dictionary. Maps types to type-specific operator classes.
+	  See check().
+	- `_lhs_type_error`: method called when LHS's type is absent from
+	  `morph_table`.
+	"""
+
+	def check(self, context, logger, mode='r'):
+		"""
+		Check LHS, determine the operator's behavior from LHS's type, and
+		create the adequate type-specific operator.
+		After this method succeeds, the BinaryPolymorphicOp object acts as a
+		proxy to the type-specific operator object.
+		"""
+		# Guilty until proven innocent
+		self.resolved_type = types.ERRONEOUS
+		self.lhs.check(context, logger, mode)
+		if isinstance(self.lhs.resolved_type, types.Scalar):
+			key = self.lhs.resolved_type
+		else:
+			key = type(self.lhs.resolved_type)
+		try:
+			morph_cls = self.morph_table[key]
+		except (TypeError, KeyError):
+			self._lhs_type_error(logger)
+		else:
+			self._morph = morph_cls(self.pos, self.lhs, self.rhs)
+			# From now on, we're nothing more than a proxy to self._morph.
+			self.check_rhs(context, logger)
+
+	def __getattribute__(self, name):
+		try:
+			morph = object.__getattribute__(self, '_morph')
+		except AttributeError:
+			return object.__getattribute__(self, name)
+		try:
+			return getattr(morph, name)
+		except AttributeError:
+			return object.__getattribute__(self, name)
+
+	def _lhs_type_error(self, logger):
+		raise NotImplementedError
+
 class NumberArithmeticOp(BinaryChameleonOp):
+	@nonwritable
 	def check(self, context, logger):
 		super().check(context, logger)
 		if self.resolved_type not in (types.INTEGER, types.REAL):
@@ -169,6 +219,7 @@ class BinaryComparisonOp(BinaryOp):
 	"""
 	resolved_type = types.BOOLEAN
 
+	@nonwritable
 	def check(self, context, logger):
 		self.lhs.check(context, logger)
 		self.rhs.check(context, logger)
@@ -185,24 +236,11 @@ class BinaryLogicalOp(BinaryOp):
 	"""
 	resolved_type = types.BOOLEAN
 
+	@nonwritable
 	def check(self, context, logger):
 		for side in (self.lhs, self.rhs):
 			side.check(context, logger)
 			semantictools.enforce("cet opérande", types.BOOLEAN, side, logger)
-
-class BinaryEncompassingOp(BinaryOp):
-	"""
-	Binary operator whose righthand operand is a list of comma-separated
-	arguments. The last argument is followed by a closing keyword, therefore
-	subclasses *must* define the `closing` member.
-	"""
-
-	closing = None # must be defined by subclasses!
-
-	def lda(self, pp):
-		pp.put(self.lhs, self.keyword_def)
-		pp.join(self.rhs, pp.put, kw.COMMA, " ")
-		pp.put(self.closing)
 
 
 #######################################################################
@@ -226,6 +264,7 @@ class LogicalNot(UnaryOp):
 	resolved_type = types.BOOLEAN
 	js_kw = "!"
 
+	@nonwritable
 	def check(self, context, logger):
 		self.rhs.check(context, logger)
 		semantictools.enforce("l'opérande du 'non'", types.BOOLEAN, self.rhs, logger)
@@ -236,30 +275,14 @@ class LogicalNot(UnaryOp):
 #
 #######################################################################
 
-class ArraySubscript(BinaryEncompassingOp):
-	"""
-	Array subscript operator.
-
-	Encompassing.
-	LHS is an array variable identifier.
-	RHS is an arglist of indices, which should resolve to integers.
-
-	Unlike most expressions, this operator is *writable*.
-	"""
-
+class _ArraySubscript(BinaryOp):
 	keyword_def = kw.LSBRACK
 	closing = kw.RSBRACK
-	writable = True
 
-	def check(self, context, logger):
-		# guilty until proven innocent
+	def check_rhs(self, context, logger):
+		# Guilty until proven innocent
 		self.resolved_type = types.ERRONEOUS
-		# are we trying to subscript an array?
-		self.lhs.check(context, logger)
 		array = self.lhs.resolved_type
-		if not isinstance(array, types.Array):
-			logger.log(semantic.NonSubscriptable(self.pos, array))
-			return
 		# check dimension count
 		ldims = len(array.dimensions)
 		rdims = len(self.rhs)
@@ -293,8 +316,73 @@ class ArraySubscript(BinaryEncompassingOp):
 		self.js_indices(pp)
 		pp.put(", ", assignment.rhs, ")")
 
+	def lda(self, pp):
+		pp.put(self.lhs, "[")
+		pp.join(self.rhs, pp.put, ", ")
+		pp.put("]")
 
-class FunctionCall(BinaryEncompassingOp):
+
+class _StringSubscript(BinaryOp):
+	keyword_def = kw.LSBRACK
+	closing = kw.RSBRACK
+
+	def check_rhs(self, context, logger):
+		# check parameter count
+		rdims = len(self.rhs)
+		if 1 != rdims:
+			logger.log(semantic.ParameterCountMismatch(
+				self.pos, given=rdims, expected=1))
+			return
+		self.index = self.rhs[0]
+		self.index.check(context, logger)
+		itype = self.index.resolved_type
+		if itype is types.INTEGER:
+			self.resolved_type = types.CHARACTER
+		elif itype is types.RANGE:
+			self.resolved_type = types.STRING
+		else:
+			logger.log(semantic.TypeError(self.index.pos, "les indices de chaînes doivent "
+					"être des entiers ou des intervalles", itype))
+			self.resolved_type = types.ERRONEOUS
+
+	def js(self, pp):
+		if self.resolved_type is types.CHARACTER:
+			pp.put(self.lhs, "[", self.index, "]")
+		elif self.resolved_type is types.STRING:
+			start = self.index.lhs
+			end = self.index.rhs
+			pp.put(self.lhs, ".substr(", start, ", 1+", end, "-", start, ")")
+		else:
+			assert False
+
+	def lda(self, pp):
+		pp.put(self.lhs, "[", self.index, "]")
+
+
+class Subscript(BinaryPolymorphicOp):
+	"""
+	Array subscript operator.
+
+	Encompassing.
+	LHS is an array variable identifier.
+	RHS is a list of indices, which should resolve to integers.
+
+	Unlike most expressions, this operator is *writable*.
+	"""
+
+	keyword_def = kw.LSBRACK
+	closing = kw.RSBRACK
+
+	def _lhs_type_error(self, logger):
+		logger.log(semantic.NonSubscriptable(self.pos, self.lhs.resolved_type))
+
+	morph_table = {
+			types.Array: _ArraySubscript,
+			types.STRING: _StringSubscript,
+	}
+
+
+class FunctionCall(BinaryOp):
 	"""
 	Function call operator.
 
@@ -311,18 +399,17 @@ class FunctionCall(BinaryEncompassingOp):
 		# errors instead of reporting the opening parenthesis's position)
 		super().__init__(lhs.pos, lhs, rhs)
 
+	@nonwritable
 	def check(self, context, logger):
 		self.lhs.check(context, logger)
 		try:
 			self.function = self.lhs.bound
-			check_effective_parameters = getattr(self.function, 'check_effective_parameters')
+			check_call = getattr(self.function, 'check_call')
 		except AttributeError:
 			logger.log(semantic.NonCallable(self.pos, self.lhs.resolved_type))
 			self.resolved_type = types.ERRONEOUS
 			return
-		for effective in self.rhs:
-			effective.check(context, logger)
-		check_effective_parameters(logger, self.pos, self.rhs)
+		check_call(context, logger, self.pos, self.rhs)
 		self.resolved_type = self.function.resolved_return_type
 
 	def lda(self, pp):
@@ -345,11 +432,10 @@ class MemberSelect(BinaryOp):
 	"""
 
 	keyword_def = kw.DOT
-	writable = True
 
-	def check(self, context, logger):
+	def check(self, context, logger, mode='r'):
 		# LHS is supposed to refer to a TypeAlias, which refers to a composite
-		self.lhs.check(context, logger)
+		self.lhs.check(context, logger, mode)
 		composite = self.lhs.resolved_type
 		if not isinstance(composite, types.Composite):
 			logger.log(semantic.NonComposite(self.pos, composite))
@@ -383,19 +469,91 @@ class Multiplication(NumberArithmeticOp):
 	keyword_def = kw.TIMES
 	js_kw = "*"
 
-class Division(NumberArithmeticOp):
+class RealDivision(BinaryOp):
 	keyword_def = kw.SLASH
 	js_kw = "/"
-	#TODO: JS integer division!!!
+	resolved_type = types.REAL
+
+	@nonwritable
+	def check(self, context, logger):
+		for side in (self.lhs, self.rhs):
+			side.check(context, logger)
+			semantictools.enforce_compatible("les opérandes d'une division réelle",
+					types.REAL, self.lhs, logger)
+
+class IntegerDivision(BinaryOp):
+	keyword_def = kw.COLON
+	resolved_type = types.INTEGER
+
+	@nonwritable
+	def check(self, context, logger):
+		for side in (self.lhs, self.rhs):
+			side.check(context, logger)
+			semantictools.enforce_compatible("les opérandes d'une division entière",
+					types.INTEGER, self.lhs, logger)
+
+	def js(self, pp):
+		pp.put("Math.floor((", self.lhs, "/", self.rhs, "))")
 
 class Modulo(NumberArithmeticOp):
 	keyword_def = kw.MODULO
 	js_kw = "%"
-	#TODO: entier? pas entier?
 
-class Addition(NumberArithmeticOp):
+class _Addition(BinaryOp):
 	keyword_def = kw.PLUS
 	js_kw = "+"
+
+	@nonwritable
+	def check_rhs(self, context, logger):
+		self.rhs.check(context, logger)
+		ltype, rtype = self.lhs.resolved_type, self.rhs.resolved_type
+		strongest = ltype.equivalent(rtype)
+		if strongest not in (types.INTEGER, types.REAL):
+			logger.log(semantic.TypeMismatch(self.pos, "les types des opérandes "
+					"doivent être équivalents", ltype, rtype))
+			self.resolved_type = types.ERRONEOUS
+		else:
+			self.resolved_type = strongest
+
+class _Concatenation(BinaryOp):
+	keyword_def = kw.PLUS
+	js_kw = "+"
+	resolved_type = types.STRING
+
+	@nonwritable
+	def check_rhs(self, context, logger):
+		self.rhs.check(context, logger)
+		ltype, rtype = self.lhs.resolved_type, self.rhs.resolved_type
+		strongest = ltype.equivalent(rtype)
+		if strongest not in (types.STRING, types.CHARACTER):
+			logger.log(semantic.TypeMismatch(self.pos, "les types des opérandes "
+					"doivent être équivalents", ltype, rtype))
+			self.resolved_type = types.ERRONEOUS
+
+class Plus(BinaryPolymorphicOp):
+	"""
+	Polymorphic operator
+	- Number operands: addition
+	- String/character operands: string concatenation
+
+	Minimalist implementation because JavaScript's '+' operator happens to have
+	exactly the same behavior (in the restricted use cases that are allowed by
+	check() anyway).
+	"""
+
+	keyword_def = kw.PLUS
+	js_kw = "+" # Warning: this works because the JS plus has exactly the same behavior
+
+	def _lhs_type_error(self, logger):
+		logger.log(semantic.TypeError(self.pos, "l'opérateur + ne fonctionne qu'avec des "
+				"nombres ou des chaînes/caractères", self.lhs.resolved_type))
+
+	morph_table = {
+			types.STRING:    _Concatenation,
+			types.CHARACTER: _Concatenation,
+			types.INTEGER:   _Addition,
+			types.REAL:      _Addition,
+	}
 
 class Subtraction(NumberArithmeticOp):
 	keyword_def = kw.MINUS
@@ -405,6 +563,7 @@ class IntegerRange(BinaryOp):
 	keyword_def = kw.DOTDOT
 	resolved_type = types.RANGE
 
+	@nonwritable
 	def check(self, context, logger):
 		for operand in (self.lhs, self.rhs):
 			operand.check(context, logger)
@@ -459,10 +618,10 @@ unary = [
 ]
 
 binary_precedence = [
-		[ArraySubscript, FunctionCall, MemberSelect],
+		[Subscript, FunctionCall, MemberSelect],
 		[Power],
-		[Multiplication, Division, Modulo],
-		[Addition, Subtraction],
+		[Multiplication, RealDivision, IntegerDivision, Modulo],
+		[Plus, Subtraction],
 		[IntegerRange],
 		[LessThan, GreaterThan, LessOrEqual, GreaterOrEqual],
 		[Equal, NotEqual],

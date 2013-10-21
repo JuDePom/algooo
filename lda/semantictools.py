@@ -18,18 +18,18 @@ def hunt_duplicates(symbol_list, logger, clash_type):
 	symbol_dict = {}
 	dupe_dict = {}
 	for item in symbol_list:
-		name = item.ident.name
+		name = item.name
 		try:
 			dupe_dict[name].append(item)
 		except KeyError:
 			dupe_dict[name] = [item]
-			symbol_dict[item.ident.name] = item
+			symbol_dict[item.name] = item
 	for dupelist in dupe_dict.values():
 		if len(dupelist) > 1:
 			pioneer = dupelist[0]
-			symbol_dict[pioneer.ident.name] = clash_type
+			symbol_dict[pioneer.name] = clash_type
 			for dupe in dupelist[1:]:
-				logger.log(semantic.DuplicateDeclaration(dupe.ident, pioneer.ident))
+				logger.log(semantic.DuplicateDeclaration(dupe, pioneer))
 	return symbol_dict
 
 

@@ -1,5 +1,6 @@
 fonction f(t: tableau entier[0..5])
 début
+	t[0] <- 10
 fin
 
 algorithme

@@ -28,6 +28,8 @@ class TypeDescriptor:
 	if this TypeDescriptor translates to an `object` type in JavaScript.
 	"""
 
+	needs_initialization = False
+
 	def __eq__(self, other):
 		raise NotImplementedError
 
@@ -61,6 +63,13 @@ class TypeDescriptor:
 		this LDA type descriptor.
 		"""
 		raise NotImplementedError
+
+	def allow_uninitialized_access(self, mode):
+		"""
+		Return True if an uninitialized variable can be legally accessed in the
+		specified mode. See Expression.check() for info about access modes.
+		"""
+		return mode != 'r'
 
 
 #######################################################################
@@ -128,6 +137,8 @@ class Scalar(TypeDescriptor):
 	pre-defined Scalar instances in this module: INTEGER, REAL, etc.).
 	"""
 
+	needs_initialization = True
+
 	# `number`, `boolean`, `string` are not objects in JavaScript
 	js_object = False
 
@@ -139,11 +150,14 @@ class Scalar(TypeDescriptor):
 		else:
 			self.name = name
 
-	def __repr__(self):
-		return self.name
-
 	def __eq__(self, other):
 		return self is other
+
+	def __hash__(self):
+		return id(self)
+
+	def __repr__(self):
+		return self.name
 
 	def resolve_type(self, context, logger):
 		return self
@@ -315,6 +329,7 @@ class Array(TypeDescriptor):
 			dim0_type = type(self.dimensions[0])
 			self.dynamic = dim0_type is Array.DynamicDimension
 			self.static = not self.dynamic
+			self.needs_initialization = self.dynamic
 			mixed_dims = False
 			for dim in self.dimensions:
 				# Semantic analysis of the dimension.
@@ -374,6 +389,12 @@ class Array(TypeDescriptor):
 				return
 		return self
 
+	def allow_uninitialized_access(self, mode):
+		if self.static:
+			return super().allow_uninitialized_access(mode)
+		else:
+			return mode == 's'
+
 
 class Composite(TypeDescriptor):
 	"""
@@ -387,6 +408,14 @@ class Composite(TypeDescriptor):
 		super().__init__()
 		self.ident = ident
 		self.fields = fields
+
+	@property
+	def pos(self):
+		return self.ident.pos
+
+	@property
+	def name(self):
+		return self.ident.name
 
 	def __eq__(self, other):
 		if self is other:

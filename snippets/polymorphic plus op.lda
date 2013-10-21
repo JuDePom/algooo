@@ -1,0 +1,17 @@
+(*|
+3
+3.2
+ab
+ab
+ab
+ab
+|*)
+algorithme
+début
+	écrire(1 + 2)
+	écrire(1.2 + 2)
+	écrire('a' + 'b')
+	écrire("a" + "b")
+	écrire("a" + 'b')
+	écrire('a' + "b")
+fin

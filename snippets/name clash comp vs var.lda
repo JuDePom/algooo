@@ -1,1 +1,16 @@
-algorithme lexique a=<> (*#DuplicateDeclaration#*)a:entier début fin
+fonction f1()
+lexique
+	a = <>
+	(*#DuplicateDeclaration#*)a: entier
+début
+	a <- 3
+fin
+
+fonction f2()
+lexique
+	a: entier
+	(*#DuplicateDeclaration#*)a = <>
+début
+	a <- 3
+fin
+

@@ -1,0 +1,31 @@
+(* Since ranges may only exist in literal form in a few select situations, we
+use arrayalloc to test them *)
+
+algorithme
+lexique
+	t: tableau entier[?]
+	i: entier
+	j: entier
+début
+	i <- 3
+	j <- 9
+
+	(* illegal constant string range *)
+	tailletab(t, (*#SpecificTypeExpected#*)"coucou"..(*#SpecificTypeExpected#*)"salut")
+
+	(* illegal constant real range *)
+	tailletab(t, (*#SpecificTypeExpected#*)1.234..(*#SpecificTypeExpected#*)5.678)
+
+	(* illegal constant char range *)
+	tailletab(t, (*#SpecificTypeExpected#*)'a'..(*#SpecificTypeExpected#*)'b')
+
+	(* illegal constant boolean range *)
+	tailletab(t, (*#SpecificTypeExpected#*)vrai..(*#SpecificTypeExpected#*)faux)
+
+	(* half-illegal *)
+	tailletab(t, i..(*#SpecificTypeExpected#*)"j")
+	tailletab(t, (*#SpecificTypeExpected#*)"i"..j)
+	tailletab(t, 1..(*#SpecificTypeExpected#*)"2")
+	tailletab(t, (*#SpecificTypeExpected#*)"1"..2)
+fin
+

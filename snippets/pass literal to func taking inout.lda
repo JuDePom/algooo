@@ -1,4 +1,4 @@
-fonction f(a: inout entier)
+fonction f((*#UnusedVariable#*)a: inout entier)
 début
 fin
 

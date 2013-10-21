@@ -16,6 +16,8 @@ lexique
 début
 	m.x <- 100
 	z <- 789
+	a <- 456
+	b <- 123
 fin
 
 algorithme

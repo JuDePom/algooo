@@ -1,5 +1,5 @@
 fonction f0() début fin
-fonction f1(a:entier) début fin
+fonction f1((*#UnusedVariable#*)a:entier) début fin
 
 algorithme
 début

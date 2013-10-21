@@ -1,4 +1,4 @@
-fonction f(t: tableau entier[0..5])
+fonction f((*#UnusedVariable#*)t: tableau entier[0..5])
 début
 fin
 

@@ -6,4 +6,5 @@ algorithme
 lexique
 	(*#DuplicateDeclaration#*)f: entier
 début
+	f <- 3 (* mute unused warning *)
 fin

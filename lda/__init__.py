@@ -34,7 +34,7 @@ def build_tree(options, buf, path=None):
 	try:
 		p = Parser(options, buf, path)
 		module = p.analyze_module()
-	# TODO self.assertTrue(parser.eof(), ("program couldn't be parsed entirely -- stopped at {}").format(parser.pos))
+		assert p.eof(), "program couldn't be parsed entirely"
 	except syntax.SyntaxError as e:
 		raise CompilationFailed([e], buf)
 	c1 = clock()

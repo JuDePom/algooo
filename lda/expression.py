@@ -2,6 +2,7 @@ from . import kw
 from . import types
 from .identifier import PureIdentifier
 from .errors import semantic
+from .vardecl import VarDecl
 
 ESCAPE_SEQUENCES = {
 	'\\n': '\n',
@@ -36,6 +37,19 @@ def surround(lda_method):
 			pp.put(")")
 	return wrapper
 
+def nonwritable(check_method):
+	"""
+	Surround a semantic check method to automatically log a NonWritable error
+	if the access mode is 'w'.
+	"""
+	def wrapper(self, context, logger, mode='r'):
+		if mode != 'r':
+			logger.log(semantic.NonWritable(self))
+			self.resolved_type = types.ERRONEOUS
+		else:
+			check_method(self, context, logger)
+	return wrapper
+
 class Expression:
 	"""
 	Base class for all expressions.
@@ -48,11 +62,7 @@ class Expression:
 	- root: True if the expression is not contained by any other
 	  expression. This is set to False by the default constructor.
 
-	- writable: True if the expression can legally occupy the lefthand
-	  side of an assignment statement
-
-	- compound: True if the expression is made of other expressions, False if
-	  the whole expression fits in a single token
+	- terminal: True if the expression is a terminal symbol.
 
 	In addition, an expression must be checked for semantic correctness with
 	the `check()` method. If the semantic analysis is successful, the
@@ -63,8 +73,7 @@ class Expression:
 	def __init__(self, pos):
 		self.pos = pos
 		self.root = False
-		assert hasattr(self, 'writable')
-		assert hasattr(self, 'compound')
+		assert hasattr(self, 'terminal')
 
 	def __eq__(self, other):
 		raise NotImplementedError
@@ -72,21 +81,26 @@ class Expression:
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
-	def check(self, context, logger):
+	def check(self, context, logger, mode='r'):
 		"""
 		Check for semantic aberrations and set the resolved_type attribute.
+
+		`mode` indicates how this expression is being accessed. It can be:
+		- 'r': read access.
+		- 'w': write access.
+		- 's': special write-ish access. (inout effective param, memory allocation)
 		"""
 		raise NotImplementedError
+
 
 class ExpressionIdentifier(PureIdentifier, Expression):
 	"""
 	Name bound to a symbol during the semantic analysis phase.
 	"""
 
-	writable = False
-	compound = False
+	terminal = True
 
-	def check(self, context, logger):
+	def check(self, context, logger, mode='r'):
 		"""
 		Resolve the name in the current context's symbol table.
 
@@ -109,7 +123,6 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 		if self.bound is None or self.bound is types.ERRONEOUS:
 			# Bound to an undeclared symbol.
 			self.resolved_type = types.ERRONEOUS
-			self.writable = False
 			return
 		# Steal the bound symbol's type.
 		try:
@@ -120,11 +133,13 @@ class ExpressionIdentifier(PureIdentifier, Expression):
 			# a NOT_A_VARIABLE type, which will ultimately trigger a TypeError
 			# if this identifier is used improperly.
 			self.resolved_type = types.NOT_A_VARIABLE
-		# Steal the bound symbol's writability.
-		try:
-			self.writable = self.bound.writable
-		except AttributeError:
-			self.writable = False
+		# Check bound symbol's writability.
+		if isinstance(self.bound, VarDecl):
+			self.bound.access(context, logger, self.pos, mode)
+		elif mode != 'r':
+			logger.log(semantic.NonWritable(self))
+			self.resolved_type = types.ERRONEOUS
+			return
 
 	def js(self, pp):
 		self.bound.js_ident(pp, access=True)
@@ -136,8 +151,7 @@ class Literal(Expression):
 	Not writable.
 	"""
 
-	writable = False
-	compound = False
+	terminal = True
 
 	def __init__(self, pos, value):
 		super().__init__(pos)
@@ -150,6 +164,7 @@ class Literal(Expression):
 	def __repr__(self):
 		return "littéral {}".format(self.resolved_type)
 
+	@nonwritable
 	def check(self, context, logger):
 		pass
 

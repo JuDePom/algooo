@@ -7,6 +7,11 @@ lexique
 	ca: caractère
 	m: Moule
 début
+	en <- 0
+	re <- 0
+	ch <- "abcdef"
+	ca <- 'a'
+
 	tantque (*#SpecificTypeExpected#*)m faire ftant
 	tantque (*#SpecificTypeExpected#*)en faire ftant
 	tantque (*#SpecificTypeExpected#*)re faire ftant

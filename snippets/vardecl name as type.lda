@@ -1,1 +1,5 @@
-algorithme lexique a: (*#SpecificTypeExpected#*)a début fin
+algorithme
+lexique
+	(*#UnusedVariable#*)a: (*#SpecificTypeExpected#*)a
+début
+fin
